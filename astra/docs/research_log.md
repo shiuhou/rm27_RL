@@ -111,3 +111,38 @@ Initial independent code review identified and helped close the visibility and
 comparison issues. The subsequent rendered/perception extension was checked
 locally; a second independent review could not run because the reviewer service
 reported a usage limit. This does not represent completed external validation.
+
+## 2026-09-05 — Assembled prototype changes the next experiment
+
+**Question:** What is the smallest real campaign that can discriminate the current
+architecture choices, now that a 1103 9600KV / MicoAir743v2-AIO-35A / MTF-02P
+prototype and 1.8-inch/2.0-inch propellers are available?
+
+**Hypothesis:** Field-dependent sensing and powered sensor coupling can invalidate
+the simulation ranking before extra guidance complexity becomes useful. A larger
+propeller may improve steady power while worsening vibration or image quality.
+
+**Method:** Specify four gated experiments: surveyed props-off flow/ToF over field
+materials; real camera acquisition/blur/timing on field fixtures; paired guarded
+thrust/power steps; six paired and three field-route low-energy flights with an
+independent pose reference. Freeze settings, preserve aborts, fit repetitions 1–2
+and withhold repetition 3. Publish exact signals, counts and metadata template.
+
+**Result:** Protocol and logging contract prepared; **no real measurements collected**.
+The 9600KV prototype supersedes the earlier 9500KV assumption. Actual battery,
+mass, firmware, proven modes and camera remain unknown. Local ArduPilot source
+and official logging/sensor documentation were checked; local source is not the
+installed firmware. Published FC specifications reveal an unconfirmed yaw-source
+dependency. FC logs alone cannot establish camera latency, absolute drift or
+fast propulsion response.
+
+**Interpretation:** A generic indoor hover cannot answer competition-field sensing
+questions. Independent reference, real lighting/materials and image timestamps
+provide greater discrimination than more unreferenced flight time. The proposed
+1.4× thrust screen must not be mislabeled validation of the 2× simulation model.
+
+**Decision:** Execute [the real campaign](real_experiments.md) with a human operator
+and measured powered-test limits. Keep visual guidance in shadow mode. Recalibrate
+in a new evidence version and challenge the frozen guidance comparisons without
+changing their thresholds. Defer high-speed/contact tests and high-fidelity
+dynamics expansion until measured residuals identify the need.

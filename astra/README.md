@@ -16,7 +16,10 @@ For an isolated installation, create a Python virtual environment and install
 for rendered experiments and the pixel-detector tests.
 
 Read the [first results and limitations](docs/first_campaign.md) before using
-the numerical results. Additional reproducible experiments:
+the numerical results. For the assembled prototype, use the
+[four real experiments](docs/real_experiments.md), [signal dictionary](docs/real_logging.md)
+and [run metadata template](configs/real_trial_template.json).
+Additional reproducible experiments:
 
 ```bash
 python3 -m astra.analyze astra/results/evaluation_v1

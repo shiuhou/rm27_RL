@@ -1,5 +1,16 @@
 {
   "status": "allocation_only_not_validated_bom",
+  "assembled_prototype_user_report_2026_09_05": {
+    "motors": "1103 9600KV",
+    "flight_controller": "MicoAir743v2-AIO-35A",
+    "flow_tof": "MTF-02P",
+    "available_propeller_diameters_in": [1.8, 2.0],
+    "battery": null,
+    "measured_flying_mass_g": null,
+    "installed_ardupilot_version": null,
+    "installed_camera_compute": null,
+    "proven_flight_modes": null
+  },
   "target_mass_g": 200,
   "mass_items_g": {"frame":15,"guards":20,"motors":16,"propellers":4,"fc_esc":10,"battery":40,"flow_tof":1.5,"camera_compute":20,"radio":3,"wiring_regulation":8,"mounts":6,"contingency":20},
   "manufacturer_items": ["fc_esc", "flow_tof"],

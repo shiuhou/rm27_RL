@@ -1,8 +1,15 @@
 # Hardware evidence and first bench measurements
 
-**No propulsion configuration is validated yet.** The campaign varies dimensionless
-thrust authority; it does not demonstrate that 1103 9500KV motors on 2S or 3S can
-produce it. A 200 g vehicle needs 50 gf per motor just to hover, before guard losses.
+**An assembled prototype is available; its performance is not measured here yet.**
+The user reports 1103 **9600KV** motors, MicoAir743v2-AIO-35A, MTF-02P and available
+1.8-inch/2.0-inch propellers. This supersedes the earlier 9500KV starting assumption.
+Battery, flying mass, installed firmware, proven flight modes and camera configuration
+remain unreported. Use the [first real experiment protocol](real_experiments.md)
+and [logging contract](real_logging.md) for the next evidence collection.
+
+The campaign varies dimensionless thrust authority; it does not establish what
+this prototype can produce. A 200 g vehicle needs 50 gf per motor just to hover,
+before guard losses.
 Nominal 2:1 thrust/weight requires 100 gf per motor; 3:1 requires 150 gf.
 
 ## Primary-source facts, accessed 2026-09-05
@@ -50,24 +57,17 @@ thrust changes during a mission. Do not copy that simplification into rankings.
 
 ## Measurement order
 
-1. **Camera timing and geometry:** photograph a hardware-timed LED transition
-   while logging frame acquisition and command output; use a photodiode/logic
-   analyzer to separate exposure, readout, buffering, inference and UART time.
-   Report p50/p95/p99 under sustained load, not reciprocal FPS. Measure FOV,
-   principal point, distortion, camera/body extrinsics and attitude synchronization.
-2. **Target perception:** known-radius benign sphere and representative illuminated
-   panel at 0.5–8 m; vary exposure, lighting, viewing angle and lateral motion.
-   Record detection/missed detection/false association, bearing and range errors,
-   clipping, motion blur and latency. Use measured distributions in simulation.
-3. **Thrust/energy:** guarded thrust stand; exact motor/prop on candidate voltages;
-   record thrust, command, RPM, current, loaded voltage and temperature. Sweep
-   throttle and voltage; repeat step tests. Guarded and unguarded curves both
-   matter. Respect motor/ESC/battery limits rather than assuming 3S is acceptable.
-4. **Mass/dynamics:** weigh the flying assembly, balance COM, measure geometry and
-   inertia using CAD plus pendulum checks; identify thrust response and mismatch.
-5. **Localization:** known-velocity textured rig and known-height surfaces; flow
-   scale/bias/dropouts over light/height, ToF reflectivity dependence, stationary
-   IMU logs over temperature and mounted vibration.
+The [four-experiment protocol](real_experiments.md) replaces the earlier generic
+measurement list: props-off field flow/ToF and camera acquisition/timing; guarded
+1.8/2.0-inch comparison at the rated battery cell count; then paired low-energy
+field flights with independent reference. It specifies durations, repetitions,
+raw signals, metadata, abort conditions and held-out validation. The
+[run template](../configs/real_trial_template.json) leaves unmeasured values null.
+
+Whole-vehicle inertia, maximum thrust, high-speed drag, long-duration sensor drift,
+impact survival and unguarded propulsion comparisons are deferred until evidence
+shows they limit the next decision. Guarded hover power and field visibility have
+higher immediate information value than another assumed high-fidelity airframe.
 
 Hardware experiments require the physical rig and human operator. No actuation
 or configuration of a real flight controller is provided by this package.

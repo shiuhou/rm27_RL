@@ -13,3 +13,10 @@
 
 An architecture decision is provisional until its dominant risk has relevant
 evidence. Neither a simulator pass nor a vendor rating closes a hardware risk.
+
+The assembled 9600KV prototype enables the [first real campaign](real_experiments.md).
+It does not close the propulsion/sensing risks by itself. Confirm its actual yaw
+reference before treating optical-flow navigation as commissioned: the FC's
+published specification lists no onboard compass. E1/E4 distinguish yaw/fusion
+issues from raw flow failure; E2 addresses camera readiness and range assumptions;
+E3/E4 establish the initial guarded propulsion and vibration envelope.
