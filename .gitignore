@@ -1,0 +1,9 @@
+# Existing reference workspaces remain independently versioned.
+/ardupilot/
+/rm_uav_lab/
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/*.egg-info/
+/astra/results/*
+!/astra/results/.gitkeep

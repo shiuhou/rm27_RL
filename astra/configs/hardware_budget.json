@@ -1,0 +1,13 @@
+{
+  "status": "allocation_only_not_validated_bom",
+  "target_mass_g": 200,
+  "mass_items_g": {"frame":15,"guards":20,"motors":16,"propellers":4,"fc_esc":10,"battery":40,"flow_tof":1.5,"camera_compute":20,"radio":3,"wiring_regulation":8,"mounts":6,"contingency":20},
+  "manufacturer_items": ["fc_esc", "flow_tof"],
+  "measured_items": [],
+  "propulsion_curves": [],
+  "compute_power_W": null,
+  "hover_power_W": null,
+  "mission_energy_Wh": null,
+  "sustained_camera_latency_ms": null,
+  "remaining_required_evidence": ["exact_part_numbers", "weighed_assembly", "guarded_thrust_current_voltage_curves", "battery_sag_and_thermal", "camera_timing_geometry", "mounted_imu_flow_tof_logs"]
+}
