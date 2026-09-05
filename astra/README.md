@@ -11,6 +11,20 @@ python3 -m astra.campaign --output astra/results/my_development
 python3 -m astra.campaign --split evaluation --full --output astra/results/my_evaluation
 ```
 
+For an isolated installation, create a Python virtual environment and install
+`pip install './astra[vision,test]'`. The optional vision dependencies are needed
+for rendered experiments and the pixel-detector tests.
+
+Read the [first results and limitations](docs/first_campaign.md) before using
+the numerical results. Additional reproducible experiments:
+
+```bash
+python3 -m astra.analyze astra/results/evaluation_v1
+MUJOCO_GL=egl python3 -m astra.render_validation --output astra/results/my_pixel_calibration
+MUJOCO_GL=egl python3 -m astra.rendered_campaign --output astra/results/my_pixel_closed_loop
+python3 -m astra.startup_study --output astra/results/my_startup_study
+```
+
 Each output directory must be new. Runs include source snapshots, complete
 resolved configuration, unique trajectory identifiers, raw JSONL episodes,
 Wilson intervals, paired bootstrap comparisons, and Markdown tables. The frozen
@@ -25,6 +39,7 @@ configuration is `configs/campaign.json`. Never tune on evaluation seed 27991.
   **Not** evidence of successful detection in real imagery.
 - Ego position/velocity errors are a declared correlated error abstraction with
   drift, scale and yaw error. **Not** a working GPS-denied estimator.
+  Roll/pitch estimation and exposure-time pose alignment remain idealized.
 - Known spherical fixture radius is a prior; size-error sweeps challenge it.
   Pixel bearing and angular extent must support any inferred target position.
 - Airborne initial condition, target initially visible, 12-second horizon,

@@ -1,5 +1,8 @@
 import numpy as np
 from astra.scoring import summarize, paired_difference
+from astra.campaign import run
+import json
+import hashlib
 
 
 def test_confidence_intervals_include_all_failures():
@@ -17,3 +20,15 @@ def test_paired_estimate_uses_episode_pairs():
     result = paired_difference(a, b)
     assert result['difference_b_minus_a'] == .5
     assert result['b_only_successes'] == 2
+
+
+def test_runner_records_replayable_sources_and_all_trials(tmp_path):
+    spec = dict(defaults={'duration_s': .1}, development_seed=7, development_n=4, methods=['pursuit','compensated_pursuit','lead'])
+    out = tmp_path/'campaign'
+    result = run(spec, out)
+    assert len((out/'episodes.jsonl').read_text().splitlines()) == 12
+    assert result['nominal/lead']['overall']['n'] == 4
+    h = hashlib.sha256()
+    for p in sorted((out/'source/astra').glob('*.py')):
+        h.update(p.name.encode()); h.update(p.read_bytes())
+    assert h.hexdigest() == json.loads((out/'manifest.json').read_text())['source_sha256']

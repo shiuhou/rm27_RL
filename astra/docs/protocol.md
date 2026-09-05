@@ -16,7 +16,10 @@ stress conditions test occlusion, ego drift, size-prior errors, mounting angle
 and attitude response. Mass and thrust variation are independent uniform ±10%
 draws. The nominal target's constant velocity magnitude is 0–5 m/s; maneuvering
 sinusoids add bounded velocity/acceleration, so instantaneous speed may exceed
-5 m/s. Target initial range is approximately 2–8 m.
+5 m/s. Target initial range is approximately 2–8 m. In v1 the small yaw-drift
+coefficient reuses the supply-variation draw; this is an artificial correlation,
+not identified hardware behavior. Conclusions are conditional on that prior;
+future calibrated campaigns should decouple these errors.
 
 Report all contacts, misses, censoring at 12 seconds, flight-envelope failures,
 visibility loss, staleness, tracking error and command effort. Success-rate

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 class Config:
     dt: float = .005
     guidance_hz: float = 100.
+    guidance_start_s: float = 0.
     duration_s: float = 12.
     camera_hz: float = 30.
     latency_s: float = .05

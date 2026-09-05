@@ -37,6 +37,9 @@ class Guidance:
 
     def command(self, ego):
         c = self.cfg
+        if ego.time < c.guidance_start_s:
+            yaw = np.arctan2(ego.camera_to_local[:, 1, 2], ego.camera_to_local[:, 0, 2])
+            return -c.velocity_gain*ego.velocity, yaw
         # Pursuit uses filtered position at exposure time. Lead compensates age
         # and predicts a constant-velocity intercept. Neither knows target future.
         target = self.position if self.method == 'pursuit' else self.target_estimate(ego.time)

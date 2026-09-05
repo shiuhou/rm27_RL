@@ -1,0 +1,6 @@
+Reference: https://github.com/shiuhou/rm_uav_lab
+Revision: b9e61bac550e3719a8d6a216bf1ff8a94a7dd03b
+Command (clone cwd): PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 /home/shiuhou/Projects/rm27_drones/astra/.venv/bin/python -m pytest -q
+Observed result: 134 passed in 89.73s
+M3 reproduction: m3_benchmark.py --json /home/shiuhou/Projects/rm27_drones/astra/results/reference_m3.json
+Observed result: 11 cases, overall_pass=true

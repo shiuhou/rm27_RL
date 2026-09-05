@@ -12,7 +12,7 @@ from .interfaces import EgoEstimate, ImageObservation
 from .scenario import Scenario
 
 
-def simulate(cfg, method, n, seed, scenario='mixed', trace=None):
+def simulate(cfg, method, n, seed, scenario='mixed', trace=None, camera=None):
     s = Scenario(n, seed, scenario)
     camera_rng = np.random.default_rng(s.noise_seed)
     ego_rng = np.random.default_rng(s.noise_seed+1)
@@ -67,7 +67,10 @@ def simulate(cfg, method, n, seed, scenario='mixed', trace=None):
         estimate_v = v*(1+cfg.ego_scale_error)+drift+velocity_noise
         ego = EgoEstimate(t, estimate_p, estimate_v, estimated_basis)
         if t+1e-9 >= next_frame/cfg.camera_hz:
-            uv, angle, visible = project(target-p, basis, cfg.target_radius_m, cfg.fov_deg, cfg.width, cfg.height, cfg.min_diameter_px)
+            if camera is None:
+                uv, angle, visible = project(target-p, basis, cfg.target_radius_m, cfg.fov_deg, cfg.width, cfg.height, cfg.min_diameter_px)
+            else:
+                uv, angle, visible = camera.measure(target-p, basis, cfg)
             uv += camera_rng.normal(0, cfg.pixel_noise, (n, 2))
             f = cfg.width/(2*np.tan(np.deg2rad(cfg.fov_deg/2)))
             angle += camera_rng.normal(0, cfg.radius_noise_fraction, n)*angle + camera_rng.normal(0, cfg.pixel_noise/(2*f), n)

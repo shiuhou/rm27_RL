@@ -1,0 +1,12 @@
+{
+  "python": "3.12.3",
+  "source_files": {
+    "perception.py": "8efccfc775098708782dbc0042b42e8b829b0aabb7acebed182071117c5b8843",
+    "render_validation.py": "63bea80a37ccb6e1caa767c61e28f166b3466190442e1fd19d740e9eaa8725b4",
+    "__init__.py": "74d39d79ecd87a23849399952596f23c6836f9e78f5436f029a49488cbb64c2d",
+    "geometry.py": "1422d74f126d50e278b9d72cc0b45900a368cd6660e92cb5c8796bdff1bd5550"
+  },
+  "seed": 27119,
+  "n_per_fov": 80,
+  "scope": "post-run source archive; listed source files unchanged since execution"
+}

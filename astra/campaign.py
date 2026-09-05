@@ -25,12 +25,17 @@ def source_hash():
     return digest.hexdigest()
 
 
-def run(spec, output, split='development', full=False, n_override=None):
-    output.mkdir(parents=True, exist_ok=False)
+def snapshot_source(output):
     snapshot = output/'source'/'astra'
     snapshot.mkdir(parents=True)
     for path in Path(__file__).parent.glob('*.py'):
         shutil.copy2(path, snapshot/path.name)
+    return source_hash()
+
+
+def run(spec, output, split='development', full=False, n_override=None):
+    output.mkdir(parents=True, exist_ok=False)
+    digest = snapshot_source(output)
     (output/'spec.json').write_text(json.dumps(spec, indent=2)+'\n')
     base = Config(**spec['defaults'])
     seed = spec[f'{split}_seed']
@@ -45,7 +50,7 @@ def run(spec, output, split='development', full=False, n_override=None):
     except subprocess.CalledProcessError:
         revision = 'uncommitted-initial-research'
     manifest = dict(utc=datetime.now(timezone.utc).isoformat(), split=split, n=n, seed=seed, specification=spec,
-                    source_sha256=source_hash(), git_revision=revision, python=platform.python_version(), numpy=np.__version__,
+                    source_sha256=digest, git_revision=revision, python=platform.python_version(), numpy=np.__version__,
                     fidelity='thrust-vector surrogate + geometric camera features + abstract ego error; not hardware-validated',
                     conditions={name: asdict(c) for name, c in conditions})
     (output/'manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')

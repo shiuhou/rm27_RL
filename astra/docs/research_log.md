@@ -43,3 +43,71 @@ results are superseded, not confirmatory evidence.
 
 **Decision:** Freeze three baselines and protocol; retain negative results and
 run evaluation without trajectory-specific tuning.
+
+## 2026-09-05 — Held-out terminal campaign
+
+**Question:** What dominates nominal terminal contact and does lead materially help?
+
+**Method:** Frozen revision 99f6b44, seed 27991, 1,000 trajectories, 52 conditions,
+three methods; 156,000 trials with paired bootstrap comparisons.
+
+**Result:** Nominal pursuit/compensated pursuit/lead: 81.3/92.1/96.2%. Lead versus
+compensated: +4.1 points (95% paired interval +2.5 to +5.8). Narrowing FOV 90→60°
+reduces lead to 81.5%; 800 ms occlusion reduces it to 61.6%. Raising T/W 2→3
+does not help in this 45°-tilt envelope. Raw data and source snapshot retained.
+
+**Interpretation:** A small classical predictor earns a place in the prototype.
+Visibility/reacquisition is more urgent than additional optimization complexity.
+
+**Decision:** Keep gains frozen; challenge acquisition and the camera abstraction.
+
+## 2026-09-05 — RGB perception and rendered closed-loop cross-check
+
+**Question:** Does the geometric-camera assumption survive actual image processing?
+
+**Method:** MuJoCo sphere rendering → color segmentation → silhouette-cone fit;
+720 calibration evaluations. Then 432 paired closed-loop trials on new seed
+28111 at 90/120° FOV, with geometric, unblurred-pixel and blurred-pixel sensing.
+
+**Result:** At 120°/11 px blur, median range bias −19.1%, p95 absolute error
+30.8% among detections, 68/80 detected. At 120°, lead contact drops 24→21/24
+under blur. Other methods also lose 3/24. No gains changed.
+
+**Interpretation:** Random angular noise alone omits systematic blur bias and
+abstention. It would be wrong to turn the geometric success rate into a claim
+of visual reliability. The small rendered sample is a mechanism check.
+
+**Decision:** Measure actual camera exposure, blur and size/bearing errors before
+selecting FOV or claiming transfer. Do not treat desktop detector time as MaixCAM
+latency. The earlier progress comment about larger errors was too broad: the
+important new finding is structured bias/abstention, not simply bigger noise.
+
+## 2026-09-05 — Initial acquisition confounds latency sensitivity
+
+**Question:** Why did corrected guidance improve with delay at narrow FOV?
+
+**Method:** New seed 28201, 1,000 paired targets × hold 0/500 ms × delay 0/150 ms
+× two methods = 8,000 trials. All gains and target distributions fixed.
+
+**Result:** Without common hold, lead contact rises 80.4→89.1% with delay. With
+500 ms common hold, it falls 95.4→92.7%; paired interval −4.0 to −1.5 points.
+
+**Interpretation:** Initial target observation and maneuver timing affect the
+latency curve. The data do not support intentionally adding pipeline delay.
+
+**Decision:** Include acquisition/readiness as an explicit mission behavior in
+the next full-mission study. Preserve both the original and controlled results.
+
+## 2026-09-05 — Evidence preservation
+
+**Verification:** Astra's 20 tests pass, including numerical convergence,
+runtime counterfactual truth isolation, pixel-detector behavior and source
+snapshot integrity. A package wheel builds. Replaying the nominal 1,000-case
+lead condition with the current default geometric backend reproduces every
+saved episode record exactly. All 164,432 retained campaign trials have unique
+condition/method/seed/episode keys; compressed records and source hashes verify.
+
+Initial independent code review identified and helped close the visibility and
+comparison issues. The subsequent rendered/perception extension was checked
+locally; a second independent review could not run because the reviewer service
+reported a usage limit. This does not represent completed external validation.

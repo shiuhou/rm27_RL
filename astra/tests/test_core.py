@@ -71,6 +71,19 @@ def test_guidance_never_uses_undelivered_observation():
     np.testing.assert_allclose(a, 0)
 
 
+def test_startup_hold_brakes_using_only_ego_estimate():
+    c = Config(guidance_start_s=.5)
+    b = camera_basis(np.array([[0., 0, 1.]]), np.array([.4]), 0)
+    e = EgoEstimate(.2, np.zeros((1, 3)), np.array([[1., 0., 0.]]), b)
+    g = Guidance(1, 'lead', c)
+    g.seen[:] = True
+    g.epoch[:] = .2
+    g.position[:] = [5., 0, 0]
+    acceleration, yaw = g.command(e)
+    np.testing.assert_allclose(acceleration, [[-c.velocity_gain, 0, 0]])
+    assert yaw[0] == pytest.approx(.4)
+
+
 def test_autonomy_has_no_truth_imports():
     for module in ['autonomy', 'interfaces', 'geometry']:
         tree = ast.parse((Path(__file__).parents[1] / f'{module}.py').read_text())

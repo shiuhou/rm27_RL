@@ -1,0 +1,52 @@
+{
+  "development_seed": 27001,
+  "evaluation_seed": 27991,
+  "development_n": 200,
+  "evaluation_n": 1000,
+  "latency_s": [
+    0.0,
+    0.02,
+    0.05,
+    0.08,
+    0.15
+  ],
+  "fov_deg": [
+    60.0,
+    90.0,
+    120.0
+  ],
+  "tw": [
+    1.5,
+    2.0,
+    3.0
+  ],
+  "methods": [
+    "pursuit",
+    "compensated_pursuit",
+    "lead"
+  ],
+  "defaults": {},
+  "stress_cases": {
+    "occlusion_300ms": {
+      "occlusion_s": 0.3
+    },
+    "occlusion_800ms": {
+      "occlusion_s": 0.8
+    },
+    "ego_drift_15cm_s": {
+      "ego_drift_m_s": 0.15
+    },
+    "size_underestimate_20pct": {
+      "assumed_target_radius_m": 0.08
+    },
+    "size_overestimate_20pct": {
+      "assumed_target_radius_m": 0.12
+    },
+    "camera_pitch_up_20deg": {
+      "camera_pitch_deg": 20.0
+    },
+    "slow_attitude_200ms": {
+      "attitude_tau_s": 0.2
+    }
+  }
+}
