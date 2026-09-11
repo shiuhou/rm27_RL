@@ -1,0 +1,373 @@
+from pymavlink import mavutil
+import math
+import time
+
+CONNECTION = "tcp:127.0.0.1:5760"
+
+TAKEOFF_ALT = 1.5
+FORWARD_DISTANCE = 5.0
+
+
+# ============================================================
+# Connect
+# ============================================================
+
+nt("[1] Connecting...")
+
+master = mavutil.mavlink_connection(CONNECTION)
+master.wait_heartbeat()
+
+print(
+    f"Connected: system={master.target_system}, "
+    f"component={master.target_component}"
+)
+
+def wait_vehicle_ready(timeout=20):
+    print("Waiting for vehicle initialization...")
+
+    deadline = time.monotonic() + timeout
+
+    while time.monotonic() < deadline:
+        msg = master.recv_match(
+            type=["SYS_STATUS", "STATUSTEXT"],
+            blocking=True,
+            timeout=1,
+        )
+
+        if msg is None:
+            continue
+
+        if msg.get_type() == "STATUSTEXT":
+            text = msg.text
+            print(f"AP: {text}")
+
+            if "ArduPilot Ready" in text:
+                print("Autopilot reports READY")
+                return
+
+    raise TimeoutError("Vehicle did not become ready")
+
+# ============================================================
+# Helpers
+# ============================================================
+
+def wait_mode(mode_name, timeout=5):
+    """Wait until ArduPilot actually enters requested mode."""
+
+    mode_id = master.mode_mapping()[mode_name]
+
+    deadline = time.monotonic() + timeout
+
+    while time.monotonic() < deadline:
+        msg = master.recv_match(
+            type="HEARTBEAT",
+            blocking=True,
+            timeout=1,
+        )
+
+        if msg is not None and msg.custom_mode == mode_id:
+            print(f"Mode confirmed: {mode_name}")
+            return
+
+    raise TimeoutError(f"Failed to enter {mode_name}")
+
+
+def set_mode(mode_name):
+    mode_id = master.mode_mapping()[mode_name]
+
+    master.mav.set_mode_send(
+        master.target_system,
+        mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+        mode_id,
+    )
+
+    wait_mode(mode_name)
+
+
+def wait_command_ack(command, timeout=5):
+    """Verify ArduPilot accepted COMMAND_LONG."""
+
+    deadline = time.monotonic() + timeout
+
+    while time.monotonic() < deadline:
+        msg = master.recv_match(
+            type="COMMAND_ACK",
+            blocking=True,
+            timeout=1,
+        )
+
+        if msg is None:
+            continue
+
+        if msg.command != command:
+            continue
+
+        if msg.result in (
+            mavutil.mavlink.MAV_RESULT_ACCEPTED,
+            mavutil.mavlink.MAV_RESULT_IN_PROGRESS,
+        ):
+            print(f"Command {command} accepted")
+            return
+
+        raise RuntimeError(
+            f"Command {command} rejected, result={msg.result}"
+        )
+
+    raise TimeoutError(f"No ACK for command {command}")
+
+
+def wait_armed(timeout=10):
+    deadline = time.monotonic() + timeout
+
+    while time.monotonic() < deadline:
+        msg = master.recv_match(
+            type="HEARTBEAT",
+            blocking=True,
+            timeout=1,
+        )
+
+        if msg is None:
+            continue
+
+        if msg.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
+            print("ARM confirmed")
+            return
+
+    raise TimeoutError("Vehicle failed to arm")
+
+
+def wait_disarmed(timeout=30):
+    deadline = time.monotonic() + timeout
+
+    while time.monotonic() < deadline:
+        msg = master.recv_match(
+            type="HEARTBEAT",
+            blocking=True,
+            timeout=1,
+        )
+
+        if msg is None:
+            continue
+
+        armed = (
+            msg.base_mode
+            & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED
+        )
+
+        if not armed:
+            print("DISARM confirmed")
+            return
+
+    raise TimeoutError("Vehicle failed to disarm")
+
+
+def get_local_position(timeout=5):
+    msg = master.recv_match(
+        type="LOCAL_POSITION_NED",
+        blocking=True,
+        timeout=timeout,
+    )
+
+    if msg is None:
+        raise TimeoutError("No LOCAL_POSITION_NED")
+
+    return msg
+
+
+# ============================================================
+# Mission
+# ============================================================
+
+try:
+    # --------------------------------------------------------
+    # WAIT FOR AUTOPILOT INITIALISATION
+    # --------------------------------------------------------
+
+    print("\n[2] WAIT READY")
+
+    wait_vehicle_ready()
+    # --------------------------------------------------------
+    # GUIDED
+    # --------------------------------------------------------
+
+    print("\n[2] GUIDED")
+
+    set_mode("GUIDED")
+
+
+    # --------------------------------------------------------
+    # ARM
+    # --------------------------------------------------------
+
+    print("\n[3] ARM")
+
+    master.arducopter_arm()
+
+    wait_command_ack(
+        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM
+    )
+
+    wait_armed()
+
+
+    # --------------------------------------------------------
+    # TAKEOFF
+    # --------------------------------------------------------
+
+    print(f"\n[4] TAKEOFF → {TAKEOFF_ALT} m")
+
+    master.mav.command_long_send(
+        master.target_system,
+        master.target_component,
+        mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+        0,
+        0, 0, 0, 0,
+        0, 0,
+        TAKEOFF_ALT,
+    )
+
+    wait_command_ack(
+        mavutil.mavlink.MAV_CMD_NAV_TAKEOFF
+    )
+
+    deadline = time.monotonic() + 15
+
+    while time.monotonic() < deadline:
+
+        msg = master.recv_match(
+            type="GLOBAL_POSITION_INT",
+            blocking=True,
+            timeout=1,
+        )
+
+        if msg is None:
+            continue
+
+        altitude = msg.relative_alt / 1000.0
+
+        print(f"Altitude: {altitude:.2f} m")
+
+        if altitude >= TAKEOFF_ALT - 0.15:
+            break
+
+    else:
+        raise TimeoutError("Takeoff altitude timeout")
+
+    print("Takeoff complete")
+
+
+    # --------------------------------------------------------
+    # SAVE START POSITION
+    # --------------------------------------------------------
+
+    pos = get_local_position()
+
+    start_x = pos.x
+    start_y = pos.y
+
+    print(
+        f"\nStart position: "
+        f"x={start_x:.2f}, "
+        f"y={start_y:.2f}"
+    )
+
+
+    # --------------------------------------------------------
+    # FORWARD 5 m
+    # --------------------------------------------------------
+
+    print(
+        f"\n[5] FORWARD → "
+        f"{FORWARD_DISTANCE:.1f} m"
+    )
+
+    master.mav.set_position_target_local_ned_send(
+
+        0,
+
+        master.target_system,
+        master.target_component,
+
+        # Relative to current BODY heading
+        mavutil.mavlink.MAV_FRAME_BODY_OFFSET_NED,
+
+        # Position x/y/z enabled
+        0x0DF8,
+
+        # x, y, z
+        FORWARD_DISTANCE,
+        0,
+        0,
+
+        # velocity
+        0, 0, 0,
+
+        # acceleration
+        0, 0, 0,
+
+        # yaw / yaw rate
+        0, 0,
+    )
+
+
+    deadline = time.monotonic() + 20
+
+    while time.monotonic() < deadline:
+
+        pos = get_local_position()
+
+        dx = pos.x - start_x
+        dy = pos.y - start_y
+
+        distance = math.hypot(dx, dy)
+        speed = math.hypot(pos.vx, pos.vy)
+
+        print(
+            f"Distance={distance:.2f} m   "
+            f"speed={speed:.2f} m/s"
+        )
+
+        if (
+            distance >= FORWARD_DISTANCE - 0.30
+            and speed < 0.30
+        ):
+            break
+
+    else:
+        raise TimeoutError("Forward movement timeout")
+
+    print("Target reached")
+
+
+    # --------------------------------------------------------
+    # LAND
+    # --------------------------------------------------------
+
+    print("\n[6] LAND")
+
+    set_mode("LAND")
+
+    wait_disarmed()
+
+    print("\n======================")
+    print("MISSION COMPLETE")
+    print("======================")
+
+
+# ============================================================
+# FAILSAFE
+# ============================================================
+
+except Exception as e:
+
+    print("\nMISSION ERROR:")
+    print(e)
+
+    print("Attempting LAND...")
+
+    try:
+        set_mode("LAND")
+    except Exception:
+        print("WARNING: Unable to switch to LAND")
+
+    raise

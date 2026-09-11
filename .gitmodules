@@ -1,0 +1,24 @@
+[submodule "rm_uav_lab_m600/ardupilot"]
+	path = rm_uav_lab_m600/ardupilot
+	url = https://github.com/ArduPilot/ardupilot.git
+[submodule "rm_uav_lab_m600/gz_ws/src/ardupilot_gazebo"]
+	path = rm_uav_lab_m600/gz_ws/src/ardupilot_gazebo
+	url = https://github.com/ArduPilot/ardupilot_gazebo.git
+[submodule "rm_uav_lab_m600/maixcam2_dart"]
+	path = rm_uav_lab_m600/maixcam2_dart
+	url = https://github.com/blademaster679/maixcam2_dart.git
+[submodule "rm_uav_lab_m600/mujoco_uav"]
+	path = rm_uav_lab_m600/mujoco_uav
+	url = https://github.com/shiuhou/rm27_drones.git
+	branch = components/mujoco-uav
+[submodule "rm_uav_lab_m600/mujoco_uav_ardupilot"]
+	path = rm_uav_lab_m600/mujoco_uav_ardupilot
+	url = https://github.com/shiuhou/rm27_drones.git
+	branch = components/mujoco-uav-ardupilot
+[submodule "rm_uav_lab_m600/rmuc2026_battlefield_mjcf"]
+	path = rm_uav_lab_m600/rmuc2026_battlefield_mjcf
+	url = https://github.com/CosmosMount/rmuc2026_battlefield_mjcf.git
+[submodule "rm_uav_lab_m600/visual_guidance"]
+	path = rm_uav_lab_m600/visual_guidance
+	url = https://github.com/shiuhou/rm27_drones.git
+	branch = components/visual-guidance

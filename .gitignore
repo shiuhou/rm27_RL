@@ -8,3 +8,9 @@
 /astra/build/
 /astra/results/*
 !/astra/results/.gitkeep
+/rm_uav_lab_m600/.sitl_reset.pid
+/rm_uav_lab_m600/logs/
+/rm_uav_lab_m600/cad_raw/*.stp
+/rm_uav_lab_m600/cad_raw/*.step
+/rm_uav_lab_m600/cad_raw/*.SLDASM
+/.vscode/
