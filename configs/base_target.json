@@ -1,0 +1,33 @@
+{
+  "field_path": "rm_uav_lab_m600/rmuc2026_battlefield_mjcf/model.xml",
+  "field_sha256": "b363ffd0c37dea3e6a78ee4881789d8a25896b67a301d5a8614d38a060b02811",
+  "selection": "positive-X base, inward-facing candidate upper plate; not a team assignment",
+  "surface_evidence": "field__visual__37 triangles near (11.43,0.02,1.076), normal (-0.4617,0,0.887)",
+  "armor_surface_center_m": [
+    11.428,
+    0.02,
+    1.0758
+  ],
+  "armor_normal": [
+    -0.4617,
+    0,
+    0.887
+  ],
+  "armor_dimensions_m": [
+    0.09,
+    0.055,
+    0.006
+  ],
+  "marker_center_m": [
+    11.475,
+    0.02,
+    1.17
+  ],
+  "marker_normal": [
+    -1,
+    0,
+    0
+  ],
+  "marker_radius_m": 0.018,
+  "provenance": "Armor footprint is a bounded test patch, not full measured armor dimensions. Marker is a configurable visual approximation from base.jpg. No real-hardware calibration."
+}

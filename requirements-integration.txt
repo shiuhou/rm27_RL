@@ -1,0 +1,8 @@
+mujoco==3.12.0
+numpy>=2.0
+cadquery-ocp==8.0.1.0.0
+trimesh>=4.0
+pytest>=8.0
+Pillow>=10
+pymavlink==2.4.49
+matplotlib>=3.9

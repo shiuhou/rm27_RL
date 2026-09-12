@@ -14,3 +14,7 @@
 /rm_uav_lab_m600/cad_raw/*.step
 /rm_uav_lab_m600/cad_raw/*.SLDASM
 /.vscode/
+/artifacts/
+/flight_logs/data/
+/rm_uav_lab_m600/cad_raw/*.STEP
+/rm_uav_lab_m600/cad_raw/*.STP

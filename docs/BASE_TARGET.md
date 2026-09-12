@@ -1,0 +1,61 @@
+# Provisional base target integration
+
+The existing field base is retained. `rm27.base_target` adds a green circular
+visual marker, a blue 90 × 55 mm test patch with 6 mm collision thickness,
+and named marker/armor sites on the positive-X base. This is a static integration
+gate, not a successful flight-contact mission or a physical-base calibration.
+
+The inward/upward patch normal was derived from triangles of
+`field__visual__37`: approximately (-0.4617, 0, 0.887). The patch occupies a
+bounded portion of the candidate upper plate; its dimensions are not the full
+armor dimensions. Marker center and 18 mm radius are configurable visual
+estimates based on `base.jpg`, not measured CAD lamp dimensions. Rendering
+exposed an initially occluded marker; the final position makes its face visible.
+No claim of exact correspondence to the photograph is made.
+
+Configuration: `configs/base_target.json`. World units are metres. Site
+`rm27_base_armor_center` is the outward surface center and its local +Z is the
+outward normal. `rm27_base_marker_center` is the marker center. The static
+`rm27_base_frame` body currently uses world coordinates at identity.
+Only `rm27_base_armor` is collision-enabled; the marker has masks 0/0.
+Neither surrounding tower collision nor the aerial approach corridor is certified.
+The green disk is colored geometry, not calibrated lamp emission or perception.
+
+The builder checks the field XML hash and compares input field geom names,
+world poses and sizes with that source before composing. It preserves vehicle
+DOF and actuator counts. Original scene/CAD/upstream files are not rewritten.
+Output records the source scene hash and assumptions in `target.json`.
+
+From the repo root:
+
+```bash
+/home/shiuhou/venvs/mujoco/bin/python -m rm27.base_target artifacts/dock-final/scene.xml --output artifacts/my-base-target
+/home/shiuhou/venvs/mujoco/bin/python -m rm27 view artifacts/my-base-target/scene.xml
+```
+
+Choose a new output directory for each build. Current inspected scene:
+`artifacts/base-target-v3/scene.xml`; close-up: `artifacts/base-target-v3/target.png`.
+The viewer is a static scene preview and does not fly the aircraft.
+
+Validation: root tests include a 180 g sphere approaching the patch along its
+normal at 0.08 m/s, under zero gravity, dt=0.002 and RK4. It makes named armor
+contact and remains on the outward side with finite state. This isolated probe
+checks the contact primitive, not UAV contact dynamics, a landing or the whole
+field. Root suite: 15 passed. The generated full-field scene also compiles and
+was rendered for visual inspection.
+
+## Work possible before real flight logs
+
+1. Validate surrounding base collision/keep-out geometry and an approach corridor.
+2. Implement single-vehicle SITL approach, low-speed contact detection, retreat,
+   return and disarm, using explicitly labeled simulation truth initially.
+3. Sequence four independent vehicle/controller states, releasing the next only
+   after valid contact, return, landing and disarm; abort on any failed sortie.
+4. Exercise interrupted communication, missed contact, return error and model
+   parameter variations; add camera/marker localization as a separate gate.
+5. Use real BIN/parameters and independent flights to calibrate and validate
+   dynamics, estimator behavior and sensor models when supplied.
+
+Items 1–4 can advance with provisional parameters. They do not establish real
+flight readiness. None of the future contact/sequence gates is marked passing
+by this static target implementation.
