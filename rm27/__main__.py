@@ -8,13 +8,17 @@ import subprocess
 import xml.etree.ElementTree as ET
 import numpy as np
 import mujoco
-from . import dock, drone
+from .integration import dock, drone
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def build(config, output):
+def build(config, output, dynamics=None):
     cfg = json.loads(Path(config).read_text())
+    drone_cfg = json.loads((ROOT / cfg["drone_config"]).read_text())
+    if dynamics is not None:
+        from .experiments.calibration import with_profile
+        drone_cfg = with_profile(drone_cfg, dynamics)
     field = ROOT / cfg["field"]["path"]
     revision = subprocess.check_output(
         ["git", "-C", str(field.parent), "rev-parse", "HEAD"], text=True
@@ -43,6 +47,8 @@ def build(config, output):
             "Dock CAD changed: audit geometry and update the source hash explicitly"
         )
     report = dock.export(ROOT / cfg["dock"]["source"], output)
+    if dynamics is not None:
+        report['calibration'] = drone_cfg['calibration']
     root = ET.parse(field).getroot()
     for asset in root.find("asset"):
         if "file" in asset.attrib:
@@ -69,7 +75,6 @@ def build(config, output):
     base_yaw = np.arctan2(rotation[1, 0], rotation[0, 0]) + yaw
     quat = [np.cos(base_yaw / 2), 0, 0, np.sin(base_yaw / 2)]
     dock.add_to_world(root, output / "dock_visual.stl", position, quat)
-    drone_cfg = json.loads((ROOT / cfg["drone_config"]).read_text())
     option = root.find("option")
     option.set("integrator", "RK4")
     option.set("timestep", ".002")
@@ -110,11 +115,18 @@ def build(config, output):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
+    p = sub.add_parser('build-cad-drone', help='Convert aircraft STEP and place one static aircraft in the isolated dock')
+    p.add_argument('--scene', type=Path, default=ROOT/'artifacts/isolated-dock-base-20260916-v6/scene.xml')
+    p.add_argument('--output', type=Path, required=True)
+    p = sub.add_parser('build-isolated', help='Build an empty test world with dock, column and current blue base')
+    p.add_argument('--scene', type=Path, default=ROOT/'artifacts/dock-final/scene.xml')
+    p.add_argument('--output', type=Path, required=True)
     p = sub.add_parser(
         "build-dock",
         help="Audit CAD, export mesh and place dock on configured H platform",
     )
     p.add_argument("--config", type=Path, default=ROOT / "configs/scene.json")
+    p.add_argument("--dynamics", type=Path, help="Explicit simulation dynamics profile; does not change flight-controller parameters")
     p.add_argument("--output", type=Path, required=True)
     p = sub.add_parser("view", help="Open a generated scene in the MuJoCo viewer")
     p.add_argument("scene", type=Path)
@@ -125,21 +137,43 @@ def main():
     p.add_argument("scene", type=Path)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--instance", type=int, default=31)
+    p.add_argument("--dynamics", type=Path, help="Verify simulation dynamics against this profile")
     p.add_argument("--view", action="store_true", help="Watch the live flight")
     p.add_argument(
         "--speedup",
         type=float,
         help="Requested speed: default 1 with --view, otherwise 5",
     )
+    p = sub.add_parser('route-flight', help='Fly from the red dock, touch blue armor and return within the configured gate')
+    p.add_argument('scene', type=Path)
+    p.add_argument('--audit', type=Path, required=True)
+    p.add_argument('--mission', type=Path, default=ROOT/'configs/fast_armor_mission.json')
+    p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--instance', type=int, default=43)
+    p.add_argument('--view', action='store_true')
+    p.add_argument('--speedup', type=float)
+    p.add_argument('--dynamics', type=Path)
     args = parser.parse_args()
-    if args.command == "build-dock":
-        build(args.config, args.output.resolve())
+    if args.command == 'build-cad-drone':
+        from .integration.cad_drone import build as build_cad_drone
+        build_cad_drone(args.output, args.scene)
+    elif args.command == 'build-isolated':
+        from .integration.isolated_scene import build as build_isolated
+        build_isolated(args.scene, args.output)
+    elif args.command == "build-dock":
+        build(args.config, args.output.resolve(), args.dynamics)
     elif args.command == "micro-flight":
-        from .micro_flight import run
+        from .autopilot.micro_flight import run
 
         return run(
-            args.scene, args.output, args.instance, view=args.view, speedup=args.speedup
+            args.scene, args.output, args.instance, view=args.view, speedup=args.speedup, dynamics=args.dynamics
         )
+    elif args.command == 'route-flight':
+        from .experiments.route_experiment import RouteExperiment
+        from .autopilot.micro_flight import run
+        return run(args.scene, args.output, args.instance,
+                   route=RouteExperiment(args.scene, args.audit, args.mission), view=args.view,
+                   speedup=args.speedup, dynamics=args.dynamics)
     else:
         import mujoco.viewer
 

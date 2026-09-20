@@ -31,11 +31,8 @@
     "manual": "https://micoair.cn/zh/docs/flight-controller/micoair743-aio-series/micoair743v2-aio-35a-manual"
   },
   "optical_flow_rangefinder": {
-    "model": null,
-    "candidates": [
-      "MTF-02",
-      "MTF-02P"
-    ],
+    "model": "MTF-02P",
+    "selection_status": "confirmed by user",
     "interface": "UART, 115200 baud, 50 Hz nominal",
     "actual_serial_port": null,
     "actual_orientation": null,
@@ -45,6 +42,8 @@
     "model": "M10G-5883",
     "gnss": "u-blox M10 / m10050",
     "compass": "QMC5883L",
+    "intended_use": "compass only",
+    "gnss_navigation_enabled": false,
     "navigation_rate_hz_nominal": 5,
     "actual_serial_port": null,
     "actual_orientation": null,
@@ -54,7 +53,6 @@
     "original ArduPilot DataFlash .BIN",
     "complete parameter export",
     "actual firmware version",
-    "MTF-02 versus MTF-02P variant",
     "battery cell count, capacity and measured voltage",
     "propeller make, model and blade count",
     "measured ready-to-fly mass",
@@ -64,15 +62,15 @@
   "provenance": {
     "current_configuration": "user message, 2026-09-12",
     "manufacturer_specs": "linked MicoAir manuals",
-    "historical_notes": "chatgptre.md is non-authoritative"
+    "historical_notes": "docs/archive/chatgptre.md is non-authoritative"
   },
   "vision": {
     "status": "provisional user-selected stack; not integrated into RM27 flight control",
     "compute_board_user_reported": "Sipeed M3C 自研視覺核心板",
     "image_sensor_user_reported": "OS04A10",
     "repository": "https://github.com/blademaster679/maixcam2_dart",
-    "local_reference_commit": "0f3018e989166a314def24d3b53fc492fdfcdcc5",
-    "reference_baseline": "Fetched origin/main f4c153ff7a8f367c7bd6c470e01719d33b359647 documents OS04A10 full-field 1344x760@180fps development mode; not measured RM27 performance",
+    "local_reference_commit": "f4c153ff7a8f367c7bd6c470e01719d33b359647",
+    "reference_baseline": "Local checkout f4c153ff7a8f367c7bd6c470e01719d33b359647 documents OS04A10 full-field 1344x760@180fps development mode; not measured RM27 performance",
     "camera_intrinsics": null,
     "camera_to_body_transform": null,
     "measured_capture_rate_hz": null,

@@ -1,6 +1,6 @@
 # Dock integration evidence — 2026-09-12
 
-Source: `rm_uav_lab_m600/cad_raw/dock.STEP`, SHA-256
+Source: `references/cad_raw/dock.STEP`, SHA-256
 `1df1750e198d7f7012ba3489cc094cba63bbb179142dca64d2f1968c354ea72f`.
 OpenCASCADE 8.0.1 via cadquery-ocp 8.0.1.0.0; MuJoCo 3.12.0.
 
@@ -53,9 +53,9 @@ Reproduction from root:
 
 ```bash
 /home/shiuhou/venvs/mujoco/bin/python -m rm27 build-dock --output artifacts/new-dock
-/home/shiuhou/venvs/mujoco/bin/python -m rm27.check_scene artifacts/new-dock/scene.xml
+/home/shiuhou/venvs/mujoco/bin/python -m rm27.integration.check_scene artifacts/new-dock/scene.xml
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 /home/shiuhou/venvs/mujoco/bin/python -m pytest tests -q
-MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python -m rm27.render artifacts/new-dock/scene.xml
+MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python -m rm27.simulation.render artifacts/new-dock/scene.xml
 ```
 
 Inspected render: `artifacts/dock-v2/views.png` (close view, top view, H platform,

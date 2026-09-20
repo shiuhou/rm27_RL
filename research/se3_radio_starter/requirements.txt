@@ -1,0 +1,5 @@
+# A chosen reproducibility baseline, not a claim these are the newest releases.
+# Use Python 3.11, 64-bit. These versions were not runtime-tested in this workspace.
+numpy==2.2.6
+pygame==2.6.1
+mujoco==3.3.7

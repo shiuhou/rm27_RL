@@ -1,6 +1,6 @@
 # Live micro-flight viewer
 
-The root `micro-flight` command and direct `rm27.micro_flight` module accept
+The root `micro-flight` command and direct `rm27.autopilot.micro_flight` module accept
 `--view` and `--speedup`. Viewing requests 1× speed by default; headless mode
 retains the 5× default. The physics timestep remains 0.002 s and the controller
 remains 250 Hz in both modes. Speed changes affect wall-clock pacing only.

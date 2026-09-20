@@ -16,8 +16,8 @@ machine-readable counterpart is [`configs/real_hardware.json`](../configs/real_h
 | Battery | Unknown | Cell count, capacity and voltage pending |
 | Flight controller | MicoAir743v2-AIO-35A | User reported |
 | Firmware family | ArduPilot | User reported; version pending |
-| Flow/range sensor | MTF-02 or MTF-02P | Exact variant pending |
-| GNSS/compass | M10G-5883 | User reported |
+| Flow/range sensor | MTF-02P | User confirmed |
+| GNSS/compass | M10G-5883, compass only | User confirmed intended use; installation pending |
 
 The current values above supersede candidate combinations found in old project
 conversation records. In particular, do not substitute 9500KV motors, 2.5-inch
@@ -38,7 +38,7 @@ Official source:
 
 ## Optical flow and rangefinder
 
-MTF-02 and MTF-02P combine downward optical flow and ranging over a 3.3 V LVTTL
+The selected sensor is **MTF-02P**. MTF-02 and MTF-02P combine downward optical flow and ranging over a 3.3 V LVTTL
 UART, nominally at 115200 baud and 50 Hz. Manufacturer specifications relevant
 to modeling are:
 
@@ -53,8 +53,8 @@ to modeling are:
 
 The manual quotes 2 cm ranging accuracy from 0.02–2 m under its stated target
 reflectivity, and optical-flow operation above 60 lux. Those are manufacturer
-conditions, not measured aircraft performance. The exact sensor variant,
-orientation, surface texture, lighting and vibration must accompany log analysis.
+conditions, not measured aircraft performance. Sensor orientation, surface
+texture, lighting and vibration must accompany log analysis.
 
 Official source:
 [MTF-02/02P manual](https://micoair.cn/zh/docs/sensors/sensors/mtf-02-02p-sensors).
@@ -63,9 +63,10 @@ Official source:
 
 The M10G-5883 uses a u-blox M10/m10050 receiver and QMC5883L compass. The
 manufacturer lists 5 Hz navigation, NMEA/UBX, a 20 × 20 × 8 mm package and
-7 g mass. GPS can provide an outdoor reference for comparing estimated motion,
-but the intended indoor competition localization remains based on other
-sensors. Compass analysis must account for mounting orientation and magnetic
+7 g mass. The user has specified that, if installed, this module is used only
+for its compass; GNSS is not part of the intended navigation solution. Simulation,
+mission logic and acceptance claims must therefore not rely on GPS position or
+velocity. Compass analysis must account for mounting orientation and magnetic
 interference from battery wiring, motors and the integrated ESC.
 
 Official source:
@@ -83,7 +84,7 @@ estimates rather than properties calibrated from this aircraft:
 - yaw torque per unit thrust;
 - aerodynamic drag and ground/guard effects;
 - IMU noise, bias, vibration and timing;
-- barometer, optical-flow, rangefinder, GPS and compass error models;
+- barometer, optical-flow, rangefinder and compass error models;
 - controller gains suitable for the real aircraft.
 
 The simulation's millimetre dock return uses MuJoCo truth in its outer guidance
@@ -97,7 +98,6 @@ analyze it read-only. Ideally receive these companion facts/files:
 
 - complete Mission Planner parameter export;
 - ArduPilot version and board target;
-- MTF-02 versus MTF-02P;
 - measured ready-to-fly mass;
 - battery cell count/capacity and propeller model/blade count;
 - sensor port and physical orientation;
@@ -106,7 +106,9 @@ analyze it read-only. Ideally receive these companion facts/files:
 
 Initial analysis will inspect IMU clipping/noise/vibration, attitude target and
 response, motor output, hover throttle, battery voltage/current, estimator
-innovations, range height, flow quality/velocity and GPS reference when present.
+innovations, range height, flow quality/velocity and compass behavior. GNSS
+messages, if present in a log, are diagnostic evidence and not an authorized
+navigation dependency.
 One log may constrain several model parameters, but it cannot uniquely identify
 every thrust, inertia, drag and latency term. Results must label direct
 measurements separately from fitted or unresolved values.
@@ -117,7 +119,7 @@ Git-ignored `flight_logs/data/`; analysis artifacts belong under `artifacts/`.
 
 ## Historical material
 
-[`chatgptre.md`](../chatgptre.md) is a conversation archive from an earlier
+[`docs/archive/chatgptre.md`](archive/chatgptre.md) is a conversation archive from an earlier
 agent and may contain obsolete hardware candidates, plans and completion claims.
 Use it only to locate ideas or possible sources. The evidence order is defined
 in the root [`AGENTS.md`](../AGENTS.md); current user statements, raw data and
@@ -132,13 +134,11 @@ rate, capture-to-control latency and flight-controller transport remain unknown.
 Do not substitute the OS04D10 reference configuration for this selected sensor.
 
 Development reference: https://github.com/blademaster679/maixcam2_dart .
-Local checkout inspected at `0f3018e989166a314def24d3b53fc492fdfcdcc5`.
-That older local README describes an OS04D10 baseline. Subsequent fetch found
-`origin/main` at `f4c153ff7a8f367c7bd6c470e01719d33b359647`, whose README
-uses OS04A10 full-field 1344×760@180fps as the development main mode.
-The working checkout was not advanced by that fetch. Capture rate is distinct
-from detection/control rate; actual M3C performance and calibration remain
-unverified. OS04D10 is historical reference, not the selected hardware.
+Local checkout inspected at `f4c153ff7a8f367c7bd6c470e01719d33b359647`.
+Its README uses OS04A10 full-field 1344×760@180fps as the development main
+mode. Capture rate is distinct from detection/control rate; actual M3C
+performance and calibration remain unverified. OS04D10 is historical reference,
+not the selected hardware.
 
 The local candidate interface is `TargetEstimate` JSON v2, carrying timestamps,
 measurement age, tracking state, predicted/measured status, `safe_for_control`,

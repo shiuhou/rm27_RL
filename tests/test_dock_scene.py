@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 import mujoco
 import numpy as np
 import pytest
-from rm27 import dock, drone
+from rm27.integration import dock, drone
 
 
 @pytest.fixture

@@ -1,0 +1,9 @@
+{
+  "type": "charuco",
+  "squares_x": "REQUIRED_MEASURED_VALUE",
+  "squares_y": "REQUIRED_MEASURED_VALUE",
+  "square_length_m": "REQUIRED_MEASURED_VALUE",
+  "marker_length_m": "REQUIRED_MEASURED_VALUE",
+  "dictionary": "DICT_5X5_100",
+  "physical_target_id": "REQUIRED_OPERATOR_VALUE"
+}

@@ -1,9 +1,0 @@
-{
-  "manifest.json": "99f2615dbafa0edb7de46e78089363a3767293c58d3dbff71d93a3dcc403a214",
-  "spec.json": "0fc08de388cb92c8acbd199bab16696f2e41e5797738ad9091cf6e95bf633a32",
-  "sensitivity.json": "a7faa0f6f3c30b1b5316b9bb9c51cf3f42e02af797ec062d283dbc392b117012",
-  "summary.json": "aa34b184be0ef06953597b1ff92c51ff2df6de8ceafbc687b1972dd7977ee0dc",
-  "episodes.jsonl.gz": "a34871804f50a7a447672411becb7d1d0a7a804b8cd1cbd811f2131e7cf2a866",
-  "contact_heatmap.png": "dbdab46e1cee46e3fba3d1282ac966d8990eaccd0ebf8384a5476c2ef4929f2d",
-  "nominal_distributions.png": "86bb2b6e4552fd57adac44c1f478adc9baa5eba059cee21985e12cacb937bcb6"
-}

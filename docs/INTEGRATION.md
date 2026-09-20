@@ -3,16 +3,20 @@
 ## Accepted objective (2026-09-12)
 
 Develop inside this root project with a unified entry point, while retaining
-independently versioned simulator and third-party repositories. Four vehicles
-occupy four dock slots. Only one may be airborne: it takes off, contacts the
-intended blue armor below the green marker, returns to its assigned slot,
-lands and disarms before the next vehicle is released. A failed sortie stops
-the sequence. The green round light is a localization marker, not the contact
-target. Moving-dart interception is a later research objective, not this gate.
+independently versioned simulator and third-party repositories. First establish
+one vehicle's repeatable complete mission under the gates in
+[MILESTONES.md](MILESTONES.md), then expand quantity. Existing four parked
+proxies remain available; multi-controller scheduling is deferred.
+The selected vehicle takes off, contacts the
+intended blue armor below the green dart-guidance lamp, stabilizes after the
+impact, returns to its assigned slot, lands and disarms before the next vehicle
+is released. A failed sortie stops the sequence. The green round light is a
+localization marker, not the contact target. Moving-dart interception is a later
+research objective, not this gate.
 
-User-provided references: `base.jpg`, `simtohit.mp4` (29 s), the September 9
-RM2027 preliminary rules PDF, `cad_raw/base2.STEP` and `cad_raw/dock.STEP` under
-`rm_uav_lab_m600`. No inference of successful physical interception is made
+User-provided references: `references/images/base.jpg`, `simtohit.mp4` (29 s), the September 9
+RM2027 preliminary rules PDF, `references/cad_raw/base2.STEP` and
+`references/cad_raw/dock.STEP`. No inference of successful physical interception is made
 from the reference video. Its frames have been sampled for context only.
 
 ## Component ownership
@@ -21,11 +25,13 @@ Root `rm27/` owns composition, asset audit and the future mission coordinator.
 `configs/` owns selected assets and placements. `artifacts/` contains generated,
 ignored run outputs. Source CAD remains external to generated models.
 
-`mujoco_uav_ardupilot/` supplies the verified G1 bridge and regression baseline.
-`rmuc2026_battlefield_mjcf/` supplies upstream field geometry. `astra/` remains
-an independent observation-only research package. `maixcam2_dart/` and
-`visual_guidance/` are perception/guidance references, not implicitly part of
-the new closed loop. ArduPilot remains an external dependency.
+`rm27/autopilot/baselines/mujoco_uav_ardupilot/` supplies the verified G1 bridge
+and regression baseline. `rm27/simulation/field/rmuc2026_battlefield_mjcf/`
+supplies upstream field geometry. `research/astra/` remains
+an independent observation-only research package. The current camera, SLAM,
+target-recognition and guidance code is under `rm27/perception/`; the old
+`maixcam2_dart/` and `visual_guidance/` checkouts are migration sources and are
+not runtime entry points. ArduPilot remains an external dependency.
 
 This organization was selected over merging all repositories (unnecessary
 history and ownership changes) or continuing separate ad-hoc launch scripts
@@ -68,11 +74,18 @@ G1's 1 kg vehicle has ~436 mm propeller width. Existing M4-A propellers span
 slot as-is. New vehicle static clearance is 11.25 mm per side; this does not
 establish return-to-slot accuracy or propeller-wall aerodynamic behavior.
 
-The current real stack is MicoAir743v2-AIO-35A running ArduPilot, an MTF-02 or
-MTF-02P optical-flow/range sensor, and an M10G-5883 GPS/compass. Exact installed
-firmware, sensor variant, ports and orientations await the real `.BIN` and full
-parameter export. See [the real-hardware baseline](REAL_HARDWARE.md). These
+The current real stack is MicoAir743v2-AIO-35A running ArduPilot, an MTF-02P
+optical-flow/range sensor, and an M10G-5883 used only for its compass. Exact
+installed firmware, ports and orientations await the real `.BIN` and full
+parameter export. GNSS is not an intended navigation input. See
+[the real-hardware baseline](REAL_HARDWARE.md). These
 components are not yet represented by calibrated sensor models in MuJoCo.
+
+The RM2027 preliminary mass-size relation gives a maximum dimension of about
+116.3 mm at 180 g. The current 120 mm proxy is therefore a useful simulation
+envelope but is not provisionally rule-compliant at that mass. At 120 mm, the
+same preliminary formula gives 175.5 g. Actual ready-to-fly mass and maximum
+dimension must be measured, and the formal rules supersede this preview.
 
 ## Mission interface and acceptance stages
 
@@ -81,21 +94,32 @@ Each ArduPilot instance needs unique ports, state, actuator mapping and origin.
 Only the coordinator advances physics once all required motor inputs are
 available. Four independent world simulations do not constitute this mission.
 
-Per-sortie states: PARKED → TAKEOFF → HOLD → APPROACH → VALID_CONTACT →
-RETREAT → RETURN → LAND → DISARM → COMPLETE. Any timeout, wrong surface,
-unsafe attitude or communication fault transitions to FAILED and blocks the
-next launch. Success requires actual designated UAV/armor contact, followed
-by actual stable landing in the assigned slot and disarmed telemetry. Proximity
-alone and teleporting the vehicle back do not count.
+Per-sortie states: PARKED → TAKEOFF → HOLD → APPROACH → IMPACT_RUN →
+VALID_IMPACT → RECOVER → RETREAT → RETURN → LAND → DISARM → COMPLETE. Any
+timeout, wrong surface, unsafe attitude, unrecovered post-impact motion or
+communication fault transitions to FAILED and blocks the next launch. Success
+requires an actual designated UAV/armor impact, controlled post-impact flight,
+then a stable landing in the assigned slot and disarmed telemetry. Proximity,
+a geometric touch and teleporting the vehicle back do not count.
 
-Stages:
-1. CAD dock audit, placement and four parked physical proxies.
-2. Base CAD visual/collision/semantic audit and mission-corridor validation.
-3. Standalone micro-vehicle ArduPilot hover and low-speed contact/retreat.
-4. Single vehicle complete round trip, including precision return and disarm.
-5. Four vehicles present in one world; sequential round trips with isolated
-   autopilot identities and no motion or control leakage to inactive vehicles.
-6. Future camera-based marker localization; future interception separately.
+The working high-speed envelope is deliberately separate from the current
+low-speed integration gate. RMUC 2026 armor documentation gives greater than
+10 m/s as the 42 mm projectile detection threshold, while the RM2027 preview
+says aerial-robot impact causes projectile damage but does not define its speed
+or classification. Until the formal RM2027 rules resolve that mapping, 10 m/s
+is a research hypothesis rather than a compliance threshold. Impact-speed
+development must progress in measured steps and record the pre-impact velocity
+vector and armor-normal component, contact surface, impulse/force, peak
+acceleration, attitude excursion, actuator saturation, time to controlled
+flight, structural state and return outcome. The 2026 detector threshold uses
+the velocity component normal to the struck armor surface.
+
+Acceptance stages and batch criteria are maintained in
+[MILESTONES.md](MILESTONES.md): S0 repeatability, S1 contact measurement,
+S2 recovery, S3 sensor-only navigation, S4 visual return, S5 complete single
+mission reliability, then S6 quantity expansion. S2 may use truth to isolate
+physics; S5 must join recovery and sensor/vision guidance in the same system.
+Separate demonstrations cannot be combined into a full-mission pass.
 
 ## Baselines and status
 
@@ -114,6 +138,11 @@ physical landing and automatic disarm. All four bodies share one world; the
 other three retain zero motor input. Precision return uses simulation truth
 and an external position loop. This validates the bounded dock maneuver only.
 
+The separate [staging-route experiment](CORRIDOR_REPORT.md) has now completed
+two truth-assisted SITL transits to a point 0.6 m outside the provisional armor
+and back to the assigned slot. The final contact segment and recovery are not
+part of those runs. Static surface clearance does not certify real geometry.
+
 Base collision/semantic integration, a base-contact sortie, four-controller
 coordination, camera perception, interception and charging mechanisms remain
 unimplemented. The `build-dock` output describes its static scene; flight
@@ -122,7 +151,9 @@ evidence is generated separately by `python -m rm27 micro-flight`.
 ## Vision hardware update
 
 The provisional user-selected onboard vision stack is Sipeed M3C 自研視覺核心板
-with OS04A10, with `maixcam2_dart` as the evolving algorithm/interface reference.
+with OS04A10. The evolving camera/recognition implementation is maintained in
+`rm27/perception/vision/maixcam2_dart_vision/`; the old `maixcam2_dart`
+checkout is source history only.
 See [REAL_HARDWARE.md](REAL_HARDWARE.md#provisional-onboard-vision) for the
 OS04D10 reference-baseline distinction and calibration/transport unknowns.
 This selection does not change the current simulation-truth flight gate.

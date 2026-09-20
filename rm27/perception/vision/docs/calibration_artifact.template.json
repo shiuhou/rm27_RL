@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "calibration_id": "UNKNOWN",
+  "status": "UNVERIFIED_CALIBRATION",
+  "camera_module": "UNKNOWN",
+  "lens_id": "UNKNOWN",
+  "focus_setting": "UNKNOWN",
+  "camera_mode_id": "UNKNOWN",
+  "image_width": 1344,
+  "image_height": 760,
+  "pixel_geometry": {
+    "pixel_format": "UNKNOWN",
+    "crop": "UNKNOWN",
+    "resize": "UNKNOWN",
+    "stride_bytes": "UNKNOWN"
+  },
+  "model": "UNKNOWN",
+  "fx": "UNKNOWN",
+  "fy": "UNKNOWN",
+  "cx": "UNKNOWN",
+  "cy": "UNKNOWN",
+  "distortion_coefficients": "UNKNOWN",
+  "calibration_target": {
+    "type": "UNKNOWN",
+    "spacing_m": "UNKNOWN",
+    "dimensions": "UNKNOWN"
+  },
+  "tool": {"name": "UNKNOWN", "version": "UNKNOWN", "git_commit": "UNKNOWN"},
+  "capture_date_utc": "UNKNOWN",
+  "fit_metrics": "UNKNOWN",
+  "validation_metrics": "UNKNOWN",
+  "residual_distribution": "UNKNOWN",
+  "source_dataset": "UNKNOWN",
+  "source_sha256": "UNKNOWN",
+  "artifact_sha256": "UNKNOWN"
+}

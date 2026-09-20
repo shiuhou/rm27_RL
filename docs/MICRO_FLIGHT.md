@@ -244,8 +244,8 @@ From the project root, use a new output directory and an unused SITL instance:
 ```bash
 cd /home/shiuhou/Projects/rm27_drones
 /home/shiuhou/venvs/mujoco/bin/python -m rm27 micro-flight artifacts/dock-final/scene.xml --output artifacts/my-micro-flight --instance 31
-/home/shiuhou/venvs/mujoco/bin/python -m rm27.plot_micro_flight artifacts/my-micro-flight
-MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python -m rm27.replay_micro_flight artifacts/my-micro-flight --render
+/home/shiuhou/venvs/mujoco/bin/python -m rm27.simulation.plot_micro_flight artifacts/my-micro-flight
+MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python -m rm27.simulation.replay_micro_flight artifacts/my-micro-flight --render
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 /home/shiuhou/venvs/mujoco/bin/python -m pytest tests -q
 ```
 

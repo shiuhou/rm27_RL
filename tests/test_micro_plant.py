@@ -13,8 +13,8 @@ def test_live_view_isolates_ui_and_copies_all_vehicles(scene_path, monkeypatch):
     from contextlib import nullcontext
     from types import SimpleNamespace
     import mujoco.viewer
-    import rm27.live_view as live_view
-    from rm27.live_view import FlightView
+    import rm27.simulation.live_view as live_view
+    from rm27.simulation.live_view import FlightView
 
     plant = MicroPlant(scene_path)
     calls = []
@@ -36,7 +36,7 @@ def test_live_view_isolates_ui_and_copies_all_vehicles(scene_path, monkeypatch):
     assert np.all(plant.data.ctrl == 0)
     plant.step([1400] * 16)
     before = plant.data.qpos.copy()
-    clock = iter([0.0, 0.05, 0.051])
+    clock = iter([0.0, 0.05, 0.051, 0.1, 0.15])
     monkeypatch.setattr(
         live_view, "time", SimpleNamespace(monotonic=lambda: next(clock))
     )
@@ -50,11 +50,14 @@ def test_live_view_isolates_ui_and_copies_all_vehicles(scene_path, monkeypatch):
     # A slow display sync must not cause every subsequent physics step to render.
     viewer.update("RETURN", {"mode": "GUIDED", "armed": True})
     assert viewer.updates == 1
+    viewer.update("ROUTE", {"mode": "GUIDED", "armed": True}, force=True)
+    np.testing.assert_allclose(handle.cam.lookat, plant.qpos[:3])
+    np.testing.assert_array_equal(plant.data.qpos, before)
     viewer.close()
 
 
-from rm27 import dock, drone
-from rm27.micro_plant import MicroPlant
+from rm27.integration import dock, drone
+from rm27.simulation.micro_plant import MicroPlant
 
 
 @pytest.fixture

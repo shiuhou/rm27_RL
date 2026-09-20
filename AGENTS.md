@@ -13,7 +13,7 @@ Read only the references needed for the requested change:
 - `docs/REAL_HARDWARE.md`: hardware identification and calibration unknowns.
 - The relevant component report: evidence and limitations for that component.
 
-`chatgptre.md` is historical context only. Verify any reused claim against
+`docs/archive/chatgptre.md` is historical context only. Verify any reused claim against
 current inputs, code or measurements.
 
 ## Execution and completion
@@ -23,6 +23,11 @@ choices, implement, run the relevant checks, inspect results and fix failures
 caused by the change without requesting approval at each step. Continue to the
 requested outcome; a first implementation alone is not completion. If blocked,
 state the missing input and complete independent work within scope.
+
+Keep progress updates sparse to conserve context and tokens. Work quietly between
+meaningful results; respond during execution only when a key milestone completes,
+new evidence materially changes the direction, or a real blocker requires user
+input. Always provide the final result when the requested work is complete.
 
 Use checks proportional to the change. Documentation-only edits need content
 and diff review, not flight tests. Rerun affected tests after fixes; broaden
@@ -44,7 +49,7 @@ When sources disagree, use this order:
 3. Current official rule and hardware documentation.
 4. Reproducible results from the current checkout, with hashes and commands.
 5. Existing repository reports whose inputs still match.
-6. Historical notes such as `chatgptre.md`.
+6. Historical notes such as `docs/archive/chatgptre.md`.
 
 Keep reported facts, engineering estimates and unknowns visibly separate.
 Do not convert an assumption into a measured value merely because a simulation
@@ -52,6 +57,9 @@ passes. Preserve raw input files and record their hash before analysis.
 
 ## Current contracts
 
+- Prioritize single-vehicle complete-mission reliability using `docs/MILESTONES.md`.
+  Defer multi-controller scheduling until its single-vehicle expansion gates pass.
+  Existing parked proxies do not establish multi-vehicle capability.
 - Root `rm27/` owns integration code. `configs/` owns reviewed configuration.
   `artifacts/` contains local generated evidence and is ignored by Git.
 - The current provisional simulation aircraft is approximately 180 g, has a
@@ -60,7 +68,7 @@ passes. Preserve raw input files and record their hash before analysis.
 - Current real hardware is documented in `docs/REAL_HARDWARE.md` and
   `configs/real_hardware.json`. Do not silently copy simulated gains or model
   estimates into a real flight controller.
-- The dock source is `rm_uav_lab_m600/cad_raw/dock.STEP`. The user explicitly
+- The dock source is `references/cad_raw/dock.STEP`. The user explicitly
   retired the old whole-field `RMUC 2025复活赛&全国赛_asm.stp` source.
 - `base2.STEP` is an independent base assembly. Its present export is a visual
   audit only and has no certified collision or target semantics.

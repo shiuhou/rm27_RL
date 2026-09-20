@@ -1,20 +1,23 @@
-# Existing reference workspaces remain independently versioned.
-/ardupilot/
-/rm_uav_lab/
+# Historical reference workspaces are kept outside this repository.
 **/.venv/
 **/__pycache__/
 **/.pytest_cache/
 **/*.egg-info/
-/astra/build/
-/astra/results/*
-!/astra/results/.gitkeep
-/rm_uav_lab_m600/.sitl_reset.pid
-/rm_uav_lab_m600/logs/
-/rm_uav_lab_m600/cad_raw/*.stp
-/rm_uav_lab_m600/cad_raw/*.step
-/rm_uav_lab_m600/cad_raw/*.SLDASM
+/research/astra/build/
+/research/astra/results/*
+!/research/astra/results/.gitkeep
+# Raw CAD is kept locally and indexed by hash in the relevant report.
+/references/cad_raw/*.stp
+/references/cad_raw/*.step
+/references/cad_raw/*.SLDASM
 /.vscode/
 /artifacts/
 /flight_logs/data/
-/rm_uav_lab_m600/cad_raw/*.STEP
-/rm_uav_lab_m600/cad_raw/*.STP
+/RoboMaster*.pdf
+/UTF-8__RoboMaster*.pdf
+/references/rules/*.pdf
+/references/images/*
+/docs/archive/chatgptre.md
+/references/cad_raw/*.STEP
+/references/cad_raw/*.STP
+/references/cad_raw/retired/

@@ -1,6 +1,6 @@
 # Base STEP preliminary inventory
 
-Source: `rm_uav_lab_m600/cad_raw/base2.STEP`, SHA-256
+Source: `references/cad_raw/base2.STEP`, SHA-256
 `1a63c97fe67e7e0c140c7a1016a1d6659e53e2b976f1a9e6e2324dd902656539`.
 The original CAD is unchanged. No whole-field STEP was used.
 
@@ -30,14 +30,14 @@ non-solid surfaces. No base was inserted into the integrated field at this stage
 Reproduce from the project root, using a new report filename:
 
 ```bash
-/home/shiuhou/venvs/mujoco/bin/python -m rm27.audit_base rm_uav_lab_m600/cad_raw/base2.STEP artifacts/base-audit/new-inventory.json
+/home/shiuhou/venvs/mujoco/bin/python -m rm27.integration.audit_base references/cad_raw/base2.STEP artifacts/base-audit/new-inventory.json
 ```
 
 Current machine-readable evidence: `artifacts/base-audit/complete-inventory.json`.
 
 ## Static visual preview
 
-`rm27.preview_base` tessellates the complete imported shape, including surfaces
+`rm27.integration.preview_base` tessellates the complete imported shape, including surfaces
 outside solids, with 0.5 mm linear tolerance. Meshes use metres and preserve
 the CAD axes and relative placements. The X=0 split is accepted only when no
 triangle crosses it. Local mesh centering is compensated by body translation.
@@ -45,8 +45,8 @@ The two gray geoms are static and have collision disabled. CAD colors and
 semantic labels are not recovered.
 
 ```bash
-/home/shiuhou/venvs/mujoco/bin/python -m rm27.preview_base rm_uav_lab_m600/cad_raw/base2.STEP artifacts/new-base-preview
-MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python -m rm27.preview_base artifacts/new-base-preview/scene.xml --render-only
+/home/shiuhou/venvs/mujoco/bin/python -m rm27.integration.preview_base references/cad_raw/base2.STEP artifacts/new-base-preview
+MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python -m rm27.integration.preview_base artifacts/new-base-preview/scene.xml --render-only
 /home/shiuhou/venvs/mujoco/bin/python -m rm27 view artifacts/new-base-preview/scene.xml
 ```
 

@@ -7,14 +7,14 @@ index f79be29..c615603 100644
  內還存在另一套模擬工作（刻意**不**收進本 repo）：
  
 -- **ArduPilot SITL**（`~/rm_uav_lab/ardupilot/`）：未修改的上游 checkout
-+- **ArduPilot SITL**（`~/Projects/rm27_drones/rm_uav_lab_m600/ardupilot/`）：未修改的上游 checkout
++- **ArduPilot SITL**（`~/Projects/rm27_drones/rm27/autopilot/vendor/ardupilot/`）：未修改的上游 checkout
    （6.6 GB，origin 為 ArduPilot/ardupilot.git），隨時可重新 clone，因此
    不複製進版控。
 -- **Gazebo 工作區**（`~/rm_uav_lab/gz_ws/`）：ArduPilot SITL 搭配的
-+- **Gazebo 工作區**（`~/Projects/rm27_drones/rm_uav_lab_m600/gz_ws/`）：ArduPilot SITL 搭配的
++- **Gazebo 工作區**（`~/Projects/rm27_drones/rm27/autopilot/vendor/ardupilot_gazebo/`）：ArduPilot SITL 搭配的
    Gazebo 模擬環境。
 -- **pymavlink 任務腳本**（`~/rm_uav_lab/missions/`）：SITL 上的
-+- **pymavlink 任務腳本**（`~/Projects/rm27_drones/rm_uav_lab_m600/missions/`）：SITL 上的
++- **pymavlink 任務腳本**（`~/Projects/rm27_drones/rm27/experiments/legacy_sitl/`）：SITL 上的
    takeoff → forward → land 系列，演進到 **V5 軌跡腳本**
    （`takeoff_forward_land_v5_trajectory.py`）。這條 V5 軌跡是本專案的
    最終重現目標之一；M0 的原始目的就是在重現它之前先建立可信、可測的

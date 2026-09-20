@@ -1,0 +1,44 @@
+test_controls_are_normalized_and_clipped (test_adapter_contract.AdapterContractTests.test_controls_are_normalized_and_clipped) ... ok
+test_nonfinite_mixer_output_rejected (test_adapter_contract.AdapterContractTests.test_nonfinite_mixer_output_rejected) ... ok
+test_nonfinite_state_rejected (test_adapter_contract.AdapterContractTests.test_nonfinite_state_rejected) ... ok
+test_units_quaternion_velocity_and_position_contract (test_adapter_contract.AdapterContractTests.test_units_quaternion_velocity_and_position_contract) ... ok
+test_case_collision_rejected (test_core.ArchiveTests.test_case_collision_rejected) ... ok
+test_normal_archive_and_no_overwrite (test_core.ArchiveTests.test_normal_archive_and_no_overwrite) ... ok
+test_parent_traversal_rejected (test_core.ArchiveTests.test_parent_traversal_rejected) ... ok
+test_asymmetric_endpoint_scaling (test_core.CalibrationTests.test_asymmetric_endpoint_scaling) ... ok
+test_axis_inference_inverted_direction (test_core.CalibrationTests.test_axis_inference_inverted_direction) ... ok
+test_bad_calibration_rejected (test_core.CalibrationTests.test_bad_calibration_rejected) ... ok
+test_deadzone_rescaling (test_core.CalibrationTests.test_deadzone_rescaling) ... ok
+test_duplicate_axis_rejected (test_core.CalibrationTests.test_duplicate_axis_rejected) ... ok
+test_neutral_deadzone_is_exact_zero (test_core.CalibrationTests.test_neutral_deadzone_is_exact_zero) ... ok
+test_noncentered_throttle_rejected (test_core.CalibrationTests.test_noncentered_throttle_rejected) ... ok
+test_nonfinite_input_rejected (test_core.CalibrationTests.test_nonfinite_input_rejected) ... ok
+test_profile_input_length_checked (test_core.CalibrationTests.test_profile_input_length_checked) ... ok
+test_profile_refuses_duplicate_mappings (test_core.CalibrationTests.test_profile_refuses_duplicate_mappings) ... ok
+test_profile_round_trip_and_backup (test_core.CalibrationTests.test_profile_round_trip_and_backup) ... ok
+test_sign_inversion_and_clamping (test_core.CalibrationTests.test_sign_inversion_and_clamping) ... ok
+test_simultaneous_axes_rejected (test_core.CalibrationTests.test_simultaneous_axes_rejected) ... ok
+test_disconnect_is_latched (test_core.GateAndQuaternionTests.test_disconnect_is_latched) ... ok
+test_gate_requires_center (test_core.GateAndQuaternionTests.test_gate_requires_center) ... ok
+test_gate_toggle_off_with_deflected_sticks (test_core.GateAndQuaternionTests.test_gate_toggle_off_with_deflected_sticks) ... ok
+test_quaternion_reordering (test_core.GateAndQuaternionTests.test_quaternion_reordering) ... ok
+test_acceleration_limit (test_core.ReferenceTests.test_acceleration_limit) ... ok
+test_bad_timestep_rejected (test_core.ReferenceTests.test_bad_timestep_rejected) ... ok
+test_demo_target_sequence (test_core.ReferenceTests.test_demo_target_sequence) ... ok
+test_diagonal_speed_is_limited (test_core.ReferenceTests.test_diagonal_speed_is_limited) ... ok
+test_disabled_reference_does_not_move (test_core.ReferenceTests.test_disabled_reference_does_not_move) ... ok
+test_hold_immediate (test_core.ReferenceTests.test_hold_immediate) ... ok
+test_initial_heading_is_body_y (test_core.ReferenceTests.test_initial_heading_is_body_y) ... ok
+test_release_decelerates_then_holds (test_core.ReferenceTests.test_release_decelerates_then_holds) ... ok
+test_reset_restores_reference (test_core.ReferenceTests.test_reset_restores_reference) ... ok
+test_reverse_away_from_limit (test_core.ReferenceTests.test_reverse_away_from_limit) ... ok
+test_settings_validation (test_core.ReferenceTests.test_settings_validation) ... ok
+test_substep_partition_equivalence (test_core.ReferenceTests.test_substep_partition_equivalence) ... ok
+test_target_limits_not_infinite_integration (test_core.ReferenceTests.test_target_limits_not_infinite_integration) ... ok
+test_world_axis_mapping (test_core.ReferenceTests.test_world_axis_mapping) ... ok
+test_yaw_right_is_clockwise (test_core.ReferenceTests.test_yaw_right_is_clockwise) ... ok
+
+----------------------------------------------------------------------
+Ran 39 tests in 0.482s
+
+OK
