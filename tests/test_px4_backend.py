@@ -130,3 +130,27 @@ def test_route_deadline_is_explicitly_configurable(tmp_path):
     from rm27.experiments.route_experiment import RouteExperiment
     mission=json.loads((ROOT/'configs/px4_corridor_mission.json').read_text())
     assert mission['physics_deadline_s']==260.
+
+
+def test_odometry_adapter_requires_qualified_metric_contract():
+    from rm27.autopilot.px4.odometry import OdometryAdapter, Registration
+    from rm27.perception.vision.localization import LocalizationEstimate, TimestampEvidence, TrackingState, ScaleState
+    stamp=lambda value: TimestampEvidence(value,'ns','vio','PUBLISH','VERIFIED')
+    covariance=np.eye(6).tolist()
+    quality={'flight_qualified':True,'pose_covariance':covariance,'velocity_covariance':covariance}
+    def estimate(source,epoch=0,**changes):
+        values=dict(source_time=stamp(source),publish_time=stamp(source+1_000_000),parent_frame='map',child_frame='body',
+                    translation=(1.,2.,3.),orientation_wxyz=(1.,0.,0.,0.),tracking_state=TrackingState.TRACKING,
+                    valid=True,initialized=True,relocalizing=False,localization_epoch=epoch,scale_state=ScaleState.METRIC,
+                    translation_unit='m',velocity_unit='m/s',velocity=(.1,.2,.3),velocity_frame='map',quality=quality)
+        values.update(changes);return LocalizationEstimate(**values)
+    identity=tuple(tuple(float(v) for v in row) for row in np.eye(3))
+    registration=Registration('map','body','vio',identity,(0.,0.,0.),identity)
+    adapter=OdometryAdapter(registration)
+    first=adapter.packet(estimate(1_000_000_000),1_020_000_000)
+    assert first.get_type()=='ODOMETRY' and first.frame_id==mavlink.MAV_FRAME_LOCAL_NED
+    assert first.reset_counter==0
+    second=adapter.packet(estimate(1_040_000_000,epoch=1),1_060_000_000)
+    assert second.reset_counter==1
+    with pytest.raises(ValueError,match='qualification'):
+        adapter.packet(estimate(1_080_000_000,epoch=1,quality={}),1_100_000_000)

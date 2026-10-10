@@ -26,7 +26,7 @@ independent worktree `rm27_drones_px4`, branch
 | PX4 S0 batch | `artifacts/px4-s0-batch-01/summary.json` | `passed: true`; 10/10 independent launches |
 | Exact physical replay | `artifacts/px4-replay-01/summary.json` | `passed: true`; 18,750 frames, zero state error |
 | ULog intake and EKF2 | `artifacts/px4-ulog-analysis-02/summary.json` | `passed: true`; range and external-vision fusion topics present |
-| Backend contracts | `tests/test_px4_backend.py` | 10 focused tests pass |
+| Backend contracts | `tests/test_px4_backend.py` | 11 focused tests pass |
 | Integrated tests | `artifacts/px4-root-tests-03.log` | 353 passed, 2 ROS-only skips |
 | PX4 Corridor/contact return | `artifacts/px4-corridor-04/summary.json` | `passed: true`; low-speed contact, retreat and dock disarm |
 
