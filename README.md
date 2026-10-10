@@ -59,6 +59,10 @@ python -m rm27 view artifacts/my-dock-scene/scene.xml
 python -m rm27.integration.check_scene artifacts/my-dock-scene/scene.xml
 MUJOCO_GL=egl python -m rm27.simulation.render artifacts/my-dock-scene/scene.xml
 python -m rm27 micro-flight artifacts/my-dock-scene/scene.xml --output artifacts/my-flight --instance 31
+# PX4 v1.17.0 closed-loop SITL (explicit backend)
+python -m rm27 micro-flight artifacts/px4-dock-150g-01/scene.xml \
+  --autopilot px4 --dynamics configs/dynamics_150g.json \
+  --output artifacts/my-px4-flight --instance 0
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest tests -q
 ```
 

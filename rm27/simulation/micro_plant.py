@@ -73,10 +73,15 @@ class MicroPlant:
         values = np.asarray(pwm[:4], dtype=float)
         if values.shape != (4,) or not np.isfinite(values).all():
             raise ValueError("Expected four finite PWM values")
+        return self.step_normalized(np.clip((values[[2, 0, 3, 1]] - 1000) / 1000, 0, 1))
+
+    def step_normalized(self, values):
+        """Physical motor order, linear force fraction; no autopilot PWM semantics."""
+        values = np.asarray(values, dtype=float)
+        if values.shape != (4,) or not np.isfinite(values).all() or np.any((values < 0) | (values > 1)):
+            raise ValueError("Expected four finite motor force fractions in [0, 1]")
         self.data.ctrl[:] = 0
-        self.data.ctrl[self.motors] = (
-            np.clip((values[[2, 0, 3, 1]] - 1000) / 1000, 0, 1) * self.maximum
-        )
+        self.data.ctrl[self.motors] = values * self.maximum
         mujoco.mj_step(self.model, self.data)
         mujoco.mj_forward(self.model, self.data)
         return self.state()

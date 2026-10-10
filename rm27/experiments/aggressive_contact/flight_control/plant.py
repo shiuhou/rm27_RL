@@ -24,7 +24,12 @@ class ContactPlant:
         raise RuntimeError('SITL reset during a flight is forbidden')
     def step(self,pwm):
         values=np.asarray(pwm[:4],float)
-        self.data.ctrl[:]=np.clip((values[[2,0,3,1]]-1000)/1000,0,1)*self.maximum
+        return self.step_normalized(np.clip((values[[2,0,3,1]]-1000)/1000,0,1))
+    def step_normalized(self,values):
+        values=np.asarray(values,float)
+        if values.shape!=(4,) or not np.isfinite(values).all() or np.any((values<0)|(values>1)):
+            raise ValueError('Expected four finite force fractions in [0,1]')
+        self.data.ctrl[:]=values*self.maximum
         for _ in range(2):
             mujoco.mj_step(self.model,self.data)
             if self.fixture:

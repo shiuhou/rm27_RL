@@ -139,6 +139,7 @@ def main():
     )
     p.add_argument("scene", type=Path)
     p.add_argument("--output", type=Path, required=True)
+    p.add_argument("--autopilot", choices=("ardupilot", "px4"), default="ardupilot")
     p.add_argument("--instance", type=int, default=31)
     p.add_argument("--dynamics", type=Path, help="Verify simulation dynamics against this profile")
     p.add_argument("--view", action="store_true", help="Watch the live flight")
@@ -156,6 +157,7 @@ def main():
     p.add_argument('--view', action='store_true')
     p.add_argument('--speedup', type=float)
     p.add_argument('--dynamics', type=Path)
+    p.add_argument('--autopilot', choices=('ardupilot', 'px4'), default='ardupilot')
     args = parser.parse_args()
     if args.command == 'build-cad-drone':
         from .integration.cad_drone import build as build_cad_drone
@@ -169,14 +171,20 @@ def main():
     elif args.command == "build-dock":
         build(args.config, args.output.resolve(), args.dynamics)
     elif args.command == "micro-flight":
-        from .autopilot.micro_flight import run
+        if args.autopilot == 'px4':
+            from .autopilot.px4.flight import run
+        else:
+            from .autopilot.micro_flight import run
 
         return run(
             args.scene, args.output, args.instance, view=args.view, speedup=args.speedup, dynamics=args.dynamics
         )
     elif args.command == 'route-flight':
         from .experiments.route_experiment import RouteExperiment
-        from .autopilot.micro_flight import run
+        if args.autopilot == 'px4':
+            from .autopilot.px4.flight import run
+        else:
+            from .autopilot.micro_flight import run
         return run(args.scene, args.output, args.instance,
                    route=RouteExperiment(args.scene, args.audit, args.mission), view=args.view,
                    speedup=args.speedup, dynamics=args.dynamics)

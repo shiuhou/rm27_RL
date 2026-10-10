@@ -84,7 +84,9 @@ class RouteExperiment:
         self.max_path_error = 0.
         self.visited = []
         self.impact = None
-        self.physics_deadline = 100.
+        self.physics_deadline = float(self.mission.get('physics_deadline_s', 100.))
+        if not np.isfinite(self.physics_deadline) or self.physics_deadline <= 0:
+            raise ValueError('Mission physics_deadline_s must be finite and positive')
         self.maximum_speed_m_s = float(self.mission['maximum_flight_speed_m_s'])
         self.maximum_tilt_deg = float(self.mission['maximum_tilt_deg'])
         self.horizontal_command_limit_m_s = float(self.mission['horizontal_command_limit_m_s'])

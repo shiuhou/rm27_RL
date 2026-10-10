@@ -1,23 +1,33 @@
 {
   "schema_version": 1,
-  "status": "current user-reported hardware; installation and parameters await flight-log verification",
-  "recorded_on": "2026-09-12",
+  "status": "User-confirmed assembly and firmware; parameter-export evidence distinguished from actual flight fusion",
+  "recorded_on": "2026-10-11",
   "airframe": {
-    "mass_kg_approximate": 0.18,
+    "mass_kg_approximate": 0.15,
     "outer_envelope_m_provisional": [
       0.12,
       0.12
     ],
     "motors": "1103 9600KV",
     "propellers": "2 inch",
-    "battery": null
+    "battery": {
+      "cells": 2,
+      "capacity_mAh": 450,
+      "evidence": "user confirmed; BAT1_N_CELLS=2 in supplied export"
+    },
+    "mass_includes": "battery, M3C, camera, carrier and wiring"
   },
   "flight_controller": {
     "model": "MicoAir743v2-AIO-35A",
     "autopilot": "PX4",
     "firmware_version": "1.17.0",
     "firmware_target": null,
-    "actual_board_orientation_parameter": null,
+    "actual_board_orientation_parameter": {
+      "SENS_BOARD_ROT": 0,
+      "SENS_BOARD_X_OFF": -1.92968,
+      "SENS_BOARD_Y_OFF": -0.802604,
+      "SENS_BOARD_Z_OFF": 0
+    },
     "manufacturer_hardware": {
       "mcu": "STM32H743VIH6",
       "imus": [
@@ -29,7 +39,7 @@
       "logging": "microSD"
     },
     "manual": "https://micoair.cn/zh/docs/flight-controller/micoair743-aio-series/micoair743v2-aio-35a-manual",
-    "firmware_selection_status": "user selected on 2026-10-10; installed build and board target await verification"
+    "firmware_selection_status": "User confirms PX4 v1.17.0 running; installed binary hash not supplied"
   },
   "optical_flow_rangefinder": {
     "model": "MTF-02P",
@@ -48,17 +58,20 @@
     "navigation_rate_hz_nominal": 5,
     "actual_serial_port": null,
     "actual_orientation": null,
-    "manual": "https://micoair.cn/zh/docs/gps-rtk/gps"
+    "manual": "https://micoair.cn/zh/docs/gps-rtk/gps",
+    "parameter_export_observation": {
+      "SYS_HAS_MAG": 0,
+      "EKF2_MAG_TYPE": 5,
+      "EKF2_GPS_CTRL": 7,
+      "note": "Configured fusion does not establish actual fusion; compass is historical intended use"
+    }
   },
   "pending_evidence": [
-    "original PX4 ULog .ulg",
-    "complete parameter export",
-    "installed PX4 version, build hash and board target",
-    "battery cell count, capacity and measured voltage",
-    "propeller make, model and blade count",
-    "measured ready-to-fly mass",
-    "sensor ports and physical orientations",
-    "flight mode, environment and maneuver notes"
+    "Current original PX4 ULog and installed binary hash",
+    "Actual thrust, inertia, motor dynamics and battery voltage under load",
+    "Camera intrinsics, camera-to-IMU extrinsics and capture clock qualification",
+    "Current selected IMU timing/noise and M3C runtime qualification",
+    "Propeller model, physical geometry and synchronized flight descriptions"
   ],
   "provenance": {
     "current_configuration": "user message, 2026-09-12",
@@ -77,10 +90,30 @@
     "camera_to_body_transform": null,
     "measured_capture_rate_hz": null,
     "measured_end_to_end_latency_ms": null,
-    "flight_controller_transport": null,
+    "flight_controller_transport": {
+      "status": "historical disarmed bench evidence; synthetic ODOMETRY received, not fused",
+      "m3c": "/dev/ttyS2",
+      "px4": "UART3 /dev/ttyS2",
+      "baud": 115200,
+      "format": "8N1, no flow control",
+      "spare_uart": false
+    },
     "interface_candidate": "TargetEstimate JSON v2; safe_for_control, timestamp and measurement age require validation",
     "evidence": "User hardware statement; local README inspected, board performance not independently reproduced",
-    "sensor_selection_status": "confirmed by user"
+    "sensor_selection_status": "confirmed by user",
+    "memory_user_reported": "1 GB RAM / 64 GB eMMC image variant"
   },
-  "firmware_selection_updated_on": "2026-10-10"
+  "firmware_selection_updated_on": "2026-10-10",
+  "parameter_export": {
+    "path": "/home/shiuhou/.codex/attachments/f93a24b6-47b7-4fd2-a658-b5b81d1b78ef/1009_1.17.0.param",
+    "sha256": "d8d217d20339dba0addbe30fc147568b614cde4ee2f7261feb688d2bb64b7daf",
+    "entries": 962,
+    "read_only": true,
+    "observations": {
+      "EKF2_EV_CTRL": 0,
+      "EKF2_OF_CTRL": 1,
+      "EKF2_RNG_CTRL": 1,
+      "EKF2_HGT_REF": 2
+    }
+  }
 }
