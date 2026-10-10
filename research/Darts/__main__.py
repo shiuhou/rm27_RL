@@ -16,13 +16,22 @@ def main():
     p=commands.add_parser('view',help='Live MuJoCo playback; no SITL required')
     p.add_argument('run',type=Path)
     p.add_argument('--speed',type=float,default=.25,help='Playback multiplier; default 0.25x')
-    p.add_argument('--camera',choices=['overview','follow','target','launch','side'],default='overview')
+    p.add_argument('--camera',choices=['overview','follow','target','launch','side','fpv'],default='overview')
+    p.add_argument('--fovy',type=float,default=60.,help='FPV vertical field of view in degrees (assumed, not calibrated)')
     p=commands.add_parser('render',help='Save scene images, trajectory plot and optional video')
     p.add_argument('run',type=Path)
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--video',action='store_true')
     p.add_argument('--speed',type=float,default=.25)
-    p.add_argument('--camera',choices=['overview','follow','target','launch','side'],default='follow')
+    p.add_argument('--camera',choices=['overview','follow','target','launch','side','fpv'],default='follow')
+    p.add_argument('--fovy',type=float,default=60.)
+    p=commands.add_parser('capture',help='Export clean first-person PNG frames and camera truth at simulation timestamps')
+    p.add_argument('run',type=Path)
+    p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--fps',type=float,default=60.)
+    p.add_argument('--width',type=int,default=1280)
+    p.add_argument('--height',type=int,default=720)
+    p.add_argument('--fovy',type=float,default=60.)
     args=parser.parse_args()
     if args.command=='build':
         r=build(args.output,args.config,args.cad_assets)
@@ -31,10 +40,13 @@ def main():
         return 0 if r['passed'] else 1
     if args.command=='view':
         from .view import view
-        view(args.run,args.speed,args.camera)
+        view(args.run,args.speed,args.camera,args.fovy)
+    elif args.command=='capture':
+        from .capture import capture
+        print(capture(args.run,args.output,args.fps,args.width,args.height,args.fovy))
     else:
         from .render import render
-        print(render(args.run,args.output,args.video,args.speed,args.camera))
+        print(render(args.run,args.output,args.video,args.speed,args.camera,args.fovy))
     return 0
 
 

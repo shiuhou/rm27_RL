@@ -3,7 +3,7 @@
 
 This tool never interprets container PTS as exposure or sensor timing. It
 decodes the source read-only, records encoded-stream observations available via
-OpenCV/FFmpeg, and writes derived diagnostics to a new output directory.
+OpenCV, and writes derived diagnostics to a new output directory.
 """
 
 import argparse
@@ -14,9 +14,27 @@ import json
 import math
 from pathlib import Path
 import subprocess
+import sys
+import shlex
+import platform
 
 import cv2
 import numpy as np
+
+
+def git_commit():
+    result = subprocess.run(["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[4],
+                            text=True, capture_output=True)
+    return result.stdout.strip() if result.returncode == 0 else "UNKNOWN"
+
+
+def source_git_status(source):
+    root = Path(__file__).resolve().parents[4]
+    if not source.is_relative_to(root):
+        return "EXTERNAL_SOURCE; see SHA-256"
+    result = subprocess.run(["git", "status", "--short", "--", str(source)], cwd=root,
+                            text=True, capture_output=True)
+    return result.stdout if result.returncode == 0 else "UNKNOWN"
 
 
 def percentile(values, q):
@@ -68,15 +86,32 @@ def write_simple_yaml(path, value, indent=0):
         emit(value, indent)
 
 
-def main():
+def acceptance_status(declared_count, decoded_count, timestamps, large_gaps,
+                      write_failures, source_unchanged, timing_reference_available=True):
+    """PASS qualifies encoded diagnostics only; unknown counts cannot prove EOF."""
+    premature = declared_count > 0 and decoded_count < declared_count
+    timing = (timing_reference_available and len(timestamps) >= 2 and all(math.isfinite(t) for t in timestamps)
+              and all(b > a for a, b in zip(timestamps, timestamps[1:]))
+              and large_gaps == 0)
+    integrity = (declared_count > 0 and decoded_count == declared_count
+                 and source_unchanged and not write_failures)
+    return {"execution_completed": True, "declared_frame_count": declared_count,
+            "decoded_frame_count": decoded_count, "premature_decode_failure": premature,
+            "decode_completeness_known": declared_count > 0,
+            "timing_checks_passed": timing, "integrity_checks_passed": integrity,
+            "write_failures": write_failures, "source_unchanged": source_unchanged,
+            "passed": timing and integrity}
+
+
+def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("video", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--sample-step", type=int, default=6,
                         help="extract/analyse every Nth frame (default: 6, about 30 Hz at 180 fps)")
     parser.add_argument("--large-gap-factor", type=float, default=1.5)
-    args = parser.parse_args()
-    if args.sample_step < 1 or args.large_gap_factor <= 1:
+    args = parser.parse_args(argv)
+    if args.sample_step < 1 or not math.isfinite(args.large_gap_factor) or args.large_gap_factor <= 1:
         parser.error("sample-step must be positive and large-gap-factor must exceed 1")
     source = args.video.resolve()
     if not source.is_file():
@@ -86,11 +121,33 @@ def main():
         parser.error(f"refusing to overwrite non-empty output: {out}")
     (out / "frames").mkdir(parents=True, exist_ok=True)
     (out / "quality" / "plots").mkdir(parents=True, exist_ok=True)
-    (out / "quality" / "examples").mkdir(parents=True, exist_ok=True)
 
+    source_hash_before = sha256(source)
+    provenance = {
+        "source_video": str(source), "source_sha256_before": source_hash_before,
+        "analyzer_version": 2, "analyzer_file_sha256": sha256(Path(__file__)),
+        "git_commit": git_commit(),
+        "interpreter": sys.executable, "python_version": platform.python_version(),
+        "opencv_version": cv2.__version__, "numpy_version": np.__version__,
+        "working_directory": str(Path.cwd()),
+        "analysis_command": shlex.join([sys.executable, "-m", "rm27.perception.vision.localization.analyze_video",
+                                       str(source), "--out", str(out), "--sample-step", str(args.sample_step),
+                                       "--large-gap-factor", str(args.large_gap_factor)]),
+        "parameters": {"sample_step": args.sample_step, "large_gap_factor": args.large_gap_factor,
+                       "jpeg_quality": 95, "orb_nfeatures": 500, "feature_grid": [4, 6],
+                       "near_duplicate_absdiff_threshold": 1.0, "luma_thresholds": [5, 250],
+                       "flow_max_corners": 200, "flow_quality_level": .01, "flow_min_distance": 8,
+                       "flow_min_points": 6, "diagnostic_percentiles": [10, 90]},
+    }
+    (out / "provenance.json").write_text(json.dumps(provenance, indent=2, allow_nan=False) + "\n")
     capture = cv2.VideoCapture(str(source))
     if not capture.isOpened():
         raise RuntimeError(f"cannot decode {source}")
+    try:
+        backend = capture.getBackendName()
+    except (cv2.error, AttributeError):
+        backend = "UNKNOWN"
+    write_failures = []
     fps = float(capture.get(cv2.CAP_PROP_FPS) or 0.0)
     width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
     height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
@@ -167,8 +224,13 @@ def main():
                 near_delta, near = None, False
             previous_gray = gray
             image_name = f"frame_{frame_index:06d}.jpg"
-            cv2.imwrite(str(out / "frames" / image_name), frame,
-                        [cv2.IMWRITE_JPEG_QUALITY, 95])
+            try:
+                written = cv2.imwrite(str(out / "frames" / image_name), frame,
+                                      [cv2.IMWRITE_JPEG_QUALITY, 95])
+            except cv2.error:
+                written = False
+            if not written:
+                write_failures.append(f"frames/{image_name}")
             quality_rows.append({
                 "frame_index": frame_index, "pts_time_s": pts,
                 "laplacian_variance": blur, "gradient_mean": gradient,
@@ -191,22 +253,33 @@ def main():
     threshold = nominal_dt * args.large_gap_factor if nominal_dt else None
     large_gaps = sum(x > threshold for x in intervals) if threshold is not None else 0
     zero_or_negative = sum(x <= 0 for x in intervals)
-    duration = timestamps[-1] if timestamps else 0.0
+    first_pts = timestamps[0] if timestamps else None
+    last_pts = timestamps[-1] if timestamps else None
+    duration = last_pts - first_pts if timestamps else 0.0
+    source_hash_after = sha256(source)
+    status = acceptance_status(declared_count, frame_index, timestamps, large_gaps,
+                               write_failures, source_hash_before == source_hash_after, nominal_dt is not None)
     file_size = source.stat().st_size
     bitrate = (file_size * 8 / duration / 1000.0) if duration > 0 else None
     metadata = {
-        "source": {"path": str(source), "sha256": sha256(source), "size_bytes": file_size,
+        "source": {"path": str(source), "sha256": source_hash_before, "size_bytes": file_size,
                     "mtime_utc": datetime.fromtimestamp(source.stat().st_mtime, timezone.utc).isoformat(),
-                    "git_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
-                    "git_status": subprocess.check_output(["git", "status", "--short", "--", str(source)], text=True)},
-        "decoder": {"backend": capture.getBackendName() if False else "OpenCV FFMPEG", "opencv_version": cv2.__version__},
+                    "git_commit": git_commit(),
+                    "git_status": source_git_status(source)},
+        "decoder": {"backend": backend, "opencv_version": cv2.__version__},
         "video_stream": {"codec_fourcc_observed": fourcc, "width": width, "height": height,
                          "pixel_format": "decoded BGR8 (source pixel format unavailable through OpenCV)",
                          "nominal_fps": fps, "declared_frame_count": declared_count,
                          "decoded_frame_count": frame_index, "start_time_s": timestamps[0] if timestamps else None,
-                         "duration_from_pts_s": duration, "bitrate_kbps_from_file_and_pts": bitrate,
+                         "first_pts_s": first_pts, "last_pts_s": last_pts, "pts_span_s": duration,
+                         "duration_from_pts_s": duration,
+                         "container_duration_s": None,
+                         "declared_count_over_fps_s": declared_count / fps if fps > 0 else None,
+                         "decoded_count_over_fps_s": frame_index / fps if fps > 0 else None,
+                         "duration_note": "PTS span excludes final presentation duration; count/fps is an estimate, not container duration",
+ "bitrate_kbps_from_file_and_pts": bitrate,
                          "stream_count": "UNKNOWN", "time_base": "UNKNOWN", "dts": "UNAVAILABLE"},
-        "timing": {"field": "ENCODED_STREAM_PTS", "unit": "seconds as reported by OpenCV/FFmpeg",
+        "timing": {"field": "ENCODED_STREAM_PTS", "unit": "seconds as reported by OpenCV",
                    "clock_domain": "UNKNOWN", "semantic": "encoded presentation timestamp",
                    "exposure_timestamp": "UNKNOWN", "sensor_capture_drop_rate": "UNKNOWN",
                    "interval_threshold_factor": args.large_gap_factor, "intervals": dt_stats,
@@ -251,13 +324,15 @@ def main():
                                   "reason": reason, "evidence": "offline decoded-frame diagnostic"})
     write_simple_yaml(out / "intervals.yaml", intervals_out)
     (out / "intervals.json").write_text(json.dumps(intervals_out, indent=2) + "\n")
-    provenance = {"source_video": str(source), "source_sha256": metadata["source"]["sha256"],
-                  "analysis_command": "python -m rm27.perception.vision.localization.analyze_video",
-                  "sample_step": args.sample_step, "derived_images_are": "decoded color frames, JPEG quality 95",
-                  "timing_field": "ENCODED_STREAM_PTS", "exposure_timestamp": "UNKNOWN",
-                  "sensor_capture_drop_rate": "UNKNOWN"}
+    provenance.update({"source_sha256_after": source_hash_after, "backend": backend,
+                       "status": status, "representative_examples": "NOT_GENERATED; use frame_quality.csv image_file"})
+    (out / "provenance.json").write_text(json.dumps(provenance, indent=2, allow_nan=False) + "\n")
     write_simple_yaml(out / "provenance.yaml", provenance)
     try:
+        import matplotlib
+        # These diagnostics are only ever written as files, never shown; select a
+        # non-interactive backend so a headless host needs no display or Tk install.
+        matplotlib.use("Agg", force=True)
         import matplotlib.pyplot as plt
         if quality_rows:
             t = [r["pts_time_s"] for r in quality_rows]
@@ -265,10 +340,11 @@ def main():
                 plt.figure(figsize=(12, 3)); plt.plot(t, [r[key] for r in quality_rows]); plt.xlabel("ENCODED_STREAM_PTS (s)"); plt.ylabel(key); plt.tight_layout(); plt.savefig(out / "quality" / "plots" / f"{name}.png", dpi=120); plt.close()
     except ImportError:
         metadata["plots"] = "UNAVAILABLE: matplotlib not installed"
-    (out / "analysis_complete.json").write_text(json.dumps({"passed": True, "metadata": metadata}, indent=2) + "\n")
+    (out / "analysis_complete.json").write_text(json.dumps({**status, "metadata": metadata}, indent=2) + "\n")
     print(json.dumps({"output": str(out), "decoded_frames": frame_index, "duration_s": duration,
-                      "sha256": metadata["source"]["sha256"]}, indent=2))
+                      "sha256": metadata["source"]["sha256"], **status}, indent=2))
+    return 0 if status["passed"] else 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

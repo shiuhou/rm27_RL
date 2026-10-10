@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "full": {"path": "artifacts/dock-final/scene.xml", "sha256": "768545c221a1b9337ba1dbc5ed49dc5fa56dec15eed875c3d73812efbbf646cb"},
+    "isolated": {"path": "artifacts/isolated-dock-base-20260916-v6/scene.xml", "sha256": "70ef7bf0462cac5a0a5380cf3874f914df8d9886b8f767f31a8660fe433f36aa"}
+  },
+  "field_commit": "67c13270e213cf3f69da2619e349eed273432330",
+  "start_height_above_slot_m": 0.23,
+  "cruise_height_m": 2.6,
+  "return_height_above_slot_m": 0.6,
+  "return_position_tolerance_m": 0.1,
+  "return_speed_tolerance_m_s": 0.2,
+  "return_hold_s": 1.0,
+  "terminal_entry_velocity_m_s": [-0.3, 0.0, 0.0],
+  "outbound_segment_times_s": [3.0, 6.0, 3.0],
+  "return_segment_times_s": [3.0, 7.0, 3.0],
+  "maximum_route_tracking_error_m": 0.2,
+  "status": "ASSUMPTION: airborne start above existing dock; return-near-dock only. New route requires its own checks. Base tower remains visual-only."
+}

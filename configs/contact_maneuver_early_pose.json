@@ -1,0 +1,20 @@
+{
+  "method": "joint",
+  "segment_times_s": [
+    1.2845450579810787,
+    2.794931510537344,
+    1.4851991654585748
+  ],
+  "cruise_height_m": 2.5352259377808064,
+  "brake_height_m": 1.7713708542234583,
+  "brake_distance_m": 2.8853078974580098,
+  "brake_y_m": 0.5,
+  "terminal": {
+    "aim_tangent_offset_m": -0.011535890004993861,
+    "normal_speed_m_s": 0.5986439994584273,
+    "terminal_specific_thrust_m_s2": 10.165583270301726,
+    "retreat_m": 0.24360482168367917,
+    "recovery_lift_m": 0.07310935782705229
+  },
+  "alignment_lead_s": 0.3384675518348339
+}

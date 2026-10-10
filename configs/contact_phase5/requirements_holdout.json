@@ -1,0 +1,539 @@
+{
+  "split": "untouched combined-error corner validation, fixed thresholds",
+  "modes": [
+    "balanced"
+  ],
+  "variants": [
+    "fixed"
+  ],
+  "cases": [
+    {
+      "name": "corner0",
+      "physical_seed": 835000,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835000,
+        "position_bias_m": [
+          -0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          -0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          -0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        -0.003
+      ]
+    },
+    {
+      "name": "corner1",
+      "physical_seed": 835001,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835001,
+        "position_bias_m": [
+          -0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          -0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          -0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        0.003
+      ]
+    },
+    {
+      "name": "corner2",
+      "physical_seed": 835002,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835002,
+        "position_bias_m": [
+          -0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          -0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        -0.003
+      ]
+    },
+    {
+      "name": "corner3",
+      "physical_seed": 835003,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835003,
+        "position_bias_m": [
+          -0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          -0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        0.003
+      ]
+    },
+    {
+      "name": "corner4",
+      "physical_seed": 835004,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835004,
+        "position_bias_m": [
+          -0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          -0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        -0.003
+      ]
+    },
+    {
+      "name": "corner5",
+      "physical_seed": 835005,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835005,
+        "position_bias_m": [
+          -0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          -0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        0.003
+      ]
+    },
+    {
+      "name": "corner6",
+      "physical_seed": 835006,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835006,
+        "position_bias_m": [
+          -0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        -0.003
+      ]
+    },
+    {
+      "name": "corner7",
+      "physical_seed": 835007,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835007,
+        "position_bias_m": [
+          -0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        0.003
+      ]
+    },
+    {
+      "name": "corner8",
+      "physical_seed": 835008,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835008,
+        "position_bias_m": [
+          0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          -0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          -0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        -0.003
+      ]
+    },
+    {
+      "name": "corner9",
+      "physical_seed": 835009,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835009,
+        "position_bias_m": [
+          0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          -0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          -0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        0.003
+      ]
+    },
+    {
+      "name": "corner10",
+      "physical_seed": 835010,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835010,
+        "position_bias_m": [
+          0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          -0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        -0.003
+      ]
+    },
+    {
+      "name": "corner11",
+      "physical_seed": 835011,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835011,
+        "position_bias_m": [
+          0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          -0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        0.003
+      ]
+    },
+    {
+      "name": "corner12",
+      "physical_seed": 835012,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835012,
+        "position_bias_m": [
+          0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          -0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        -0.003
+      ]
+    },
+    {
+      "name": "corner13",
+      "physical_seed": 835013,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835013,
+        "position_bias_m": [
+          0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          -0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        0.003
+      ]
+    },
+    {
+      "name": "corner14",
+      "physical_seed": 835014,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835014,
+        "position_bias_m": [
+          0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        -0.003
+      ]
+    },
+    {
+      "name": "corner15",
+      "physical_seed": 835015,
+      "physical_scale": 0.25,
+      "sensor": {
+        "seed": 835015,
+        "position_bias_m": [
+          0.005,
+          0,
+          0
+        ],
+        "velocity_bias_m_s": [
+          0.01,
+          0,
+          0
+        ],
+        "attitude_bias_deg": [
+          0,
+          0.1,
+          0
+        ],
+        "delay_s": 0.02,
+        "update_hz": 50,
+        "position_std": 0.001,
+        "velocity_std": 0.005,
+        "attitude_std_deg": 0.05
+      },
+      "target_bias_m": [
+        0,
+        0,
+        0.003
+      ]
+    }
+  ]
+}

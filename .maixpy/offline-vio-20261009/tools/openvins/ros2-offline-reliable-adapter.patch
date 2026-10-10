@@ -1,0 +1,29 @@
+--- a/tools/openvins/run_adapter_ros2.sh
++++ b/tools/openvins/run_adapter_ros2.sh
+@@ -79,9 +79,23 @@
+   sleep 1
+ done
+ test "$ready" = true
+-ros2 bag play /data --rate 0.5 --disable-keyboard-controls --wait-for-all-acked 5000 > /out/player.log 2>&1 &
+-player_pid=$!
+-set +e
++ros2 bag play /data --rate 0.5 --start-paused --qos-profile-overrides-path /repo/tools/openvins/offline_replay_qos.yaml --disable-keyboard-controls --wait-for-all-acked 5000 > /out/player.log 2>&1 &
++player_pid=$!
++# Isolated offline delivery control; discovery of both publishers BEFORE resume.
++ready=false
++for attempt in $(seq 1 30); do
++  kill -0 "$player_pid"
++  ros2 topic info /imu0 --verbose > /out/paused-imu-endpoints.txt 2>&1 || true
++  ros2 topic info /cam0/image_raw --verbose > /out/paused-camera-endpoints.txt 2>&1 || true
++  if grep -q 'Publisher count: 1' /out/paused-imu-endpoints.txt && grep -q 'Subscription count: 2' /out/paused-imu-endpoints.txt && grep -q 'Publisher count: 1' /out/paused-camera-endpoints.txt && grep -q 'Subscription count: 2' /out/paused-camera-endpoints.txt; then
++    ready=true
++    break
++  fi
++  sleep 1
++done
++test "$ready" = true
++timeout 20 ros2 service call /rosbag2_player/resume rosbag2_interfaces/srv/Resume > /out/player-resume.txt 2>&1
++set +e
+ wait "$player_pid"
+ player_status=$?
+ set -e

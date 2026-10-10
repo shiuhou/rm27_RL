@@ -1,7 +1,7 @@
 """Validation for canonical localization experiment metadata.
 
 The validator is intentionally conservative: unknown timing is valid evidence,
-while a claim of exposure timing without verification is rejected.
+and unverified interpretation claims remain claims, never timing facts.
 """
 
 from hashlib import sha256
@@ -95,70 +95,150 @@ def _hash_file(path):
 
 
 def _validate_timing(timing, label):
-    if not isinstance(timing, dict):
-        raise ManifestError(f"{label} must be an object")
-    for key in ("raw_value", "unit", "clock_domain", "semantic", "evidence_status"):
-        if key not in timing:
-            raise ManifestError(f"{label} missing {key}")
-    if isinstance(timing["raw_value"], bool) or not isinstance(timing["raw_value"], int) or timing["raw_value"] < 0:
-        raise ManifestError(f"{label}.raw_value must be a non-negative integer")
-    for key in ("unit", "clock_domain", "semantic", "evidence_status"):
-        if not isinstance(timing[key], str) or not timing[key]:
-            raise ManifestError(f"{label}.{key} must be a non-empty string")
-    if "EXPOSURE" in timing["semantic"].upper() and timing["evidence_status"].upper() != "VERIFIED":
-        raise ManifestError(f"{label} claims exposure timing without verified evidence")
+    from .schema import TimestampEvidence
+    try:
+        TimestampEvidence.from_dict(timing)
+    except (TypeError, ValueError) as exc:
+        raise ManifestError(f"{label}: {exc}") from exc
+    if "monotonic" in timing and type(timing["monotonic"]) is not bool:
+        raise ManifestError(f"{label}.monotonic must be boolean")
 
 
-def validate_manifest(data, base_dir=None):
+def _geometry(record, stride_key):
+    for key in ("width", "height", stride_key, "uv_stride_bytes", "frame_bytes"):
+        value = record.get(key)
+        if value is not None and (type(value) is not int or value <= 0):
+            raise ManifestError(f"{key} must be a positive integer")
+    width, height, stride = (record.get(k) for k in ("width", "height", stride_key))
+    fmt = record.get("pixel_format")
+    if stride is not None:
+        if width is None or fmt not in ("RGB888", "GRAY8", "NV21"):
+            raise ManifestError("stride validation requires width and supported pixel_format")
+        if stride < width * (3 if fmt == "RGB888" else 1):
+            raise ManifestError("stride is too small for pixel_format")
+    if fmt == "NV21":
+        # One Y plane, then interleaved VU plane; byte strides, same row pitch.
+        if width is None or height is None or width % 2 or height % 2:
+            raise ManifestError("NV21 requires even width and height")
+        if stride is not None and stride % 2:
+            raise ManifestError("NV21 stride must be even")
+        if record.get("uv_stride_bytes") is not None and record["uv_stride_bytes"] != stride:
+            raise ManifestError("NV21 requires equal Y and VU stride")
+        if record.get("frame_bytes") is not None:
+            if stride is None or record["frame_bytes"] < stride * height * 3 // 2:
+                raise ManifestError("NV21 frame_bytes does not contain both planes")
+
+
+def validate_experiment_metadata(data):
+    """Experiment metadata only; does not inspect frame files or qualify a dataset."""
     if not isinstance(data, dict):
         raise ManifestError("manifest must be an object")
-    if data.get("schema_version") not in (1,):
-        raise ManifestError(f"unsupported manifest schema_version {data.get('schema_version')}")
+    if type(data.get("schema_version")) is not int or data["schema_version"] != 1:
+        raise ManifestError("unsupported manifest schema_version")
+    try:
+        json.dumps(data, allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        raise ManifestError("metadata must be strict JSON") from exc
     camera = data.get("camera")
     if camera is not None:
         if not isinstance(camera, dict):
             raise ManifestError("camera must be an object")
-        for key in ("width", "height", "stride_bytes"):
-            if camera.get(key) is not None and (not isinstance(camera[key], int) or camera[key] <= 0):
-                raise ManifestError(f"camera.{key} must be a positive integer")
-        if camera.get("width") and camera.get("stride_bytes") and camera["stride_bytes"] < camera["width"]:
-            raise ManifestError("camera.stride_bytes cannot be less than width")
-        if camera.get("exposure_timestamp_verified") and camera.get("timestamp_source") in (None, "unknown"):
+        _geometry(camera, "stride_bytes")
+        if camera.get("timestamp_source") is not None and not isinstance(camera["timestamp_source"], str):
+            raise ManifestError("timestamp_source must be a string")
+        verified = camera.get("exposure_timestamp_verified", False)
+        if type(verified) is not bool:
+            raise ManifestError("exposure_timestamp_verified must be boolean")
+        if verified and (camera.get("timestamp_source") or "UNKNOWN").upper() == "UNKNOWN":
             raise ManifestError("verified exposure timestamp requires a verified timestamp source")
-    frames = data.get("frames", [])
+        if verified and not camera.get("timestamp_source"):
+            raise ManifestError("verified exposure timestamp requires a verified timestamp source")
+        for key in ("exposure_us", "gain", "requested_fps", "observed_fps"):
+            if camera.get(key) is not None:
+                _finite(camera[key], key)
+    return data
+
+
+def validate_frame_records(frames):
+    """Validate supplied frame metadata, not image existence or calibration.
+
+    Ordering uses only explicitly monotonic, VERIFIED interpretations with known
+    compatible units and identical domain + event semantic. Unknowns are retained.
+    """
     if not isinstance(frames, list):
         raise ManifestError("frames must be a list")
-    previous_sequence = previous_time = None
+    previous_sequence = None
+    clocks = {}
+    factors = {"ns": 1, "us": 1000, "ms": 1000000, "s": 1000000000}
     for index, frame in enumerate(frames):
         if not isinstance(frame, dict):
             raise ManifestError(f"frames[{index}] must be an object")
         if "sequence" in frame:
             sequence = frame["sequence"]
-            if isinstance(sequence, bool) or not isinstance(sequence, int) or sequence < 0:
-                raise ManifestError(f"frames[{index}].sequence is invalid")
+            if type(sequence) is not int or sequence < 0:
+                raise ManifestError("sequence must be a non-negative integer")
             if previous_sequence is not None and sequence <= previous_sequence:
-                raise ManifestError(f"frames[{index}].sequence is not increasing")
+                raise ManifestError("sequence is not increasing (one sequence space per frame list)")
             previous_sequence = sequence
-        for key in ("width", "height", "stride"):
-            if key in frame and frame[key] is not None and (not isinstance(frame[key], int) or frame[key] <= 0):
-                raise ManifestError(f"frames[{index}].{key} is invalid")
-        if frame.get("width") and frame.get("stride") and frame["stride"] < frame["width"]:
-            raise ManifestError(f"frames[{index}] stride is less than width")
+        _geometry(frame, "stride")
         if "timestamp" in frame:
-            _validate_timing(frame["timestamp"], f"frames[{index}].timestamp")
-            current_time = frame["timestamp"]["raw_value"]
-            if previous_time is not None and frame["timestamp"].get("monotonic", True) and current_time < previous_time:
-                raise ManifestError(f"frames[{index}].timestamp is not monotonic")
-            previous_time = current_time
+            t = frame["timestamp"]
+            _validate_timing(t, f"frames[{index}].timestamp")
+            if (t.get("monotonic") is True and t["evidence_status"] == "VERIFIED"
+                    and t["unit"] in factors and t["clock_domain"].upper() != "UNKNOWN"
+                    and t["semantic"].upper() != "UNKNOWN"):
+                key = (t["clock_domain"], t["semantic"])
+                current = t["raw_value"] * factors[t["unit"]]
+                if key in clocks and current < clocks[key]:
+                    raise ManifestError("timestamp is not monotonic in the same known clock/event")
+                clocks[key] = current
         for key in ("exposure_us", "gain"):
-            if key in frame and frame[key] is not None:
-                _finite(frame[key], f"frames[{index}].{key}")
-    calibration_file = camera.get("calibration_file") if isinstance(camera, dict) else None
-    calibration_hash = camera.get("calibration_sha256") if isinstance(camera, dict) else None
-    if calibration_file and calibration_hash and base_dir is not None:
-        path = Path(base_dir) / calibration_file
-        if not path.exists():
-            raise ManifestError(f"missing calibration file: {path}")
-        if _hash_file(path) != calibration_hash:
-            raise ManifestError("calibration_sha256 does not match calibration_file")
+            if frame.get(key) is not None:
+                _finite(frame[key], key)
+    return frames
+
+
+def validate_calibration_reference(reference, base_dir=None):
+    """Validate a claimed file/id/hash bundle; no intrinsic-fit qualification.
+
+    A claim requires all three fields. UNKNOWN/null bundles are representable
+    while capture is required. Hash is over original bytes, paths relative to
+    the manifest directory. No current-directory fallback when base is omitted.
+    """
+    if not isinstance(reference, dict):
+        raise ManifestError("calibration reference must be an object")
+    identifier = reference.get("calibration_id")
+    file = reference.get("calibration_file", reference.get("file"))
+    digest = reference.get("calibration_hash", reference.get("calibration_sha256", reference.get("sha256")))
+    for keys in (("calibration_file", "file"), ("calibration_hash", "calibration_sha256", "sha256")):
+        supplied = [reference[k] for k in keys if reference.get(k) is not None]
+        if supplied and any(v != supplied[0] for v in supplied):
+            raise ManifestError("conflicting calibration reference aliases")
+    known = lambda v: v is not None and v != "UNKNOWN"
+    available = reference.get("status") in ("AVAILABLE", "CALIBRATED", "VERIFIED")
+    if not available and not any(known(v) for v in (identifier, file, digest)):
+        return reference
+    if not all(isinstance(v, str) and v and known(v) for v in (identifier, file, digest)):
+        raise ManifestError("claimed calibration requires calibration_id, calibration_file and calibration_hash")
+    if not re.fullmatch(r"[0-9a-f]{64}", digest):
+        raise ManifestError("calibration hash must be lowercase SHA-256")
+    path = Path(file)
+    if not path.is_absolute():
+        if base_dir is None:
+            raise ManifestError("base_dir required to resolve calibration file")
+        path = Path(base_dir) / path
+    if not path.is_file():
+        raise ManifestError(f"missing calibration file: {path}")
+    if _hash_file(path) != digest:
+        raise ManifestError("calibration hash does not match calibration_file")
+    return reference
+
+
+def validate_manifest(data, base_dir=None):
+    """Compatibility composition of the three narrow validators; not qualification."""
+    validate_experiment_metadata(data)
+    validate_frame_records(data.get("frames", []))
+    for reference in (data, data.get("camera"), data.get("calibration")):
+        if reference is not None:
+            validate_calibration_reference(reference, base_dir)
     return data

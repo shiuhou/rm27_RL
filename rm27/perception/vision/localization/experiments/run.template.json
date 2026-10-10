@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "purpose": "PLANNED",
+  "run_id": "REPLACE_WITH_UNIQUE_RUN_ID",
+  "backend": "stella_vslam",
+  "dataset": "REPLACE_WITH_VALIDATED_DATASET_MANIFEST_PATH",
+  "installation": "REPLACE_WITH_EXTERNAL_INSTALLATION_MANIFEST_PATH",
+  "output": "REPLACE_WITH_NEW_ARTIFACT_DIRECTORY",
+  "subset": "all_decoded_sampled",
+  "input_hz": 30,
+  "transforms": {},
+  "native_mask": null,
+  "timeout_s": 300,
+  "online": false
+}

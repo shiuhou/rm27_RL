@@ -12,22 +12,26 @@ Recommended layout for one flight:
 
 ```text
 flight_logs/data/YYYY-MM-DD_short-description/
-├── original.BIN
+├── original.ulg
 ├── parameters.param
 ├── notes.md
 └── video.mp4                 # optional
 ```
 
-Do not convert, rename internally or edit the original `.BIN`. A useful
+Do not convert, rename internally or edit the original PX4 `.ulg`. A useful
 `notes.md` records aircraft mass, battery, propeller, exact MTF variant,
-ArduPilot version, flight modes, indoor/outdoor conditions, floor and lighting,
+PX4 version/build hash and board target, flight modes, indoor/outdoor conditions, floor and lighting,
 maneuver order, abnormalities and video synchronization cue.
+
+Historical ArduPilot `.BIN` files remain read-only evidence. The existing
+DataFlash inventory workflow does not parse PX4 ULog; ULog analysis support
+requires separate implementation.
 
 Before analysis, record SHA-256:
 
 ```bash
 cd /home/shiuhou/Projects/rm27_drones
-sha256sum flight_logs/data/YYYY-MM-DD_short-description/original.BIN
+sha256sum flight_logs/data/YYYY-MM-DD_short-description/original.ulg
 ```
 
 The first analysis is read-only. It may propose simulation calibration values;

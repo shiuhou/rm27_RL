@@ -1,0 +1,3 @@
+# SIMULATION ONLY: isolate AP input shaping from attitude/rate feedback.
+# No flight-hardware calibration. Retain the inherited inner PID unchanged.
+ATC_RATE_FF_ENAB 0

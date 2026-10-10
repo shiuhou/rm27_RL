@@ -35,7 +35,7 @@ def test_round_trip_keeps_unknown_timing_and_has_no_age():
 
 def test_schema_and_pose_validation():
     payload = estimate().to_dict()
-    payload["schema_version"] = 2
+    payload["schema_version"] = 999
     with pytest.raises(ValueError, match="unsupported"):
         LocalizationEstimate.from_dict(payload)
     with pytest.raises(ValueError, match="non-finite"):
@@ -43,7 +43,7 @@ def test_schema_and_pose_validation():
     with pytest.raises(ValueError, match="non-zero"):
         estimate(orientation_wxyz=(0, 0, 0, 0))
     with pytest.raises(ValueError, match="velocity_frame"):
-        estimate(velocity=(1, 0, 0))
+        estimate(velocity=(1, 0, 0), velocity_unit="UNKNOWN")
     payload = estimate().to_dict()
     del payload["source_time"]["semantic"]
     with pytest.raises(ValueError, match="timestamp missing"):
@@ -52,7 +52,7 @@ def test_schema_and_pose_validation():
 
 def test_reset_epoch_is_explicit():
     reset = estimate(tracking_state=TrackingState.RESET, valid=False, initialized=False,
-                     relocalizing=True, localization_epoch=5, reset_reason="restart")
+                     relocalizing=False, localization_epoch=5, reset_reason="restart")
     assert reset.to_dict()["localization_epoch"] == 5
     assert reset.to_dict()["tracking_state"] == "RESET"
 
@@ -74,8 +74,8 @@ def test_manifest_rejects_fabricated_exposure_and_bad_stride():
             "timestamp_source": "unknown", "exposure_timestamp_verified": True}})
     with pytest.raises(ManifestError, match="stride"):
         validate_manifest({"schema_version": 1, "camera": {"width": 640, "stride_bytes": 320}})
-    with pytest.raises(ManifestError, match="exposure"):
-        validate_manifest({"schema_version": 1, "frames": [{"timestamp": {
+    # Unverified exposure is preserved as a claim, consistently with the record.
+    validate_manifest({"schema_version": 1, "frames": [{"timestamp": {
             "raw_value": 1, "unit": "us", "clock_domain": "host",
             "semantic": "EXPOSURE", "evidence_status": "UNVERIFIED"}}]})
 
@@ -85,7 +85,7 @@ def test_manifest_calibration_hash_is_checked(tmp_path):
     calibration.write_text("calibration: test\n")
     digest = hashlib.sha256(calibration.read_bytes()).hexdigest()
     data = {"schema_version": 1, "camera": {
-        "calibration_file": calibration.name, "calibration_sha256": digest}}
+        "calibration_id": "test-only", "calibration_file": calibration.name, "calibration_sha256": digest}}
     assert validate_manifest(data, base_dir=tmp_path) is data
     data["camera"]["calibration_sha256"] = "0" * 64
     with pytest.raises(ManifestError, match="does not match"):

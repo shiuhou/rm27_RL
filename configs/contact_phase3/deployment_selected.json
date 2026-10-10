@@ -1,0 +1,23 @@
+{
+  "checkpoint": "artifacts/distill-spline-01/policy.npz",
+  "deployment": {
+    "predict": "dynamic",
+    "portable_observer": true,
+    "shared_adaptation": true,
+    "feedback_overrides": {
+      "rate_reference_source": "analytic"
+    },
+    "contact_velocity_std_m_s": 0.02
+  },
+  "estimator": {
+    "position_std": 0.002,
+    "velocity_std": 0.02,
+    "attitude_std_deg": 0.2,
+    "rate_std": 0.02,
+    "delay_s": 0.01,
+    "update_hz": 50,
+    "dropout": 0.1
+  },
+  "mode": "balanced",
+  "seed": null
+}

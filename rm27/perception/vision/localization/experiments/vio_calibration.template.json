@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "status": "NOT_CALIBRATED",
+  "T_body_camera": {"status": "UNKNOWN", "calibration_reference": null},
+  "T_imu_camera": {"status": "UNKNOWN", "calibration_reference": null},
+  "temporal_offset": {
+    "status": "UNKNOWN",
+    "value": null,
+    "unit": "UNKNOWN",
+    "camera_clock_domain": "UNKNOWN",
+    "imu_clock_domain": "UNKNOWN",
+    "sign_convention": "NOT_ESTABLISHED",
+    "evidence_reference": null
+  },
+  "camera_imu_clock_relation": "UNKNOWN"
+}

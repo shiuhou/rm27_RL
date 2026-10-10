@@ -1,0 +1,175 @@
+{
+  "split": "design",
+  "cases": [
+    [
+      850000,
+      1.0
+    ],
+    [
+      850001,
+      2.0
+    ],
+    [
+      850002,
+      1.0
+    ],
+    [
+      850003,
+      2.0
+    ]
+  ],
+  "modes": [
+    "balanced"
+  ],
+  "variants": {
+    "delay0_none": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0
+      },
+      "deployment": {}
+    },
+    "delay5_none": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.005
+      },
+      "deployment": {}
+    },
+    "delay5_kinematic": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.005
+      },
+      "deployment": {
+        "predict": "kinematic"
+      }
+    },
+    "delay5_dynamic": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.005
+      },
+      "deployment": {
+        "predict": "dynamic"
+      }
+    },
+    "delay10_none": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.01
+      },
+      "deployment": {}
+    },
+    "delay10_kinematic": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.01
+      },
+      "deployment": {
+        "predict": "kinematic"
+      }
+    },
+    "delay10_dynamic": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.01
+      },
+      "deployment": {
+        "predict": "dynamic"
+      }
+    },
+    "delay20_none": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.02
+      },
+      "deployment": {}
+    },
+    "delay20_kinematic": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.02
+      },
+      "deployment": {
+        "predict": "kinematic"
+      }
+    },
+    "delay20_dynamic": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.02
+      },
+      "deployment": {
+        "predict": "dynamic"
+      }
+    },
+    "delay10_shared": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.01
+      },
+      "deployment": {
+        "shared_adaptation": true
+      }
+    },
+    "delay10_dynamic_shared": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.01
+      },
+      "deployment": {
+        "predict": "dynamic",
+        "shared_adaptation": true
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "platform": "M3C",
+  "sensor": "OS04A10",
+  "lens_id": "UNKNOWN",
+  "focus_note": "REPLACE_WITH_ACTUAL_SETTING_AND_FIXED_FOCUS_NOTE",
+  "camera_mode_id": "full180",
+  "width": 1344,
+  "height": 760,
+  "crop_resize": "REPLACE_WITH_OBSERVED_CROP_RESIZE_STATE",
+  "device_software_commit": "REPLACE_WITH_ACTUAL_DEVICE_BUILD_COMMIT",
+  "board_revision": "UNKNOWN",
+  "recording_command": "REPLACE_WITH_EXECUTED_COMMAND",
+  "timestamp_evidence": {
+    "unit": "UNKNOWN",
+    "clock_domain": "UNKNOWN",
+    "semantic": "UNKNOWN",
+    "evidence_status": "UNVERIFIED"
+  },
+  "physical_measurements": {
+    "horizontal_span_m": "REQUIRED_MEASURED_VALUE",
+    "horizontal_square_count": 10,
+    "vertical_span_m": "REQUIRED_MEASURED_VALUE",
+    "vertical_square_count": 7,
+    "measurement_note": "REPLACE_WITH_RULER_OR_CALIPER_AND_FLATNESS_CHECK"
+  },
+  "exposure_us": null,
+  "gain": null
+}

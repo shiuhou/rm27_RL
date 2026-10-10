@@ -24,6 +24,7 @@ cd /home/shiuhou/Projects/rm27_drones
 | `3` | 目標近景 |
 | `4` | 發射站近景 |
 | `5` | 側面看拋物線 |
+| `6` | 飛鏢第一視角：鏢頭位置、沿鏢身向前看 |
 | 空白鍵 | 暫停／繼續 |
 | `R` | 重新發射 |
 
@@ -36,6 +37,55 @@ xdg-open research/Darts/artifacts/render-04-apex-5m/trajectory.png
 
 `view` 是 MuJoCo 視窗中的運動學重播；不是只打開靜態 XML。
 無桌面的環境使用下方 `render` 命令。
+
+## 第一視角與視覺算法輸入
+
+直接以第一視角啟動；在視窗中按 `6` 也能切換：
+
+```bash
+cd /home/shiuhou/Projects/rm27_drones
+/home/shiuhou/venvs/mujoco/bin/python -m research.Darts view research/Darts/artifacts/flight-04-apex-5m --camera fpv --fovy 60
+```
+
+相機固定在 CAD 前端面中心，光軸沿鏢身 +X、影像上方沿鏢身 +Z。
+姿態繼承現有「沿速度方向、相對世界上方固定滾轉」的顯示假設，沒有自動追蹤目標。
+預設垂直視野 60°，並非實測鏡頭參數；以 `--fovy` 調整。
+自由視角仍可用滑鼠旋轉／縮放；第一視角固定於飛鏢。
+
+已有第一視角影片：`artifacts/fpv-preview-20260927-v1/flight.mp4`。
+這段預覽使用原速、片頭停留 1 秒／命中後停留 2 秒，不疊文字或子畫面。
+需要重新匯出時使用新目錄：
+
+```bash
+MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python -m research.Darts render research/Darts/artifacts/flight-04-apex-5m \
+  --output research/Darts/artifacts/fpv-preview-new --camera fpv --video --speed 1 --fovy 60
+```
+
+供算法讀取的無損 PNG 序列使用獨立 `capture` 命令，按**仿真時間**取樣，
+不含預覽的停留幀、慢動作重複幀、文字疊圖或 site 輔助標記：
+
+```bash
+MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python -m research.Darts capture research/Darts/artifacts/flight-04-apex-5m \
+  --output research/Darts/artifacts/fpv-capture-new --fps 60 --width 1280 --height 720 --fovy 60
+```
+
+- `frames/*.png`：RGB 影像，時間為 `i/fps < 命中時間`，不含命中後凍結。
+- `frames.jsonl`：每幀檔名、仿真時間、相機世界位置與 `R_world_from_camera`。
+  相機座標為右／下／前；`p_world = R_world_from_camera @ p_camera + position_world_m`。
+- `camera.json`：解析度、幀率、理想針孔內參 K、零畸變係數、座標約定、來源及程式雜湊。
+  左上像素中心為 `(0,0)`，主點為 `((width-1)/2,(height-1)/2)`。
+- `asset_relocations.json`：舊場景素材搬遷後的路徑與 SHA-256。
+  場地素材需逐一符合原報告的 Git 版本；不改寫舊場景／報告。
+- `summary.json`：匯出完成檢查；`passed` 不代表识別算法通過。
+
+2026-09-27 的 `artifacts/fpv-capture-20260927-v1` 已匯出 107 幀，
+1280×720、60 fps、時間 0 至 1.766667 s，`summary.json` 為 `passed: true`。
+這是 **headless 解析軌跡渲染**，不是閉環 SITL，也尚未執行识別算法。
+目標不保證一直在視野中心，起飛時有發射站結構，接近命中時目標會放大並可能裁切。
+近裁切面為 1 mm，不應以命中瞬間畫面驗證识別。
+目前沒有真實鏡頭畸變、曝光、運動模糊、滾動快門、感測器噪聲或飛鏢振動；
+燈光和靶面也只是場景示範材質。可先驗證讀圖與幾何流程，不能視為實機识別精度。
+後續應依真實相機標定、安裝姿態及實拍資料另行驗證。
 
 ## 重新建立或調整
 

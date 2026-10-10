@@ -1,7 +1,9 @@
 """Compose the current dock field with an independent kinematic dart experiment."""
 
 import contextlib
+import hashlib
 import json
+import subprocess
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
@@ -191,12 +193,62 @@ def build(output, config=DEFAULT_CONFIG, cad_assets=None):
     return report
 
 
-def load_run(output):
+def playback_spec(output, report):
+    """Resolve the documented repository migration without rewriting saved runs.
+
+    Relocated field meshes must match the recorded Git commit byte for byte.
+    Unknown missing assets fail instead of silently substituting a new scene.
+    """
+    root=ET.parse(output/'scene.xml').getroot()
+    field=ROOT/'rm27/simulation/field/rmuc2026_battlefield_mjcf'
+    old_field=str(ROOT/'rm_uav_lab_m600/rmuc2026_battlefield_mjcf')+'/'
+    old_run=str(ROOT/'Darts/artifacts'/output.name)+'/'
+    blobs=None;relocated=[]
+    for element in root.iter():
+        name=element.get('file')
+        if not name:
+            continue
+        original=Path(name)
+        resolved=original if original.is_absolute() else output/original
+        if not resolved.exists() and name.startswith(old_field):
+            relative=name[len(old_field):]
+            resolved=field/relative
+            if blobs is None:
+                rows=subprocess.check_output(['git','-C',str(field),'ls-tree','-r',report['field_commit']],text=True)
+                blobs={row.split('\t',1)[1]:row.split()[2] for row in rows.splitlines()}
+            raw=resolved.read_bytes()
+            digest=hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
+            if blobs.get(relative)!=digest:
+                raise ValueError(f'Relocated field asset differs from recorded commit: {relative}')
+        elif not resolved.exists() and name.startswith(old_run):
+            resolved=output/name[len(old_run):]
+        if not resolved.exists():
+            raise FileNotFoundError(f'Missing playback asset: {name}')
+        element.set('file',str(resolved.resolve()))
+        if resolved!=original:
+            relocated.append(dict(original=name,resolved=str(resolved.resolve()),sha256=sha256(resolved)))
+    report['playback_asset_relocations']=relocated
+    return mujoco.MjSpec.from_string(ET.tostring(root,encoding='unicode'))
+
+
+def load_run(output, fovy=60.):
     output=Path(output).resolve()
     report=json.loads((output/'summary.json').read_text())
     if sha256(output/'scene.xml') != report['scene_sha256'] or sha256(output/'dart_visual.obj') != report['dart_mesh_sha256']:
         raise ValueError('Generated scene or dart mesh changed; rebuild this experiment')
-    m,d=load_model(output/'scene.xml')
+    if not np.isfinite(fovy) or not 1 < fovy < 179:
+        raise ValueError('Vertical field of view must be finite and in (1,179) degrees')
+    # Add the camera in memory: earlier, hashed experiment artifacts stay intact.
+    spec=playback_spec(output,report)
+    # MuJoCo cameras look down -Z with +Y up. Dart +X is forward, +Z up.
+    camera_rotation=np.array([[0.,0.,-1.],[-1.,0.,0.],[0.,1.,0.]])
+    spec.body('darts_projectile').add_camera(name='darts_fpv',pos=[0,0,0],
+        quat=quat(camera_rotation),fovy=float(fovy),ipd=0.)
+    m=spec.compile()
+    # An absolute 1 mm near plane, rather than the whole-field default clip.
+    m.vis.map.znear=.001/m.stat.extent
+    d=mujoco.MjData(m)
+    mujoco.mj_forward(m,d)
     path=BallisticPath.aimed(report['launch_m'],report['target_m'],report['flight_time_s'],report['config']['gravity_m_s2'])
     return m,d,path,report
 
@@ -211,7 +263,14 @@ def pose(m,d,path,t):
     return p,v
 
 
-def camera(cam,mode,path,report,t):
+def camera(cam,mode,path,report,t,model=None):
+    if mode=='fpv':
+        if model is None:
+            raise ValueError('First-person camera requires the loaded model')
+        cam.type=mujoco.mjtCamera.mjCAMERA_FIXED
+        cam.fixedcamid=model.camera('darts_fpv').id
+        return
+    cam.type=mujoco.mjtCamera.mjCAMERA_FREE
     p,_=path.state(np.clip(t,0,path.duration))
     views={
         'overview':([0,0,1.4],34,90,-65),

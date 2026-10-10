@@ -1,0 +1,10 @@
+{
+  "external_navigation": {
+    "update_hz": 50,
+    "delay_s": 0.01,
+    "position_std": 0.003,
+    "velocity_std": 0.02,
+    "attitude_std_deg": 0.1,
+    "seed": 551
+  }
+}

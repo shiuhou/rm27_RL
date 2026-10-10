@@ -1,0 +1,28 @@
+--- a/ov_msckf/src/run_subscribe_msckf.cpp
++++ b/ov_msckf/src/run_subscribe_msckf.cpp
+@@ -35,11 +35,9 @@
+ 
+ using namespace ov_msckf;
+ 
+-std::shared_ptr<VioManager> sys;
+ #if ROS_AVAILABLE == 1
++std::shared_ptr<VioManager> sys;
+ std::shared_ptr<ROS1Visualizer> viz;
+-#elif ROS_AVAILABLE == 2
+-std::shared_ptr<ROS2Visualizer> viz;
+ #endif
+ 
+ // Main function
+@@ -83,6 +81,12 @@
+   VioManagerOptions params;
+   params.print_and_load(parser);
+   params.use_multi_threading_subs = true;
++#if ROS_AVAILABLE == 2
++  // Release ROS resources before process-static middleware/plugin teardown.
++  // Global ownership defers their destructors until after main() has returned.
++  std::shared_ptr<VioManager> sys;
++  std::shared_ptr<ROS2Visualizer> viz;
++#endif
+   sys = std::make_shared<VioManager>(params);
+ #if ROS_AVAILABLE == 1
+   viz = std::make_shared<ROS1Visualizer>(nh, sys);

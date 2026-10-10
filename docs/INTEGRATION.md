@@ -74,10 +74,11 @@ G1's 1 kg vehicle has ~436 mm propeller width. Existing M4-A propellers span
 slot as-is. New vehicle static clearance is 11.25 mm per side; this does not
 establish return-to-slot accuracy or propeller-wall aerodynamic behavior.
 
-The current real stack is MicoAir743v2-AIO-35A running ArduPilot, an MTF-02P
-optical-flow/range sensor, and an M10G-5883 used only for its compass. Exact
-installed firmware, ports and orientations await the real `.BIN` and full
-parameter export. GNSS is not an intended navigation input. See
+The current real stack is MicoAir743v2-AIO-35A with user-selected PX4 v1.17.0
+(updated 2026-10-10), an MTF-02P optical-flow/range sensor, and an M10G-5883
+used only for its compass. The installed PX4 build, board target, ports and
+orientations await the real `.ulg` and full parameter export. Existing ArduPilot
+SITL evidence does not establish PX4 integration. GNSS is not an intended navigation input. See
 [the real-hardware baseline](REAL_HARDWARE.md). These
 components are not yet represented by calibrated sensor models in MuJoCo.
 

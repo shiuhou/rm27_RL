@@ -1,0 +1,14 @@
+# SIMULATION ONLY synthetic VIO-equivalent measurement source; not actual vision.
+ATC_RATE_FF_ENAB 0
+GPS1_TYPE 0
+SIM_GPS1_ENABLE 0
+EK3_SRC1_POSXY 6
+EK3_SRC1_VELXY 6
+EK3_SRC1_POSZ 6
+EK3_SRC1_VELZ 6
+# Keep IMU/compass attitude chain; no truth attitude fed into actor.
+EK3_SRC1_YAW 1
+VISO_TYPE 1
+VISO_DELAY_MS 10
+VISO_POS_M_NSE 0.1
+VISO_VEL_M_NSE 0.1

@@ -25,3 +25,10 @@ The manifest validator accepts unknown timing and absent optional IMU or
 uncertainty, while rejecting malformed records, non-finite values, impossible
 dimensions/strides, bad sequence order, missing calibration files, hash
 mismatches, and unverified exposure claims.
+
+## 2026-09-22 version 2 update
+
+The v1 description above is historical. The v2 contract and timestamp-claim
+policy supersede it; see [VSL-0B.1 preparation update](VSL-0B1_CALIBRATION_PREP.md).
+Unverified exposure claims are now preserved as claims, and file/hash validation
+is explicitly separated from dataset qualification.

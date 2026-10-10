@@ -1,0 +1,80 @@
+{
+  "schema_version": 2,
+  "status": "ASSUMED simulation research; no hardware calibration",
+  "v1_parameters": {
+    "duration_s": 1.3667700446956428,
+    "normal_speed_m_s": 0.6818080182555131,
+    "terminal_specific_thrust_m_s2": 15.156469167079706,
+    "tangent_speed_m_s": -0.12117001856948054,
+    "penetration_m": 0.005120814865890886,
+    "retreat_m": 0.28,
+    "recovery_lift_m": 0.08
+  },
+  "controller": {
+    "actuator_feedback_gain": 0.5,
+    "actuator_predictor_tau_s": 0.04,
+    "adapt_specific_thrust": true,
+    "thrust_adaptation_tau_s": 0.12
+  },
+  "training_seeds": [
+    301,
+    302,
+    303,
+    304,
+    305,
+    306,
+    307,
+    308
+  ],
+  "training_scales": [
+    1.0,
+    2.0
+  ],
+  "evaluation_seed_start": 432000,
+  "stress_evaluation_seed_start": 442000,
+  "search_seed": 92327,
+  "candidate_count": 48,
+  "evaluation_trials": 64,
+  "bounds": {
+    "duration_s": [
+      1.15,
+      1.75
+    ],
+    "normal_speed_m_s": [
+      0.35,
+      1.05
+    ],
+    "terminal_specific_thrust_m_s2": [
+      9.0,
+      15.5
+    ],
+    "tangent_speed_m_s": [
+      -0.16,
+      0.16
+    ],
+    "penetration_m": [
+      0.003,
+      0.016
+    ],
+    "aim_tangent_offset_m": [
+      -0.012,
+      0.016
+    ],
+    "retreat_m": [
+      0.16,
+      0.32
+    ],
+    "recovery_lift_m": [
+      0.02,
+      0.1
+    ]
+  },
+  "margin_objective_m": 0.012,
+  "risk_objective": "mean loss + 0.5 mean worst quartile; contact geometry is arena orientation during training",
+  "preserved_gates": "configs/aggressive_contact.json unchanged; 2 second entry and 1 second hold",
+  "geometry_splits": {
+    "legacy_patch": 0.0,
+    "arena_patch": 90.0
+  },
+  "scope": "same physical model/draws/gates for all methods in each geometry split; v1 parameters frozen before this study"
+}

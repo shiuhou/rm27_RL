@@ -31,18 +31,18 @@ historical conversation context only and is not a current specification.
   sequential mission contract.
 - `configs/drone.json`: user-reported 1103 9600KV, 2-inch props, approximately
   180 g; provisional 120 × 120 mm envelope. Unmeasured dynamics are labeled.
-- `configs/real_hardware.json`: current MicoAir flight controller and sensor
-  inventory, with unresolved installation/log fields left explicit.
+- `configs/real_hardware.json`: current MicoAir flight controller, selected PX4 v1.17.0
+  firmware and sensor inventory, with unresolved installation/log fields left explicit.
 - `rm27/`: CAD audit, dock conversion, scene composition, preview and single-vehicle flight gate.
-- `tests/`: dock geometry, four-vehicle settling, isolated flight-interface and
-  live-view state-isolation, calibration, contact and route checks (31 passing).
+- `tests/`: dock geometry, four-vehicle settling, isolated flight-interface,
+  live-view state-isolation, calibration, contact, route and policy checks (104 passing).
 - `artifacts/`: generated models, renders and local evidence (ignored).
 
 The dock is placed on the red H platform by default. Four separate physical
 vehicle proxies occupy its slots. A separate [single-vehicle flight gate](docs/MICRO_FLIGHT.md)
 uses real ArduPilot SITL for takeoff, hover, return and landing, with simulation
 truth assisting precision return. The scene builder itself is a static preview.
-Base-contact missions and four ArduPilot instances are not implemented.
+A separate Phase 4 research experiment now reaches physical base contact and recovery through actual ArduPilot SITL with truth-assisted ego state; EKF-only contact still fails. This does not complete the accepted dock-to-dock mission or four-instance integration.
 A separate [provisional base target](docs/BASE_TARGET.md) adds a green marker
 and collision test patch to the existing field base without replacing it.
 The [S0 batch report](docs/S0_REPORT.md) records ten independent passing dock
@@ -101,3 +101,69 @@ clone alone includes them. No hardware actuation is provided by the root CLI.
 
 Existing research: [Astra](research/astra/README.md), [research journal](research/astra/docs/research_log.md),
 [hardware evidence](research/astra/docs/hardware.md), [real experiment protocol](research/astra/docs/real_experiments.md).
+
+The [whole-maneuver study](docs/WHOLE_MANEUVER_REPORT.md) jointly optimizes the
+airborne dock-to-contact trajectory and recovery parameters, including early
+thrust-direction preparation. It compares total time to held recovery against
+the staged mission and transit-only time compression on the same RMUC plant.
+
+The separate [aggressive contact/recovery laboratory](rm27/experiments/aggressive_contact/README.md)
+executes continuous trajectories, physical bottom-bumper contact and recovery on
+the root MuJoCo vehicle model, with paired parameter-search benchmarks. Its
+[arena mission and v2 report](docs/AGGRESSIVE_CONTACT_V2_REPORT.md) reuse the
+existing RMUC field and dock: airborne departure, blue-base contact, recovery,
+and return near the dock, with a MuJoCo viewer. It uses truth state and direct
+motor control; it does not advance the ArduPilot S2–S5 or real-flight acceptance gates.
+
+当前研究新增 [Whole-Maneuver Teacher 报告](docs/WHOLE_MANEUVER_TEACHER_REPORT.md)：
+完整场地三档连续进场／接触／恢复、同植物返航、240 次新留出比较、rate/thrust 代理与
+320 条可审计 demonstrations。balanced 在本次 small/stress 各 24/24 通过，约 6.1 秒恢复确认；
+仍为 truth-assisted MuJoCo 研究，未验证 SITL／视觉／真机。观看命令见 [START_HERE](START_HERE.md)。
+
+[Whole-Maneuver Distillation](docs/WHOLE_MANEUVER_DISTILLATION_REPORT.md) 已实现并训练 BC、history、
+纠偏数据和混合 student；纯动作网络在本轮未成功，learned reference + model feedback 在独立仿真测试中
+保持主要 teacher 性能。包含可回放完整任务、checkpoint、数据划分、延迟／噪声 ablation 与 host runtime。
+
+### Hybrid student Phase 3
+
+[Architecture, ablations and deployment report](docs/HYBRID_STUDENT_DEPLOYMENT_REPORT.md):
+1,698 new maneuver evaluations and a full-field round trip. On 72 fresh paired
+trials, noisy 20 ms ego delay improves from 16/72 to 68/72 through causal state
+propagation, analytic reference rates and model feedback. Small-noise success
+remains 66/72; no claim of universal improvement. All 11 newly trained direct BC,
+history and corrective MLP variants still fail their closed-loop validation.
+The deployment API accepts timestamped estimates/covariance and emits body
+rates + physical thrust; the MAVLink adapter is an offline prototype, with no
+ArduPilot firmware or hardware validation. Root tests: 91 passed.
+
+```bash
+OPENBLAS_NUM_THREADS=1 /home/shiuhou/venvs/mujoco/bin/python -m rm27.experiments.aggressive_contact.distillation.phase3 mission --config configs/contact_phase3/deployment_selected.json --output artifacts/phase3-mission-new
+/home/shiuhou/venvs/mujoco/bin/python -m rm27.experiments.aggressive_contact view --input artifacts/phase3-mission-01 --speed 1 --loop
+```
+
+The second command plays the actual recorded full-field mission. It does not
+start a new closed-loop flight. [EGL motion GIF](artifacts/phase3-render-01/maneuver.gif).
+
+### Hybrid policy Phase 4: actual firmware integration
+
+[ArduPilot integration and estimator report](docs/HYBRID_POLICY_SITL_REPORT.md):
+actual Guided/attitude/PID/mixer control on the existing full-field MuJoCo plant.
+One nominal balanced maneuver passes with privileged ego state after disabling
+firmware input shaping (7.47 mm contact error, 23.03 mm margin); the paired EKF
+telemetry run hits the rim (82.72 mm error). This separates interface shaping
+from the remaining localization gap. SITL uses synthetic GPS, which is not the
+intended onboard navigation source. Six new interface tests pass; a final root
+rerun and further SITL validation were blocked by an execution-environment fault.
+No hardware validation or RL. Recorded flight viewing commands are in START_HERE.
+
+### Estimator-aware maneuver Phase 5
+
+[Estimator requirements, commitment and non-GPS EKF report](docs/ESTIMATOR_AWARE_HYBRID_MANEUVER_REPORT.md):
+254 main MuJoCo episodes and 32 actual SITL flights. A synthetic external-navigation
+source now feeds real ArduPilot EKF with GPS disabled; the independent sensor-seed
+holdout passes 9/12 contact/recovery tasks. This is not a camera/VIO implementation.
+A paired commitment guard avoids 12 uncertain attempts but sacrifices task
+availability and cannot detect an unreported localization bias. Relative frame
+alignment and persistent velocity/tilt errors matter more than position RMSE alone.
+The combined-error validation passes 16/16 under its explicit simulation inputs.
+Root tests: 104 passed. [Recorded non-GPS SITL maneuver](artifacts/phase5-render-01/maneuver.gif).

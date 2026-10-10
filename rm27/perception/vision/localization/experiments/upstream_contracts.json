@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "evidence": "UPSTREAM_SOURCE_REVIEW_ONLY_NOT_BUILT",
+  "pins": {
+    "stella_vslam": "e445b5452535e781fdf6777ec33a06f5f8f5e416",
+    "stella_vslam_examples": "defc69eecc36e51cdda22885bb86954f08ad6887",
+    "ORB-SLAM3": "4452a3c4ab75b1cde34e5505a36ec3f9edcdc4c4"
+  },
+  "sources": [
+    {
+      "repository": "stella_vslam_examples",
+      "commit": "defc69eecc36e51cdda22885bb86954f08ad6887",
+      "path": "src/run_image_slam.cc",
+      "url": "https://raw.githubusercontent.com/stella-cv/stella_vslam_examples/defc69eecc36e51cdda22885bb86954f08ad6887/src/run_image_slam.cc",
+      "sha256": "1092e14a3411b457c5b761189b472b005fcfc79640781ef46fd7476b7212d0fd"
+    },
+    {
+      "repository": "stella_vslam_examples",
+      "commit": "defc69eecc36e51cdda22885bb86954f08ad6887",
+      "path": "src/run_tum_rgbd_slam.cc",
+      "url": "https://raw.githubusercontent.com/stella-cv/stella_vslam_examples/defc69eecc36e51cdda22885bb86954f08ad6887/src/run_tum_rgbd_slam.cc",
+      "sha256": "c9dc5b40e182dc9ef1e91952701d1202599b01b8758ea5c2d8da60b5acb27176"
+    },
+    {
+      "repository": "stella_vslam_examples",
+      "commit": "defc69eecc36e51cdda22885bb86954f08ad6887",
+      "path": "src/util/image_util.cc",
+      "url": "https://raw.githubusercontent.com/stella-cv/stella_vslam_examples/defc69eecc36e51cdda22885bb86954f08ad6887/src/util/image_util.cc",
+      "sha256": "c09b8f6ef9034657609f7828b9f64e23867a43df30a5f1a2b959d771ab852528"
+    },
+    {
+      "repository": "stella_vslam_examples",
+      "commit": "defc69eecc36e51cdda22885bb86954f08ad6887",
+      "path": "src/util/image_util.h",
+      "url": "https://raw.githubusercontent.com/stella-cv/stella_vslam_examples/defc69eecc36e51cdda22885bb86954f08ad6887/src/util/image_util.h",
+      "sha256": "c01b03387f61919c52d1fc23396b58053ffc76ebf8dd9c30e48bf0528c9d3f74"
+    },
+    {
+      "repository": "stella_vslam_examples",
+      "commit": "defc69eecc36e51cdda22885bb86954f08ad6887",
+      "path": "CMakeLists.txt",
+      "url": "https://raw.githubusercontent.com/stella-cv/stella_vslam_examples/defc69eecc36e51cdda22885bb86954f08ad6887/CMakeLists.txt",
+      "sha256": "3aba7d783d4b15ab64a0545e449059993b02e404a159f771ff1ee97d109343d6"
+    },
+    {
+      "repository": "stella_vslam",
+      "commit": "e445b5452535e781fdf6777ec33a06f5f8f5e416",
+      "path": "src/stella_vslam/io/trajectory_io.cc",
+      "url": "https://raw.githubusercontent.com/stella-cv/stella_vslam/e445b5452535e781fdf6777ec33a06f5f8f5e416/src/stella_vslam/io/trajectory_io.cc",
+      "sha256": "5d8cdde41514ab00df91891b13b5aebbdf2418511235542e67ada6ae7335cc04"
+    },
+    {
+      "repository": "stella_vslam",
+      "commit": "e445b5452535e781fdf6777ec33a06f5f8f5e416",
+      "path": "src/stella_vslam/camera/perspective.cc",
+      "url": "https://raw.githubusercontent.com/stella-cv/stella_vslam/e445b5452535e781fdf6777ec33a06f5f8f5e416/src/stella_vslam/camera/perspective.cc",
+      "sha256": "eb2ae2587ed36feeda1b8c10a26223b717eb5fc89fffab354c797d0c28d6c32a"
+    },
+    {
+      "repository": "stella_vslam",
+      "commit": "e445b5452535e781fdf6777ec33a06f5f8f5e416",
+      "path": "src/stella_vslam/camera/fisheye.cc",
+      "url": "https://raw.githubusercontent.com/stella-cv/stella_vslam/e445b5452535e781fdf6777ec33a06f5f8f5e416/src/stella_vslam/camera/fisheye.cc",
+      "sha256": "e437d67d26b9497d75da012d9afaeb64eadf395d386fca58245bad37f7371289"
+    },
+    {
+      "repository": "ORB_SLAM3",
+      "commit": "4452a3c4ab75b1cde34e5505a36ec3f9edcdc4c4",
+      "path": "Examples/Monocular/mono_tum.cc",
+      "url": "https://raw.githubusercontent.com/UZ-SLAMLab/ORB_SLAM3/4452a3c4ab75b1cde34e5505a36ec3f9edcdc4c4/Examples/Monocular/mono_tum.cc",
+      "sha256": "970e306cdda76253b88de00adca9f7b51205b36eb34494876e3bd9477ae9d6c5"
+    },
+    {
+      "repository": "ORB_SLAM3",
+      "commit": "4452a3c4ab75b1cde34e5505a36ec3f9edcdc4c4",
+      "path": "Examples/Monocular/TUM1.yaml",
+      "url": "https://raw.githubusercontent.com/UZ-SLAMLab/ORB_SLAM3/4452a3c4ab75b1cde34e5505a36ec3f9edcdc4c4/Examples/Monocular/TUM1.yaml",
+      "sha256": "04d529fedbee94609c61eddca43bedd0b59ebc2018b656a83e5b1829a2fc6952"
+    },
+    {
+      "repository": "ORB_SLAM3",
+      "commit": "4452a3c4ab75b1cde34e5505a36ec3f9edcdc4c4",
+      "path": "src/System.cc",
+      "url": "https://raw.githubusercontent.com/UZ-SLAMLab/ORB_SLAM3/4452a3c4ab75b1cde34e5505a36ec3f9edcdc4c4/src/System.cc",
+      "sha256": "935dd45007a75d6750bb8c3b5c41f4edb91b7ef0b0944f655d4348955bbd168a"
+    },
+    {
+      "repository": "stella_vslam_examples",
+      "commit": "defc69eecc36e51cdda22885bb86954f08ad6887",
+      "path": "src/util/tum_rgbd_util.cc",
+      "url": "https://raw.githubusercontent.com/stella-cv/stella_vslam_examples/defc69eecc36e51cdda22885bb86954f08ad6887/src/util/tum_rgbd_util.cc",
+      "sha256": "dab0cb9a3b636513633cc2f6bebfedf4de11f06043fbe33779a60050aadecbdb"
+    },
+    {
+      "repository": "stella_vslam_examples",
+      "commit": "defc69eecc36e51cdda22885bb86954f08ad6887",
+      "path": "src/util/tum_rgbd_util.h",
+      "url": "https://raw.githubusercontent.com/stella-cv/stella_vslam_examples/defc69eecc36e51cdda22885bb86954f08ad6887/src/util/tum_rgbd_util.h",
+      "sha256": "023bd3bf039e61d8ef0bc549b374ab920d830920130fb6c45526c43328530747"
+    }
+  ],
+  "contracts": {
+    "stella_vslam": {
+      "binary": "run_tum_rgbd_slam",
+      "mode": "Camera.setup=monocular",
+      "input": "rgb.txt plus identical unused depth association aliases",
+      "output": "final frame_trajectory.txt T_wc, xyzw; lost frames omitted",
+      "online": "UNAVAILABLE",
+      "mask": "NOT_EXPOSED_BY_THIS_CLI"
+    },
+    "ORB-SLAM3": {
+      "binary": "Examples/Monocular/mono_tum",
+      "mode": "MONOCULAR",
+      "input": "rgb.txt",
+      "output": "final KeyFrameTrajectory.txt T_wc, xyzw; keyframes only",
+      "online": "UNAVAILABLE",
+      "mask": "NOT_EXPOSED_BY_THIS_CLI",
+      "viewer": "stock example enables viewer and sleeps to original PTS"
+    }
+  }
+}

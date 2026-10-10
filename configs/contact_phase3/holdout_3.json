@@ -1,0 +1,153 @@
+{
+  "split": "untouched_holdout",
+  "cases": [
+    [
+      870000,
+      1.0
+    ],
+    [
+      870001,
+      1.0
+    ],
+    [
+      870002,
+      1.0
+    ],
+    [
+      870003,
+      1.0
+    ],
+    [
+      870004,
+      1.0
+    ],
+    [
+      870005,
+      1.0
+    ],
+    [
+      870006,
+      1.0
+    ],
+    [
+      870007,
+      1.0
+    ],
+    [
+      870008,
+      1.0
+    ],
+    [
+      870009,
+      1.0
+    ],
+    [
+      870010,
+      1.0
+    ],
+    [
+      870011,
+      1.0
+    ],
+    [
+      880000,
+      2.0
+    ],
+    [
+      880001,
+      2.0
+    ],
+    [
+      880002,
+      2.0
+    ],
+    [
+      880003,
+      2.0
+    ],
+    [
+      880004,
+      2.0
+    ],
+    [
+      880005,
+      2.0
+    ],
+    [
+      880006,
+      2.0
+    ],
+    [
+      880007,
+      2.0
+    ],
+    [
+      880008,
+      2.0
+    ],
+    [
+      880009,
+      2.0
+    ],
+    [
+      880010,
+      2.0
+    ],
+    [
+      880011,
+      2.0
+    ]
+  ],
+  "variants": {
+    "current_medium": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.005,
+        "velocity_std": 0.05,
+        "attitude_std_deg": 0.5,
+        "rate_std": 0.05,
+        "delay_s": 0.01
+      }
+    },
+    "improved_medium": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.005,
+        "velocity_std": 0.05,
+        "attitude_std_deg": 0.5,
+        "rate_std": 0.05,
+        "delay_s": 0.01
+      },
+      "deployment": {
+        "predict": "dynamic",
+        "portable_observer": true,
+        "shared_adaptation": true,
+        "feedback_overrides": {
+          "rate_reference_source": "analytic"
+        },
+        "contact_velocity_std_m_s": 0.05
+      }
+    },
+    "improved_50hz": {
+      "checkpoint": "artifacts/distill-spline-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.01,
+        "update_hz": 50,
+        "dropout": 0.1
+      },
+      "deployment": {
+        "predict": "dynamic",
+        "portable_observer": true,
+        "shared_adaptation": true,
+        "feedback_overrides": {
+          "rate_reference_source": "analytic"
+        },
+        "contact_velocity_std_m_s": 0.02
+      }
+    }
+  }
+}

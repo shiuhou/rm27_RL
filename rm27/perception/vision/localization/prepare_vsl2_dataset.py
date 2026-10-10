@@ -31,6 +31,18 @@ def main():
     stream = json.loads((source / "video_stream.json").read_text())
     quality = list(csv.DictReader((source / "quality" / "frame_quality.csv").open()))
     intervals = json.loads((source / "intervals.json").read_text())
+    source_video = Path(stream["source"]["path"])
+    if not source_video.is_file() or sha256(source_video) != stream["source"]["sha256"]:
+        raise ValueError("source MP4 missing or SHA-256 mismatch")
+    upstream_files = ["video_stream.json", "quality/frame_quality.csv", "intervals.json"]
+    upstream_identity = {name: sha256(source / name) for name in upstream_files}
+    image_hashes = {}
+    for item in quality:
+        image = (source / item["image_file"]).resolve()
+        if not image.is_relative_to(source) or not image.is_file():
+            raise ValueError(f"missing or nonlocal referenced image: {item['image_file']}")
+        image_hashes[item["image_file"]] = sha256(image)
+    (out / "image_hashes.json").write_text(json.dumps(image_hashes, indent=2) + "\n")
     rows = []
     for item in quality:
         rows.append({
@@ -57,6 +69,10 @@ def main():
         "status": "CALIBRATION_REQUIRED",
         "source": {
             "artifact_directory": str(source),
+            "upstream_metadata_sha256": upstream_identity,
+            "image_path_base": "source.artifact_directory",
+            "image_hashes_file": "image_hashes.json",
+            "source_hash_verified": True,
             "source_video": stream["source"]["path"],
             "source_sha256": stream["source"]["sha256"],
             "producer_git_commit": stream["source"]["git_commit"],

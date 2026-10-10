@@ -1,0 +1,84 @@
+{
+  "split": "design common-mode invariance and metadata gate controls",
+  "modes": [
+    "balanced"
+  ],
+  "variants": [
+    "fixed",
+    "guard"
+  ],
+  "cases": [
+    {
+      "name": "common_0.05_0_0",
+      "sensor": {
+        "position_bias_m": [
+          0.05,
+          0,
+          0
+        ]
+      },
+      "target_bias_m": [
+        0.05,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "common_0_0.05_0",
+      "sensor": {
+        "position_bias_m": [
+          0,
+          0.05,
+          0
+        ]
+      },
+      "target_bias_m": [
+        0,
+        0.05,
+        0
+      ]
+    },
+    {
+      "name": "common_0_0_0.05",
+      "sensor": {
+        "position_bias_m": [
+          0,
+          0,
+          0.05
+        ]
+      },
+      "target_bias_m": [
+        0,
+        0,
+        0.05
+      ]
+    },
+    {
+      "name": "common_0.1_-0.1_0.1",
+      "sensor": {
+        "position_bias_m": [
+          0.1,
+          -0.1,
+          0.1
+        ]
+      },
+      "target_bias_m": [
+        0.1,
+        -0.1,
+        0.1
+      ]
+    },
+    {
+      "name": "stale_target",
+      "quality": {
+        "target_age_s": 0.5
+      }
+    },
+    {
+      "name": "low_confidence",
+      "quality": {
+        "target_confidence": 0.4
+      }
+    }
+  ]
+}

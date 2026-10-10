@@ -14,9 +14,9 @@
   },
   "flight_controller": {
     "model": "MicoAir743v2-AIO-35A",
-    "autopilot": "ArduPilot",
-    "firmware_version": null,
-    "firmware_target": "MicoAir743v2",
+    "autopilot": "PX4",
+    "firmware_version": "1.17.0",
+    "firmware_target": null,
     "actual_board_orientation_parameter": null,
     "manufacturer_hardware": {
       "mcu": "STM32H743VIH6",
@@ -28,7 +28,8 @@
       "esc": "4-in-1 35A Bluejay",
       "logging": "microSD"
     },
-    "manual": "https://micoair.cn/zh/docs/flight-controller/micoair743-aio-series/micoair743v2-aio-35a-manual"
+    "manual": "https://micoair.cn/zh/docs/flight-controller/micoair743-aio-series/micoair743v2-aio-35a-manual",
+    "firmware_selection_status": "user selected on 2026-10-10; installed build and board target await verification"
   },
   "optical_flow_rangefinder": {
     "model": "MTF-02P",
@@ -50,9 +51,9 @@
     "manual": "https://micoair.cn/zh/docs/gps-rtk/gps"
   },
   "pending_evidence": [
-    "original ArduPilot DataFlash .BIN",
+    "original PX4 ULog .ulg",
     "complete parameter export",
-    "actual firmware version",
+    "installed PX4 version, build hash and board target",
     "battery cell count, capacity and measured voltage",
     "propeller make, model and blade count",
     "measured ready-to-fly mass",
@@ -62,7 +63,8 @@
   "provenance": {
     "current_configuration": "user message, 2026-09-12",
     "manufacturer_specs": "linked MicoAir manuals",
-    "historical_notes": "docs/archive/chatgptre.md is non-authoritative"
+    "historical_notes": "docs/archive/chatgptre.md is non-authoritative",
+    "firmware_selection": "user message, 2026-10-10: PX4 v1.17.0"
   },
   "vision": {
     "status": "provisional user-selected stack; not integrated into RM27 flight control",
@@ -79,5 +81,6 @@
     "interface_candidate": "TargetEstimate JSON v2; safe_for_control, timestamp and measurement age require validation",
     "evidence": "User hardware statement; local README inspected, board performance not independently reproduced",
     "sensor_selection_status": "confirmed by user"
-  }
+  },
+  "firmware_selection_updated_on": "2026-10-10"
 }

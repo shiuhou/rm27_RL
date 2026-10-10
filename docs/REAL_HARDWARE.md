@@ -1,8 +1,9 @@
 # Current real-aircraft hardware baseline
 
-Status: user-reported configuration recorded on 2026-09-12. Exact installed
-firmware, parameters, sensor ports and orientations will be verified from the
-pending original ArduPilot DataFlash `.BIN` and full parameter export. The
+Status: hardware configuration recorded on 2026-09-12; firmware selection updated
+by the user on 2026-10-10 to **PX4 v1.17.0**. Installed build, parameters, sensor
+ports and orientations await verification from the original PX4 ULog (`.ulg`)
+and full parameter export. The
 machine-readable counterpart is [`configs/real_hardware.json`](../configs/real_hardware.json).
 
 ## Current aircraft
@@ -15,7 +16,7 @@ machine-readable counterpart is [`configs/real_hardware.json`](../configs/real_h
 | Propellers | 2 inch | User reported; model/blade count pending |
 | Battery | Unknown | Cell count, capacity and voltage pending |
 | Flight controller | MicoAir743v2-AIO-35A | User reported |
-| Firmware family | ArduPilot | User reported; version pending |
+| Firmware | PX4 v1.17.0 | User selected on 2026-10-10; installed build verification pending |
 | Flow/range sensor | MTF-02P | User confirmed |
 | GNSS/compass | M10G-5883, compass only | User confirmed intended use; installation pending |
 
@@ -27,8 +28,10 @@ props, or an assumed 2S/3S battery without new evidence.
 
 The manufacturer's current manual identifies an STM32H743VIH6 MCU, BMI088 and
 BMI270 IMUs, SPL06 barometer, microSD logging and an integrated four-channel
-35 A Bluejay ESC. The ArduPilot firmware target is `MicoAir743v2`, shared with
-the non-AIO board. The manufacturer specifies a 45° physical installation for
+35 A Bluejay ESC. The selected real-aircraft firmware is PX4 v1.17.0; its exact
+board target and installed build remain to be verified. The manufacturer
+manual's `MicoAir743v2` target describes ArduPilot and does not identify the
+PX4 target. The manufacturer specifies a 45° physical installation for
 the AIO, but the aircraft's actual orientation parameter must be read from its
 parameter set before interpreting body axes. Do not infer it from the board
 manual alone.
@@ -89,15 +92,18 @@ estimates rather than properties calibrated from this aircraft:
 
 The simulation's millimetre dock return uses MuJoCo truth in its outer guidance
 loop. It is not evidence of MTF, GPS, vision or real-aircraft landing accuracy.
+The existing flight gates and frozen G1 baseline use ArduPilot SITL; their
+results do not establish PX4 v1.17.0 integration or real-flight performance.
 Never write `configs/micro_hover.parm` directly to the real flight controller.
 
 ## Pending flight-log intake
 
-Keep the first received `.BIN` byte-for-byte unchanged. Record its SHA-256 and
+Keep the first received PX4 `.ulg` byte-for-byte unchanged. Retain any historical
+ArduPilot `.BIN` files as separate read-only evidence. Record its SHA-256 and
 analyze it read-only. Ideally receive these companion facts/files:
 
-- complete Mission Planner parameter export;
-- ArduPilot version and board target;
+- complete PX4 parameter export;
+- PX4 version, build hash and board target;
 - measured ready-to-fly mass;
 - battery cell count/capacity and propeller model/blade count;
 - sensor port and physical orientation;
@@ -146,5 +152,5 @@ marker/armor observations, camera-frame line of sight and optional pose.
 A future adapter must validate freshness and frame conventions and respect
 `safe_for_control`; green-marker detection alone does not establish armor
 position, metric range or valid flight guidance. UART/CAN integration remains
-listed as future work in that README. No vision-to-ArduPilot connection has
+listed as future work in that README. No vision-to-PX4 connection has
 been added to RM27 by recording this hardware update.

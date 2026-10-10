@@ -1,0 +1,7 @@
+# SIMULATION ONLY; isolated phase4 working directory. No hardware calibration.
+GUID_OPTIONS 8
+ATC_ANGLE_BOOST 0
+LOG_DISARMED 1
+FS_GCS_ENABLE 0
+FS_THR_ENABLE 0
+# Initial inherited micro-hover PID; identification tests must precede claims.

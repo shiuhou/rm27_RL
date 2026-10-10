@@ -1,0 +1,4 @@
+# The current RM27 MuJoCo environment already satisfies these requirements.
+# Install from the repository root if creating a fresh research environment.
+-r requirements-integration.txt
+scipy>=1.13

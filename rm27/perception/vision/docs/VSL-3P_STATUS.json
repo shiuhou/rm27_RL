@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-23",
+  "vsl_3p": "PARTIAL",
+  "scope": "PUBLIC_DATASET_SOFTWARE_QUALIFICATION",
+  "stella_vslam": "PASS_UNMODIFIED_PIN",
+  "orb_slam3": "PASS_WITH_RECORDED_LIFECYCLE_PATCH_STOCK_NATIVE_FAIL",
+  "vsl_1b": "NOT_STARTED",
+  "vsl_2": "BLOCKED_ON_CALIBRATION_CAPTURE",
+  "vsl_3": "NOT_STARTED",
+  "vsl_4": "NOT_STARTED",
+  "vsl_6": "NOT_STARTED",
+  "report": "VSL-3P_PUBLIC_BACKEND_QUALIFICATION.md",
+  "online_instrumentation": "PASS_PUBLIC_DATASET_RUNTIME_OBSERVATIONS",
+  "online_report": "VSL-3P1_ONLINE_STATE_REPORT.md",
+  "remaining_limits": [
+    "stock ORB lifecycle failure remains",
+    "map/reset epochs and explicit relocalization events unavailable",
+    "real loss/recovery not exercised by this public sequence"
+  ]
+}

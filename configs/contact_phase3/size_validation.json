@@ -1,0 +1,73 @@
+{
+  "split": "validation",
+  "cases": [
+    [
+      860000,
+      1.0
+    ],
+    [
+      860001,
+      2.0
+    ],
+    [
+      860002,
+      1.0
+    ],
+    [
+      860003,
+      2.0
+    ],
+    [
+      860004,
+      1.0
+    ],
+    [
+      860005,
+      2.0
+    ]
+  ],
+  "variants": {
+    "small": {
+      "checkpoint": "artifacts/phase3-spline-small-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.01
+      },
+      "deployment": {
+        "predict": "dynamic",
+        "portable_observer": true
+      }
+    },
+    "medium": {
+      "checkpoint": "artifacts/phase3-spline-medium-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.01
+      },
+      "deployment": {
+        "predict": "dynamic",
+        "portable_observer": true
+      }
+    },
+    "large": {
+      "checkpoint": "artifacts/phase3-spline-large-01/policy.npz",
+      "estimator": {
+        "position_std": 0.002,
+        "velocity_std": 0.02,
+        "attitude_std_deg": 0.2,
+        "rate_std": 0.02,
+        "delay_s": 0.01
+      },
+      "deployment": {
+        "predict": "dynamic",
+        "portable_observer": true
+      }
+    }
+  }
+}

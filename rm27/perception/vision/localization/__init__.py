@@ -8,6 +8,8 @@ from .schema import (
     LocalizationEstimate,
     TimestampEvidence,
     TrackingState,
+    ScaleState,
+    LocalizationStreamValidator,
 )
 from .manifest import ManifestError, validate_manifest, load_manifest
 
@@ -16,6 +18,8 @@ __all__ = [
     "LocalizationEstimate",
     "TimestampEvidence",
     "TrackingState",
+    "ScaleState",
+    "LocalizationStreamValidator",
     "ManifestError",
     "validate_manifest",
     "load_manifest",

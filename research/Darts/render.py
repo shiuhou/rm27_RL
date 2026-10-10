@@ -35,20 +35,21 @@ def plot(path,report,output):
     plt.close(fig)
 
 
-def render(run,output,video=False,speed=.25,mode='follow'):
+def render(run,output,video=False,speed=.25,mode='follow',fovy=60.):
     if not 0 < speed <= 10:
         raise ValueError('Playback speed must be in (0,10]')
     output=Path(output).resolve()
     output.mkdir(parents=True,exist_ok=False)
-    m,d,path,report=load_run(run)
+    m,d,path,report=load_run(run,fovy)
     option=mujoco.MjvOption();option.geomgroup[3]=0;option.geomgroup[4]=0
     cam=mujoco.MjvCamera()
     with mujoco.Renderer(m,height=720,width=1280) as renderer:
         def frame(t,mode,annotate=True):
-            pose(m,d,path,t);camera(cam,mode,path,report,t)
+            pose(m,d,path,t);camera(cam,mode,path,report,t,m)
+            option.sitegroup[:]=0 if mode=='fpv' else 1
             renderer.update_scene(d,camera=cam,scene_option=option)
             im=Image.fromarray(renderer.render())
-            if annotate:
+            if annotate and mode!='fpv':
                 draw=ImageDraw.Draw(im)
                 _,v=path.state(min(t,path.duration))
                 phase='TARGET PLANE HIT (kinematic stop)' if t>=path.duration else 'FLIGHT'
@@ -60,7 +61,9 @@ def render(run,output,video=False,speed=.25,mode='follow'):
             return im
 
         for name,t,mode_at in [('overview',path.duration/2,'overview'),('target',path.duration,'target'),
-                              ('launch',0,'launch'),('dart',path.duration/2,'follow'),('side',path.duration/2,'side')]:
+                              ('launch',0,'launch'),('dart',path.duration/2,'follow'),('side',path.duration/2,'side'),
+                              ('fpv_launch',0,'fpv'),('fpv_midflight',path.duration/2,'fpv'),
+                              ('fpv_approach',max(0,path.duration-.1),'fpv')]:
             frame(t,mode_at).save(output/f'{name}.png')
         frames_written=0
         if video:
@@ -86,5 +89,6 @@ def render(run,output,video=False,speed=.25,mode='follow'):
     plot(path,report,output)
     (output/'render.json').write_text(json.dumps(dict(source_run=str(Path(run).resolve()),
         mode='offscreen MuJoCo rendering of analytic states',video_frames=frames_written,
-        video_fps=30 if video else None,playback_speed=speed),indent=2)+'\n')
+        video_fps=30 if video else None,playback_speed=speed,camera=mode,
+        fpv_vertical_fov_degrees=fovy,fpv_overlays=False),indent=2)+'\n')
     return output

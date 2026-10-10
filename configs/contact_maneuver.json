@@ -1,0 +1,35 @@
+{
+  "status": "NOMINAL research: airborne above existing slot; no hardware claim",
+  "terminal": {
+    "duration_s": 1.3240323618264735,
+    "normal_speed_m_s": 0.5125307646334143,
+    "terminal_specific_thrust_m_s2": 11.617198817910882,
+    "tangent_speed_m_s": -0.09391295265518838,
+    "penetration_m": 0.012003647545808061,
+    "retreat_m": 0.26368013309966626,
+    "recovery_lift_m": 0.06264408563774422,
+    "aim_tangent_offset_m": 0.006019446300111857
+  },
+  "search_seed": 92417,
+  "training_cases": [[601, 1.0], [602, 1.0], [603, 2.0], [604, 2.0]],
+  "evaluation_seed_start": 552000,
+  "stress_seed_start": 562000,
+  "evaluation_trials": 24,
+  "joint_candidates": 36,
+  "early_pose_selection": {"max_mean_error_500ms_deg": 10.0, "min_ready_lead_s": 0.25},
+  "staged_time_scales": [1.0, 0.65, 0.5, 0.4, 0.3, 0.25],
+  "flight_gates": {"max_speed_m_s": 9.0, "max_tilt_deg": 65.0, "max_height_m": 4.5},
+  "objective": "joint success first; mean dock-to-confirmed-recovery time + 0.5 worst-case time, small penalties for contact margin below 12mm and attitude-ready lead below 0.3s",
+  "bounds": {
+    "departure_time_s": [0.9, 1.5], "cruise_time_s": [1.5, 3.0], "arrival_time_s": [1.2, 2.0],
+    "cruise_height_m": [2.3, 2.8], "brake_height_m": [1.7, 2.6], "brake_distance_m": [1.5, 3.0],
+    "alignment_lead_s": [0.0, 0.5], "aim_tangent_offset_m": [-0.025, 0.015],
+    "normal_speed_m_s": [0.45, 0.85], "terminal_specific_thrust_m_s2": [10.0, 13.0],
+    "retreat_m": [0.18, 0.32], "recovery_lift_m": [0.02, 0.1]
+  },
+  "initial_design": {
+    "method": "joint", "segment_times_s": [1.2, 3.0, 1.6],
+    "cruise_height_m": 2.6, "brake_height_m": 2.2,
+    "brake_distance_m": 2.268, "brake_y_m": 0.5
+  }
+}

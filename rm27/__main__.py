@@ -118,6 +118,9 @@ def main():
     p = sub.add_parser('build-cad-drone', help='Convert aircraft STEP and place one static aircraft in the isolated dock')
     p.add_argument('--scene', type=Path, default=ROOT/'artifacts/isolated-dock-base-20260916-v6/scene.xml')
     p.add_argument('--output', type=Path, required=True)
+    p = sub.add_parser('build-isolated-dart', help='Derive v6 with the red H pedestal removed and red dart station added')
+    p.add_argument('--config', type=Path, default=ROOT/'configs/isolated_red_dart.json')
+    p.add_argument('--output', type=Path, required=True)
     p = sub.add_parser('build-isolated', help='Build an empty test world with dock, column and current blue base')
     p.add_argument('--scene', type=Path, default=ROOT/'artifacts/dock-final/scene.xml')
     p.add_argument('--output', type=Path, required=True)
@@ -157,6 +160,9 @@ def main():
     if args.command == 'build-cad-drone':
         from .integration.cad_drone import build as build_cad_drone
         build_cad_drone(args.output, args.scene)
+    elif args.command == 'build-isolated-dart':
+        from .integration.isolated_red_dart import build as build_isolated_dart
+        build_isolated_dart(args.output, args.config)
     elif args.command == 'build-isolated':
         from .integration.isolated_scene import build as build_isolated
         build_isolated(args.scene, args.output)

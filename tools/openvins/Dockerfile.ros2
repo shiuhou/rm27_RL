@@ -1,0 +1,14 @@
+# Official ros:jazzy-ros-base index digest:
+# sha256:066420e07f60aa18262f2479981def87ebcfcec42eefb0c0c57c4a46098348ca
+# Imported via skopeo (TLS and content digests verified; no signature claim).
+# Local Docker image ID after archive import is the immutable build parent.
+FROM sha256:e331f1ff8bee6dc648d253015aba97ab7f112a5575b1b4a57fcd705cc8ccde48
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+RUN apt-get -o Acquire::Retries=2 update && \
+    DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 install -y --no-install-recommends \
+      build-essential cmake libeigen3-dev libopencv-dev libceres-dev \
+      libboost-system-dev libboost-filesystem-dev libboost-thread-dev libboost-date-time-dev \
+      ros-jazzy-cv-bridge ros-jazzy-image-transport ros-jazzy-tf2-geometry-msgs \
+      python3-colcon-common-extensions python3-opencv python3-yaml time && \
+    dpkg-query -W > /research-dependencies.tsv

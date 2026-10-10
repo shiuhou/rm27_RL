@@ -42,7 +42,7 @@ camera:
   sensor_frame_sequence_available: false
   timestamp_source: unknown
   timestamp_clock_id: null
-  timestamp_unit: ns
+  timestamp_unit: UNKNOWN
   exposure_timestamp_verified: false
   rolling_shutter_readout_us: null
 protocol:
