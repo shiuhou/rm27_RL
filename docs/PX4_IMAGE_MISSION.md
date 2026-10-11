@@ -186,6 +186,26 @@ clearance proof. Root suite `px4-root-tests-23.log` reports 427 passed, 5 skippe
 subsequent affected checks pass 14 tests after failed-flight recovery scoring
 and compressed surface-reader changes.
 
+The V3 controller process was interrupted after nine scored attempts; flights
+10–12 had finished but their local surface checks were incomplete. A resume
+controller verifies the original694 input hashes, keeps all original reports,
+finishes independent scoring for saved flights and launches only absent cases.
+It never retries an existing failure. Process exits for10–12 are unavailable
+and explicitly remain null; base-flight stdout, final mission, native VIO,
+ULog and independent surfaces are checked separately. The executed resume
+source snapshot and command-provenance correction are retained.
+
+Combined results are in `px4-image-nominal-batch-03-resume-01`; every native
+recovery step is additionally checked against the unchanged V4 continuous
+certificate in `px4-image-nominal-v3-native-membership-01`. Both reports require
+all20 attempts before `passed` can become true. Inspect their actual summaries.
+
+```bash
+/home/shiuhou/venvs/mujoco/bin/python -m tools.px4.resume_image_batch \
+  artifacts/interrupted-image-batch --workers 2 --instance 50 \
+  --output artifacts/image-batch-resume-new
+```
+
 The batch freezes code, camera, reviewed corridor/assets, estimator, native VIO
 and PX4 binary before launch and retains every failed attempt. Each instance
 has separate processes, parameters, VIO session and logs. The public batch

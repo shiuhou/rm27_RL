@@ -30,3 +30,8 @@ cd /home/shiuhou/Projects/rm27_drones_px4
 Use this command only after all workers have stopped. It requires each run's
 PX4 metadata and final summary. It does not infer mission success from archive
 integrity or alter existing acceptance summaries.
+
+`px4-recording-archive-10` subsequently verifies116 additional closed generated
+recordings, saving8,005,049,140 bytes. The three active nominal/condition/return
+fault batches are excluded from that sweep. Failed attempts remain present,
+with exactly the same decompressed frame bytes and logical hashes.
