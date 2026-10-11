@@ -121,6 +121,20 @@ def test_land_requests_autonomous_landing_without_disarm():
     assert np.isnan(calls[0][1][3:]).all()
 
 
+def test_px4_acceleration_feedforward_is_explicit():
+    from types import SimpleNamespace
+    from rm27.autopilot.px4.runtime import Runtime
+    sent=[]
+    r=Runtime.__new__(Runtime);r.system=1
+    r.plant=SimpleNamespace(data=SimpleNamespace(time=1.))
+    r.mav=SimpleNamespace(set_position_target_local_ned_send=lambda *args:sent.append(args))
+    r.position([0,0,-1])
+    assert sent[-1][4] & (7<<6) == 7<<6
+    r.position([0,0,-1],acceleration=[1,0,-4])
+    assert sent[-1][4] & (7<<6) == 0
+    assert sent[-1][11:14] == (1,0,-4)
+
+
 def test_px4_restores_user_mode_after_auto_disarm():
     from rm27.autopilot.px4.flight import confirm_auto_disarm
     telemetry={'armed':False,'mode':'OFFBOARD','landed_state':mavlink.MAV_LANDED_STATE_ON_GROUND,

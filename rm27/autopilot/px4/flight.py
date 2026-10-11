@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 import time
 import traceback
+import subprocess
 import mujoco
 import numpy as np
 from pymavlink.dialects.v20 import common as mavlink
@@ -45,6 +46,18 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
     if dynamics: (output/'dynamics.json').write_bytes(Path(dynamics).read_bytes())
     summary={'passed':False,'autopilot':'px4','firmware':'v1.17.0','run_type':'closed-loop SITL','headless':not view,'estimation_source':'synthetic ODOMETRY to EKF2','guidance':'diagnostic truth-assisted' if profile=='diagnostic' else 'EKF telemetry','gate_version':'MICRO_FLIGHT existing physical thresholds','events':[],'failure':None}
     metadata={'scene':str(scene),'scene_sha256':hashlib.sha256(scene.read_bytes()).hexdigest(),'mass_kg':float(plant.model.body_mass[plant.body]),'origin_nwu':plant.origin.tolist(),'profile':profile,'dynamics_profile':str(dynamics),'runner_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+    source_root=Path(__file__).resolve().parents[3]
+    metadata['git_commit']=subprocess.check_output(['git','rev-parse','HEAD'],cwd=source_root,text=True).strip()
+    difference=subprocess.check_output(['git','diff','--binary','HEAD'],cwd=source_root)
+    (output/'source_diff.patch').write_bytes(difference)
+    metadata['source_diff_sha256']=hashlib.sha256(difference).hexdigest()
+    metadata['source_sha256']={str(path.relative_to(source_root)):hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in [Path(__file__),Path(__file__).with_name('runtime.py'),source_root/'rm27/experiments/route_experiment.py']}
+    if route:
+        text=json.dumps(route.mission,indent=2,sort_keys=True)+'\n'
+        (output/'mission.json').write_text(text)
+        metadata['mission_sha256']=hashlib.sha256(text.encode()).hexdigest()
+        (output/'route_audit.json').write_text(json.dumps(route.audit,indent=2)+'\n')
     (output/'metadata.json').write_text(json.dumps(metadata,indent=2))
     phase='INITIALIZE';phase_start=0.;stable_since=None;next_send=0.;next_action=10.;next_heartbeat=0.;next_params=0.
     hover=[];landing=None;land_observed=False;land_requested=False;land_monitor=LandingMonitor();max_tilt=max_force=max_penetration=0.;start=time.monotonic();viewer=None
@@ -77,7 +90,10 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
         v=np.zeros(3) if feedforward is None else np.array(feedforward,copy=True)
         v[:2]+=kp*error[:2]+integral;v[2]+=(kp if kpz is None else kpz)*error[2]
         v[:2]=np.clip(v[:2],-xy_limit,xy_limit);v[2]=np.clip(v[2],-z_limit,z_limit)
-        rt.position(goal,-yaw,discrepancy+to_ap(v));next_send=t+.02;last_send=t
+        acceleration=None
+        if route and route.impact and t-route.impact['time_s'] < route.mission.get('separation_acceleration_duration_s',0.):
+            acceleration=to_ap(route.armor_normal*route.mission.get('separation_acceleration_m_s2',0.))
+        rt.position(goal,-yaw,discrepancy+to_ap(v),acceleration=acceleration);next_send=t+.02;last_send=t
     try:
         if view:
             from ...simulation.live_view import FlightView
@@ -165,7 +181,10 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                 elif phase=='ROUTE':
                     route_position=plant.origin+local if profile=='ekf' else plant.qpos[:3]
                     route_velocity=to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float)) if profile=='ekf' else plant.qvel[:3]
+                    previous_impact=route.impact
                     route.check(route_position);p=route.target(t,route_position,speed,mission_contacts,route_velocity)
+                    if previous_impact is None and route.impact is not None:
+                        next_send=0. # dispatch the separation command on the impact tick
                     if p is None:
                         summary['route']={'passed':True,'visited':route.visited,'impact':route.impact};transition('RETURN')
                     else:target(p-plant.origin,route.horizontal_command_limit_m_s,route.vertical_command_limit_m_s,route.reference_velocity,route.mission['truth_position_gain_s_inv'],route.mission['truth_vertical_position_gain_s_inv'])

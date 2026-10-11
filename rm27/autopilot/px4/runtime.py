@@ -83,10 +83,15 @@ class Runtime:
     def land(self):
         """Request PX4's normal autonomous landing at the current position."""
         self.command(mavlink.MAV_CMD_NAV_LAND,0,0,0,float('nan'),float('nan'),float('nan'),float('nan'))
-    def position(self, position, yaw=0., velocity=None):
+    def position(self, position, yaw=0., velocity=None, acceleration=None):
         velocity=[0.,0.,0.] if velocity is None else velocity
+        mask=0b100111000000
+        if acceleration is None:
+            acceleration=[0.,0.,0.]
+        else:
+            mask &= ~(7 << 6)
         self.mav.set_position_target_local_ned_send(int(self.plant.data.time*1000),self.system,1,
-            mavlink.MAV_FRAME_LOCAL_NED,0b100111000000,*position,*velocity,0,0,0,yaw,0)
+            mavlink.MAV_FRAME_LOCAL_NED,mask,*position,*velocity,*acceleration,yaw,0)
     def heartbeat(self):
         self.mav.heartbeat_send(mavlink.MAV_TYPE_GCS,mavlink.MAV_AUTOPILOT_INVALID,0,0,0)
     def receive(self):

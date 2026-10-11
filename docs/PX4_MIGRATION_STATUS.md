@@ -31,8 +31,13 @@ independent worktree `rm27_drones_px4`, branch
 | PX4 EKF telemetry micro-flight | `artifacts/px4-micro-ekf-05/summary.json` | `passed: true`; telemetry-only position/velocity/touchdown state machine |
 | ULog intake and EKF2 | `artifacts/px4-ulog-analysis-02/summary.json` | `passed: true`; range and external-vision fusion topics present |
 | Backend contracts | `tests/test_px4_backend.py` | 16 focused tests pass, including scene-ray range and no-hit behavior |
-| Integrated tests | `artifacts/px4-root-tests-05.log` | 355 passed, 2 ROS-only skips |
-| PX4 Corridor/contact return | `artifacts/px4-corridor-04/summary.json` | `passed: true`; low-speed contact, retreat and dock disarm |
+| Integrated tests | `artifacts/px4-root-tests-05.log` | 355 passed, 2 ROS-only skips before the visual SITL additions |
+| PX4 150 g base-target scene | `artifacts/px4-base-target-150g-02/target.json` | Compiled full-field 150 g scene with dock and provisional blue target; this builder emits no `summary.json` |
+| Corridor route audit | `artifacts/px4-corridor-audit-02/summary.json` | `passed: true`; low-speed geometry/contact audit used by the PX4 route runner |
+| PX4 Corridor/contact return | `artifacts/px4-corridor-05/summary.json` | `passed: true`; low-speed contact, retreat and dock disarm |
+| PX4 route batch | `artifacts/px4-s2-batch-01/summary.json` | `passed: true`; 20/20 closed-loop SITL route returns and auto-disarms |
+| S2 recovery evaluator | `artifacts/px4-s2-eval-batch-04/summary.json` | Strict V2 re-evaluation fails on repeated armor contacts; S2 remains pending |
+| MuJoCo image input | `tests/test_px4_visual_sitl.py` | 3 focused tests pass; RGB rendering, blue/green segmentation and TargetEstimate v2 |
 
 The `px4-micro-16` run is a closed-loop SITL diagnostic run. Its external
 position source is synthetic ODOMETRY fused by EKF2, and its precision guidance
@@ -57,14 +62,27 @@ The Corridor first two PX4 attempts are retained as failures in
 over the unchanged 0.3 m abort gate). `px4-corridor-03` retained a runner time
 limit failure after the tracking fix. `px4-corridor-04` is the current slower,
 explicit-deadline rerun and passes the low-speed contact/retreat/dock route.
-This does not complete the S1/S2 batch thresholds, visual target return or
-complete mission batches. The telemetry-only result is an S0-level navigation
-demonstration with synthetic ODOMETRY; it is not the S3 no-GPS sensor suite or
-a qualified VIO flight. Those gates must use fresh PX4 evidence on the selected
-model; ArduPilot results are not transferred.
+The route batch passes 20/20 return/disarm gates. S2 remains pending: contact
+gaps exceed the existing 30 ms separation gate before another armor collision.
+The earlier evaluator outputs `px4-s2-eval-batch-01` through `-03` are retained
+as diagnostic artifacts and superseded by V2. The first scorer incorrectly
+counted unsafe samples in a hold and its impact grace window masked repeat
+collisions. V2 checks every hold sample and all subsequent contacts. No
+recovery threshold is relaxed to claim a pass. These are diagnostic
+truth-assisted flights; S4/S5 image-driven missions remain pending. The telemetry-only result is an S0-level
+navigation demonstration with synthetic ODOMETRY; it is not the S3 no-GPS
+sensor suite or a qualified VIO flight. Those gates must use fresh PX4 evidence
+on the selected model; ArduPilot results are not transferred.
 The OpenVINS artifacts and M3C/OS04A10 documents are imported research inputs,
 not a qualified current-flight camera pipeline. Hardware flashing, parameter
 writes and real flight remain outside this software migration.
+
+The first image-only boundary is now implemented in
+`rm27/perception/sitl/mujoco_camera.py` and
+`rm27/perception/sitl/image_target_detector.py`. It renders a body-following
+RGB camera and emits `TargetEstimate` v2 after image segmentation. Its tests
+are contract and renderer tests; a full S4 visual mission batch still needs a
+mission input path that consumes this detector and fresh image-driven evidence.
 
 ## Commands
 
@@ -84,4 +102,13 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
 /home/shiuhou/venvs/mujoco/bin/python -m rm27.autopilot.px4.batch \
   artifacts/px4-dock-150g-02/scene.xml --dynamics configs/dynamics_150g.json \
   --output artifacts/px4-s0-batch-new --count 10 --instance 0
+
+# Re-evaluate recorded route recovery thresholds without rerunning PX4.
+/home/shiuhou/venvs/mujoco/bin/python -m rm27.autopilot.px4.recovery \
+  artifacts/px4-s2-batch-01 --batch \
+  --output artifacts/px4-s2-eval-batch-new
+
+# Exercise the MuJoCo RGB camera and image-only target detector.
+MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python -m pytest \
+  tests/test_px4_visual_sitl.py -q
 ```

@@ -89,6 +89,13 @@ class RouteExperiment:
             raise ValueError('Mission physics_deadline_s must be finite and positive')
         self.maximum_speed_m_s = float(self.mission['maximum_flight_speed_m_s'])
         self.maximum_tilt_deg = float(self.mission['maximum_tilt_deg'])
+        self.retreat_bias = float(self.mission.get('impact_retreat_bias_m', 0.))
+        if not np.isfinite(self.retreat_bias) or not 0. <= self.retreat_bias <= .1:
+            raise ValueError('impact_retreat_bias_m must be between 0 and .1 m')
+        for name, upper in [('separation_acceleration_m_s2',9.81),('separation_acceleration_duration_s',.5)]:
+            value=float(self.mission.get(name,0.))
+            if not np.isfinite(value) or not 0. <= value <= upper:
+                raise ValueError(f'{name} must be finite and between 0 and {upper}')
         self.horizontal_command_limit_m_s = float(self.mission['horizontal_command_limit_m_s'])
         self.vertical_command_limit_m_s = float(self.mission['vertical_command_limit_m_s'])
 
@@ -189,7 +196,10 @@ class RouteExperiment:
                     }
                     self._record(time, position, 'armor_contact')
                     self.state = 'RETREAT'
-                    self.reference = position.copy()
+                    # An explicitly configured separation command helps the
+                    # firmware leave the plate before the contact guard rolls
+                    # back into it. Zero preserves historical AP routes.
+                    self.reference = position + self.armor_normal*self.retreat_bias
                     break
             target = self.points[-1] if self.state == 'RETREAT' else self.armor_center-self.armor_normal*.05
             rate = (self.mission['retreat_reference_speed_m_s'] if self.state == 'RETREAT'
