@@ -1,7 +1,24 @@
 """The supported workflow cannot claim success from a flight exit alone."""
 import json
+from types import SimpleNamespace
+
+import numpy as np
 
 from rm27.autopilot.px4 import simulation
+
+
+def test_landed_numpy_physics_scores_serialize_and_reject_residual_motion():
+    from rm27.autopilot.px4.flight import independent_resting_score
+    plant=SimpleNamespace(contacts=lambda: ['bottom'], qvel=np.zeros(6),
+        motors=np.arange(4), data=SimpleNamespace(actuator_force=np.zeros(4)))
+    position=np.array([0.,0.,.02])
+    result=independent_resting_score(plant,position,check_motion=True)
+    assert json.loads(json.dumps(result))['passed'] is True
+    plant.qvel[0]=.02
+    assert independent_resting_score(plant,position,check_motion=True)['passed'] is False
+    plant.qvel[:]=0
+    plant.data.actuator_force[0]=.1
+    assert independent_resting_score(plant,position,check_motion=True)['passed'] is False
 
 
 def test_nominal_flight_without_actual_ev_fusion_fails_workflow(tmp_path, monkeypatch):

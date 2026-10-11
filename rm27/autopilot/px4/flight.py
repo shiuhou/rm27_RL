@@ -52,6 +52,18 @@ def confirm_auto_disarm(telemetry, timestamp, land_observed):
         raise RuntimeError('No fresh PX4 landed/disarmed confirmation')
 
 
+def independent_resting_score(plant, final_local, *, check_motion=False):
+    """JSON-safe physical result; this is never supplied to the mission actor."""
+    passed=bool(plant.contacts() and np.linalg.norm(final_local[:2])<=.007 and abs(final_local[2]-.02)<=.005)
+    speed=float(np.linalg.norm(plant.qvel[:3]))
+    force=float(np.max(np.abs(plant.data.actuator_force[plant.motors])))
+    if check_motion:
+        passed=bool(passed and speed<=.01 and force<1e-5)
+    return dict(passed=passed,source='MuJoCo truth, scoring only',
+        horizontal_error_m=float(np.linalg.norm(final_local[:2])),height_error_m=float(abs(final_local[2]-.02)),
+        physical_speed_m_s=speed,maximum_actual_motor_force_N=force)
+
+
 def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, route=None, profile='diagnostic', runtime_factory=Runtime,wall_deadline_s=300., policy=LEGACY_POLICY):
     speedup=(1. if view else 5.) if speedup is None else float(speedup)
     if not math.isfinite(speedup) or speedup<=0:raise ValueError('speedup must be positive')
@@ -425,13 +437,9 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                 vertical_maximum_m=float(z.max()),vertical_p95_m=float(np.percentile(z,95)),
                 passed=bool(xy.max()<=.2 and z.max()<=.1),source='MuJoCo truth, scoring only')
         if summary['passed']:
-            physical_pass=bool(plant.contacts() and np.linalg.norm(final_local[:2])<=.007 and abs(final_local[2]-.02)<=.005)
-            if policy.ground_rest_confirmation:
-                physical_pass=physical_pass and np.linalg.norm(plant.qvel[:3])<=.01 and np.max(np.abs(plant.data.actuator_force[plant.motors]))<1e-5
-            summary['independent_resting_score']=dict(passed=physical_pass,source='MuJoCo truth, scoring only',
-                horizontal_error_m=float(np.linalg.norm(final_local[:2])),height_error_m=float(abs(final_local[2]-.02)),
-                physical_speed_m_s=float(np.linalg.norm(plant.qvel[:3])),
-                maximum_actual_motor_force_N=float(np.max(np.abs(plant.data.actuator_force[plant.motors]))))
+            score=independent_resting_score(plant,final_local,check_motion=policy.ground_rest_confirmation)
+            summary['independent_resting_score']=score
+            physical_pass=score['passed']
             if not physical_pass or not summary.get('independent_hover_score',{}).get('passed'):
                 summary['passed']=False;summary['failure']='Independent physical hover or dock resting gate failed'
             elif route and summary.get('route',{}).get('passed') is not True:
