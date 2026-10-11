@@ -8,6 +8,12 @@ The user clarified the current R&D scope on 2026-10-11:
 precision, large reliability batches and hardware readiness are not completion
 prerequisites. Hardware operations remain outside this software task.
 
+Vision/VIO hardware tests and algorithm research are now owned by the user's
+other computer and [rm27_slam](https://github.com/shiuhou/rm27_slam). This worktree
+retains its existing simulation chain and PX4-facing contracts. That research
+does not block migration closeout; pull/integration waits until the user reports
+the upstream work ready. See the ownership section in the current criteria.
+
 Execution is **paused at the user's request after the current development
 node**. The low-altitude command-loss flight and independent scoring are
 complete. Batch scheduling is suspended; the queued complete-return camera
@@ -171,7 +177,8 @@ This is simulation tuning; remaining gates and timeout are unchanged.
 ## Remaining migration closeout
 
 - Consolidate the already verified current-image/VIO/PX4 development chain into
-  documented, reproducible build/run/view/replay entry points.
+  documented, reproducible PX4 build/run/view/replay entry points, retaining
+  existing perception as a fixed dependency rather than developing it locally.
 - Finish the per-research migration coverage review; distinguish PX4 interfaces
   from independent direct-physics studies and retain explicit AP reproduction.
 - Address concrete frame, unit, motor, clock, mode and invalid-estimate defects
