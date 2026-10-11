@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "scope": "Guard-tip camera margin development only; synthetic mount/intrinsics, no OS04A10 calibration",
+  "width": 800,
+  "height": 600,
+  "fovy_deg": 70,
+  "body_name": "drone_1",
+  "offset_body": [
+    0.0,
+    0.0,
+    0.02
+  ],
+  "forward_body": [
+    -0.5416752204197018,
+    0.5416752204197018,
+    -0.6427876096865393
+  ],
+  "up_body": [
+    -0.4545194776720436,
+    0.4545194776720436,
+    0.766044443118978
+  ],
+  "camera_hz": 20.0,
+  "imu_frame": "body_flu",
+  "accelerometer_noise_std_m_s2": 0.004,
+  "gyroscope_noise_std_rad_s": 0.0003,
+  "seed": 170011
+}

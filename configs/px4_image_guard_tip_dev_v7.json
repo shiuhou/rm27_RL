@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "status": "image/VIO complete-mission development only; no accepted batch",
+  "friendly_team": "red",
+  "target_team": "blue",
+  "armor_geom": "rm27_base_armor",
+  "armor_site": "rm27_base_armor_center",
+  "command_waypoint_indices": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "stop_waypoint_indices": [
+    1,
+    2,
+    3
+  ],
+  "inbound_stop_waypoint_indices": [
+    1,
+    2
+  ],
+  "staging_distance_m": 0.6,
+  "cruise_reference_speed_m_s": 0.35,
+  "vertical_reference_speed_m_s": 0.2,
+  "horizontal_reference_braking_m_s2": 0.5,
+  "vertical_reference_braking_m_s2": 0.35,
+  "impact_reference_speed_m_s": 0.03,
+  "retreat_reference_speed_m_s": 0.12,
+  "horizontal_command_limit_m_s": 0.4,
+  "truth_position_gain_s_inv": 1.4,
+  "truth_vertical_position_gain_s_inv": 0.8,
+  "vertical_command_limit_m_s": 0.35,
+  "maximum_flight_speed_m_s": 2.0,
+  "maximum_high_altitude_overshoot_m": 0.15,
+  "runtime_tracking_abort_m": 0.3,
+  "maximum_tilt_deg": 45.0,
+  "takeoff_settle_s": 0.25,
+  "pre_route_hover_s": 10.0,
+  "waypoint_radius_m": 0.2,
+  "waypoint_speed_gate_m_s": 0.12,
+  "return_radius_m": 0.12,
+  "return_speed_gate_m_s": 0.8,
+  "return_settle_s": 0.2,
+  "descent_reference_speed_m_s": 0.25,
+  "alignment_hold_s": 0.2,
+  "final_descent_reference_speed_m_s": 0.12,
+  "maximum_takeoff_to_dock_contact_s": 30.0,
+  "physics_deadline_s": 400.0,
+  "limitations": "Surveyed corridor and armor normal, 120 mm proxy guard point and 30 degree primary camera mount are simulation assumptions, not hardware measurements.",
+  "impact_retreat_bias_m": 0.025,
+  "separation_acceleration_m_s2": 4.0,
+  "separation_acceleration_duration_s": 0.12,
+  "gate_version": "PX4_IMAGE_MISSION_GUARD_TIP_DEVELOPMENT_V7",
+  "selection_basis": "35 degree primary mount and surveyed staging point account for guard offset; static image sweep passes at tip normal distances 0.6 through 0.08 m; no hardware calibration.",
+  "surveyed_armor_center_m": [
+    -11.468,
+    0.02,
+    1.0758
+  ],
+  "surveyed_armor_normal": [
+    0.4617,
+    0,
+    0.887
+  ],
+  "armor_rectangle_dimensions_m": [
+    0.09,
+    0.055
+  ],
+  "impact_acceleration_threshold_m_s2": 0.8,
+  "impact_rate_threshold_rad_s": 0.5,
+  "contact_commitment_lease_s": 2.5,
+  "estimation_profile": "vio_mission_dev",
+  "contact_point_body_flu_m": [
+    -0.06,
+    0.06,
+    -0.018
+  ],
+  "tip_staging_distance_m": 0.1
+}

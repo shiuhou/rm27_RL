@@ -149,7 +149,10 @@ This is simulation tuning; remaining gates and timeout are unchanged.
 
 - S1: complete local forbidden-region audit. Current-aircraft classification
   and converged front impact evidence are present; the remaining prerequisite
-  cannot be inferred from these probes.
+  cannot be inferred from these probes. The new V4 recorded-pose capsule audit
+  fails: COM alignment lets guards cross visual tower surfaces outside the
+  armor patch. Guard-tip alignment and its recovery-volume audit are in
+  development; full S1 remains open.
 - S2: the fixed low-speed 1 ms recovery batch passes 20/20 under the strict
   V2 scorer. S1's complete forbidden-region audit remains a separate partial
   prerequisite; this result does not extend the claim to other contact speeds.
@@ -162,13 +165,17 @@ This is simulation tuning; remaining gates and timeout are unchanged.
   Strategy repair, Student retraining and paired comparison remain unfinished.
 - P5/S4/S5: current-flight native VIO/ODOMETRY, pixel-derived metric armor pose,
   causal IMU contact inference and dedicated downward AprilTag return are now
-  connected. Development V4 completes the entire 150 g mission once, including
-  independently scored recovery, normal LAND and automatic disarm. Twenty
-  nominal and fifty variable-condition runs plus the full fault matrix remain
-  required. See [complete image mission](PX4_IMAGE_MISSION.md).
+  connected. Frozen nominal V1 is complete and fails **11/20**, including six
+  recovery failures, one reacquisition exhaustion and two invalid LAND alignments.
+  The guard-tip/image-height V9 development completes one physical task with a
+  passing sampled surface audit, 16 ms first-hit inference and 1.554 mm resting
+  XY. Canonical timing fixes, new reserved nominal acceptance, fifty variable
+  conditions and the full fault matrix remain required.
+  See [complete image mission](PX4_IMAGE_MISSION.md).
 - P6: ULog intake, finite logging session and M3C single-UART tools are present;
   six fake-wire root tests pass. See [software report](PX4_M3C_SOFTWARE.md).
-  End-to-end live capture and device runtime qualification remain pending.
+  Full saved-SITL-log wire replay and loss rejection now pass; end-to-end
+  live device capture and device runtime qualification remain pending.
   UART 115200 and ~50 Hz HIGHRES_IMU do not qualify 200 Hz raw IMU or real VIO.
 - Default backend remains explicit during migration. Complete mission and
   hardware qualification are separate decisions; no hardware is modified.

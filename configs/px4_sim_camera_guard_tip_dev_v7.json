@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "scope": "Guard-tip development, 35 degree primary mount; static image sweep only, no OS04A10 calibration",
+  "width": 640,
+  "height": 480,
+  "fovy_deg": 60.0,
+  "body_name": "drone_1",
+  "offset_body": [
+    0.0,
+    0.0,
+    0.02
+  ],
+  "forward_body": [
+    -0.5792279653395692,
+    0.5792279653395692,
+    -0.573576436351046
+  ],
+  "up_body": [
+    -0.4055797876726388,
+    0.4055797876726388,
+    0.8191520442889918
+  ],
+  "camera_hz": 20.0,
+  "imu_frame": "body_flu",
+  "accelerometer_noise_std_m_s2": 0.004,
+  "gyroscope_noise_std_rad_s": 0.0003,
+  "seed": 170011
+}

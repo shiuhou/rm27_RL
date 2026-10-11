@@ -38,6 +38,12 @@ class ImageRoute:
         self.navigation_time=None;self.imu=None;self.imu_time=None;self.stable_since=None
         self.commit_time=None;self.commit_position=None;self.last_impact_imu=None
         self.aborted=False;self.abort_reason=None;self.contact_impulses=[]
+        self.contact_point=None
+        if 'contact_point_body_flu_m' in mission:
+            self.contact_point=np.asarray(mission['contact_point_body_flu_m'],float)
+            if self.contact_point.shape!=(3,) or not np.isfinite(self.contact_point).all():
+                raise ValueError('configured finite body-frame contact point required')
+        self.contact_bias=np.zeros(3);self.imu_rates=None
 
     def _event(self, name, time, position):
         row=dict(state=name,time_s=float(time),position=np.asarray(position).tolist())
@@ -71,6 +77,8 @@ class ImageRoute:
         values=np.asarray([message.xacc,message.yacc,message.zacc],dtype=float)
         if np.isfinite(values).all():
             self.imu=values;self.imu_time=message.time_usec/1e6
+            rates=np.asarray([getattr(message,k,float('nan')) for k in ('xgyro','ygyro','zgyro')])
+            self.imu_rates=rates if np.isfinite(rates).all() and getattr(message,'fields_updated',63)&56==56 else None
 
     def fresh_image(self, now):
         return self.pose_time is not None and 0<=now-self.pose_time<=.2
@@ -101,8 +109,11 @@ class ImageRoute:
         q=np.asarray(tel['quaternion']);rotation=BASIS@Rotation.from_quat(q[[1,2,3,0]]).as_matrix()@BASIS
         acceleration=rotation@(BASIS@self.imu)+[0,0,-9.81]
         outward=float(acceleration@self.armor_normal)
-        rate=float(np.linalg.norm(tel['rates']))
-        rate_fresh=0<=now-tel.get('attitude_time',-100)<=.1
+        # Gyro and acceleration belong to the same fresh HIGHRES_IMU sample.
+        # ATTITUDE_QUATERNION can arrive one control tick later; consuming the
+        # impulse while looking at its previous rates added a 20 ms delay.
+        rate=float(np.linalg.norm(self.imu_rates if self.imu_rates is not None else tel['rates']))
+        rate_fresh=self.imu_rates is not None or 0<=now-tel.get('attitude_time',-100)<=.1
         # A low-speed impact may last less than one 20 ms IMU publication
         # interval. Requiring two acceleration peaks misses that first hit.
         # Admission happens only in the bounded image-committed contact phase.
@@ -146,15 +157,25 @@ class ImageRoute:
                     self.aborted=True;self.abort_reason='armor image lost before commitment';self.state='RETREAT'
                 return self.reference.copy()
             self.stable_since=None
-            displacement=position-self.armor_center
+            offset=np.zeros(3)
+            if self.contact_point is not None:
+                q=np.asarray(self.navigation['quaternion'])
+                rotation=BASIS@Rotation.from_quat(q[[1,2,3,0]]).as_matrix()@BASIS
+                offset=rotation@self.contact_point
+            displacement=position+offset-self.armor_center
             distance=float(displacement@self.armor_normal)
             tangent=displacement-distance*self.armor_normal
             attitude=self.navigation
             rates=np.linalg.norm(attitude['rates'])
-            if distance<.125 and np.linalg.norm(tangent)<.01 and speed<.15 and rates<.3:
+            staging=self.mission['tip_staging_distance_m'] if self.contact_point is not None else .12
+            tangent_gate=.008 if self.contact_point is not None else .01
+            speed_gate=.12 if self.contact_point is not None else .15
+            if distance<staging+.005 and np.linalg.norm(tangent)<tangent_gate and speed<speed_gate and rates<.3:
                 self.state='COMMIT';self.commit_time=time;self.commit_position=self.armor_center.copy()
-                self.reference=position.copy();self._event('image_contact_commitment',time,position)
-            return self._move(self.armor_center+self.armor_normal*.12,.03,dt)
+                self.contact_bias=-offset
+                self.reference=position.copy()
+                self._event('image_guard_tip_commitment' if self.contact_point is not None else 'image_contact_commitment',time,position)
+            return self._move(self.armor_center-offset+self.armor_normal*staging,.03,dt)
         if self.state=='COMMIT':
             if self._impact(time,position,velocity):
                 self.state='RECOVER';self.stable_since=None
@@ -162,7 +183,9 @@ class ImageRoute:
             elif time-self.commit_time>self.mission['contact_commitment_lease_s']:
                 self.aborted=True;self.abort_reason='bounded contact lease exhausted';self.state='RETREAT'
                 self.reference=position.copy()
-            else:return self._move(self.commit_position+self.armor_normal*.02,.1,dt)
+            else:
+                stop_distance=-.002 if self.contact_point is not None else .02
+                return self._move(self.commit_position+self.contact_bias+self.armor_normal*stop_distance,.1,dt)
         if self.state=='RECOVER':
             tel=self.navigation;q=np.asarray(tel['quaternion'])
             rotation=Rotation.from_quat(q[[1,2,3,0]]).as_matrix()
@@ -173,7 +196,7 @@ class ImageRoute:
                 self.state='RETREAT';self._event('estimated_recovery_confirmed',time,position)
             if time-self.impact['time_s']>4:
                 self.aborted=True;self.abort_reason='recovery timeout';self.state='RETREAT'
-            return self._move(self.armor_center+self.armor_normal*.6,.12,dt)
+            return self._move(self.armor_center+self.contact_bias+self.armor_normal*.6,.12,dt)
         if self.state=='RETREAT':
             if np.linalg.norm(position-self.points[-1])<.12 and speed<.1:
                 self.state='INBOUND';self.index=len(self.points)-2;self.reference=position.copy()
@@ -187,5 +210,7 @@ class ImageRoute:
 
     def result(self):
         return dict(passed=self.impact is not None and not self.aborted,visited=self.visited,impact=self.impact,
+            contact_point_body_flu_m=None if self.contact_point is None else self.contact_point.tolist(),
+            committed_contact_bias_world_m=self.contact_bias.tolist(),
             aborted=self.aborted,abort_reason=self.abort_reason,source='RGB metric pose plus PX4 telemetry and IMU',
             scope='complete-mission development, independently scored; no real hardware qualification')

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "scope": "Guard-tip development; primary camera 30 degrees down is a simulation assumption, not OS04A10 calibration",
+  "width": 640,
+  "height": 480,
+  "fovy_deg": 60.0,
+  "body_name": "drone_1",
+  "offset_body": [
+    0.0,
+    0.0,
+    0.02
+  ],
+  "forward_body": [
+    -0.6123724356957945,
+    0.6123724356957945,
+    -0.49999999999999994
+  ],
+  "up_body": [
+    -0.3535533905932737,
+    0.3535533905932737,
+    0.8660254037844387
+  ],
+  "camera_hz": 20.0,
+  "imu_frame": "body_flu",
+  "accelerometer_noise_std_m_s2": 0.004,
+  "gyroscope_noise_std_rad_s": 0.0003,
+  "seed": 170011
+}

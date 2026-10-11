@@ -38,3 +38,23 @@ def test_impact_requires_a_fresh_strong_sensor_event_and_preserves_world_force_d
     message.time_usec=1_040_000;message.zacc=-13.;task.observe_imu(message)
     assert task._impact(1.05,np.zeros(3),np.zeros(3))
     assert task.impact['source'].startswith('fresh IMU impulse')
+
+
+def test_same_sample_gyro_detects_impact_before_cached_attitude_rates_update():
+    task=route()
+    task.navigation=dict(quaternion=[1.,0,0,0],rates=[0.,0.,0.],attitude_time=1.)
+    task.observe_imu(SimpleNamespace(time_usec=1_020_000,xacc=0.,yacc=0.,zacc=-9.81,
+        xgyro=.9,ygyro=0.,zgyro=0.,fields_updated=63))
+    assert task._impact(1.024,np.zeros(3),np.zeros(3))
+    assert task.impact['imu_samples'][0][2]==pytest.approx(.9)
+
+
+def test_unupdated_or_old_gyro_cannot_admit_an_impact():
+    task=route()
+    task.navigation=dict(quaternion=[1.,0,0,0],rates=[.9,0.,0.],attitude_time=.5)
+    task.observe_imu(SimpleNamespace(time_usec=1_020_000,xacc=0.,yacc=0.,zacc=-9.81,
+        xgyro=.9,ygyro=0.,zgyro=0.,fields_updated=7))
+    assert not task._impact(1.024,np.zeros(3),np.zeros(3))
+    task.observe_imu(SimpleNamespace(time_usec=1_040_000,xacc=0.,yacc=0.,zacc=-9.81,
+        xgyro=.9,ygyro=0.,zgyro=0.,fields_updated=63))
+    assert not task._impact(1.15,np.zeros(3),np.zeros(3))

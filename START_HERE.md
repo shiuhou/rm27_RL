@@ -25,6 +25,20 @@ python -m rm27 --help
 和自動停槳 20/20，最大物理落位誤差 3.74 mm；完整目標接近／接觸任務
 及故障矩陣仍需驗收。[PX4 Teacher／Student 接觸研究入口與失敗證據](docs/PX4_CONTACT_RESEARCH.md)。
 
+目前也已接通當前飛行圖像／OpenVINS → 目標接近 → 接觸與恢復 →
+下視 AprilTag 回庫降落。舊版完整任務批次為 11/20，未通過；護圈接觸點
+對準與影像高度修正版已通過一次開發飛行，新的獨立批次仍待驗收；
+不能當作完整遷移已通過。[完整任務程式、證據與操作方式](docs/PX4_IMAGE_MISSION.md)。
+
+```bash
+MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python \
+  -m rm27.autopilot.px4.image_mission artifacts/px4-dock-tags-05/scene.xml \
+  --audit artifacts/px4-guard-tip-corridor-audit-01/summary.json \
+  --config configs/px4_image_guard_tip_dev_v11.json \
+  --camera-config configs/px4_sim_camera_guard_tip_dev_v8.json \
+  --instance 40 --output artifacts/px4-image-mission-new
+```
+
 ```bash
 cd /home/shiuhou/Projects/rm27_drones_px4
 # 由 PX4 EKF 遥测控制短程往返；数值光流下限 8 cm，无 GPS/ODOMETRY。

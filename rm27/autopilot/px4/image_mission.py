@@ -53,10 +53,19 @@ def execute(scene, audit_path, output, *, configuration=None, camera_configurati
         if hashlib.sha256(Path(path).read_bytes()).hexdigest()!=expected:
             raise ValueError('reviewed corridor asset hash changed: '+path)
     camera=json.loads(camera_path.read_text())
+    runtime_class=VioRuntime
+    if settings.get('use_tag_height_registration'):
+        from .tag_height import TagHeightRuntime
+        runtime_class=TagHeightRuntime
+        path=Path(__file__).with_name('tag_height.py')
+        input_hashes[str(path)]=hashlib.sha256(path.read_bytes()).hexdigest()
+    # Preserve exact input bytes even for development files not yet tracked
+    # by Git; the tracked diff alone cannot reproduce those inputs.
+    snapshot={path:Path(path).read_bytes() for path in input_hashes}
     route=ImageRoute(audit,settings,camera)
     detector=ArmorPoseDetector(*settings['armor_rectangle_dimensions_m'],fovy_deg=camera['fovy_deg'])
 
-    class ImageRuntime(VioRuntime):
+    class ImageRuntime(runtime_class):
         def __init__(self,*args,**kwargs):
             super().__init__(*args,**kwargs)
             self.profile=settings['estimation_profile']
@@ -107,9 +116,14 @@ def execute(scene, audit_path, output, *, configuration=None, camera_configurati
 
     code=run(scene,output,instance,dynamics=ROOT/'configs/dynamics_150g.json',profile='vio',
         view=view,speedup=speedup,route=route,runtime_factory=ImageRuntime,wall_deadline_s=600.)
+    source_directory=output/'image_inputs';source_directory.mkdir(exist_ok=False)
+    source_paths={}
+    for path,contents in snapshot.items():
+        saved=source_directory/(hashlib.sha256(contents).hexdigest()+'-'+Path(path).name)
+        saved.write_bytes(contents);source_paths[path]=str(saved.relative_to(output))
     (output/'image_mission_inputs.json').write_text(json.dumps(dict(
         mission=settings,camera=camera,audit=str(audit_path),
-        input_sha256=input_hashes,
+        input_sha256=input_hashes,input_snapshot_paths=source_paths,
         run_type='headless closed-loop SITL' if not view else 'live-view closed-loop SITL',
         scope='complete-mission development; physical acceptance and camera hardware qualification remain separate'),indent=2)+'\n')
     summary=json.loads((output/'summary.json').read_text())
