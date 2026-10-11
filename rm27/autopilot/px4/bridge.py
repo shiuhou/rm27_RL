@@ -1,5 +1,6 @@
 """Strict HIL actuator decode and physical sensor production for PX4 SITL."""
 import math
+import mujoco
 import numpy as np
 from pymavlink.dialects.v20 import common as mavlink
 
@@ -30,6 +31,11 @@ class SensorProducer:
         self.plant=plant
         self.rng=np.random.default_rng(seed)
         self.seed=seed
+        # Vehicle geometry is assigned to group 5 by the scene builder.  The
+        # mask includes field and dock groups while excluding aircraft bodies
+        # that could otherwise occlude the downward ray.
+        self._range_geomgroup=np.ones(6,dtype=np.uint8)
+        self._range_geomgroup[5]=0
     def hil_sensor(self):
         s=self.plant.state(); z=-s['position'][2]
         # Pressure altitude relative to the local origin; temperature in Celsius.
@@ -60,7 +66,26 @@ class SensorProducer:
         The simulator converts this to metres and publishes a downward-facing
         range topic for EKF2 and the PX4 land detector.
         """
-        z=max(0.01,float(-self.plant.state()['position'][2]))
+        # Query the compiled collision scene from the vehicle origin.  A
+        # slot-relative height would report a plausible value over empty
+        # space and would hide gaps or raised geometry in the scene.
+        start=np.asarray(self.plant.data.xpos[self.plant.body],dtype=float)
+        geomid=np.array([-1],dtype=np.int32)
+        distance=float(mujoco.mj_ray(
+            self.plant.model,
+            self.plant.data,
+            start,
+            np.array([0.,0.,-1.],dtype=float),
+            self._range_geomgroup,
+            1,
+            int(self.plant.body),
+            geomid,
+        ))
+        # DISTANCE_SENSOR has no separate no-return flag.  Its configured
+        # maximum is the explicit invalid/no-hit policy for this bridge.
+        if not math.isfinite(distance) or distance < 0:
+            distance=4.
+        z=float(np.clip(distance,.01,4.))
         return mavlink.MAVLink_distance_sensor_message(
             max(1,round(float(self.plant.data.time)*1e3)),1,400,int(round(np.clip(z, .01, 4.)*100)),
             mavlink.MAV_DISTANCE_SENSOR_LASER,0,mavlink.MAV_SENSOR_ROTATION_PITCH_270,1,0.,0.,(0.,0.,0.,0.),100)

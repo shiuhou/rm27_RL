@@ -49,6 +49,7 @@ def add(root, name, position, quaternion, cfg):
         name=f"{name}_fuselage",
         type="box",
         size=".02 .015 .01",
+        group="5",
         rgba=".2 .25 .3 1",
     )
     # Top/bottom rails and corner posts form a replaceable collision proxy.
@@ -69,6 +70,7 @@ def add(root, name, position, quaternion, cfg):
             type="capsule",
             size=str(guard_r),
             fromto=" ".join(map(str, start + end)),
+            group="5",
             rgba=".8 .65 .15 1",
         )
     actuators = root.find("actuator")
@@ -86,6 +88,7 @@ def add(root, name, position, quaternion, cfg):
             type="capsule",
             size=".002",
             fromto=f"0 0 0 {x} {y} 0",
+            group="5",
             rgba=".2 .2 .2 1",
         )
         ET.SubElement(
@@ -97,6 +100,7 @@ def add(root, name, position, quaternion, cfg):
             pos=f"{x} {y} .008",
             contype="0",
             conaffinity="0",
+            group="5",
             rgba=".2 .5 .8 .8",
         )
         site = f"{name}_rotor_{i}"

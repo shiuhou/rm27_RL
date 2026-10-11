@@ -48,7 +48,7 @@ class Runtime:
             airframe=etc/'init.d-posix/airframes/4999_rm27'
             airframe.write_text('. ${R}etc/init.d/rc.mc_defaults\n'+''.join(f'param set {k} {v}\n' for k,v in params.items()))
             startup=etc/'init.d-posix/px4-rc.mavlink'
-            startup.write_text(f'mavlink start -x -u {self.api_port} -o {self.host_port} -t 127.0.0.1 -r 4000000 -m onboard\n'+''.join(f'mavlink stream -u {self.api_port} -r {rate} -s {name}\n' for name,rate in [('HEARTBEAT',5),('LOCAL_POSITION_NED',50),('ATTITUDE_QUATERNION',100),('ESTIMATOR_STATUS',10),('EXTENDED_SYS_STATE',10)]))
+            startup.write_text(f'mavlink start -x -u {self.api_port} -o {self.host_port} -t 127.0.0.1 -r 4000000 -m onboard\n'+''.join(f'mavlink stream -u {self.api_port} -r {rate} -s {name}\n' for name,rate in [('HEARTBEAT',5),('LOCAL_POSITION_NED',50),('ATTITUDE_QUATERNION',100),('ESTIMATOR_STATUS',10),('EXTENDED_SYS_STATE',10),('DISTANCE_SENSOR',50)]))
             (etc/'init.d-posix/px4-rc.mavlinksim').write_text(f'simulator_mavlink start -t 127.0.0.1 {self.sim_port}\n')
             self.expected=params
             self.server=socket.socket(); self.server.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
@@ -104,6 +104,7 @@ class Runtime:
                 elif kind=='LOCAL_POSITION_NED':
                     self.telemetry.update(local_position=[msg.x,msg.y,msg.z],local_velocity=[msg.vx,msg.vy,msg.vz],local_time=now)
                 elif kind=='EXTENDED_SYS_STATE':self.telemetry.update(landed_state=msg.landed_state,landed_time=now)
+                elif kind=='DISTANCE_SENSOR':self.telemetry.update(distance_m=float(msg.current_distance)*.01,distance_time=now)
                 elif kind=='COMMAND_ACK':
                     self.telemetry.setdefault('command_ack',{})[msg.command]={'result':msg.result,'time':now}
                 elif kind=='ESTIMATOR_STATUS':self.telemetry.update(estimator_flags=msg.flags,estimator_time=now)

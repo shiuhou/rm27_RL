@@ -2,6 +2,7 @@
 import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
+import mujoco
 import numpy as np
 import pytest
 from pymavlink.dialects.v20 import common as mavlink
@@ -64,6 +65,27 @@ def test_sensor_frame_and_message(px4_plant):
     assert odom.child_frame_id==mavlink.MAV_FRAME_BODY_FRD
     np.testing.assert_allclose([msg.xacc,msg.yacc,msg.zacc],plant.state()['imu']['accel_body'],atol=.02)
     np.testing.assert_allclose([odom.q[0],odom.q[1],odom.q[2],odom.q[3]],plant.state()['quaternion'])
+
+
+def test_distance_sensor_follows_scene_ray_and_has_explicit_no_hit(px4_plant):
+    plant=px4_plant
+    sensor=SensorProducer(plant)
+    # The initial vehicle origin is 2 cm above the fixture dock floor.
+    assert sensor.distance_sensor().current_distance==2
+    assert set(plant.model.geom_group[plant.model.geom_bodyid==plant.body])=={5}
+
+    # Move the same aircraft upward without changing its assigned slot origin;
+    # a slot-relative height implementation would still report 2 cm.
+    plant.data.qpos[plant.qa+2]+=.05
+    mujoco.mj_forward(plant.model,plant.data)
+    assert sensor.distance_sensor().current_distance==7
+
+    # Outside the fixture dock there is no collision surface below the ray.
+    # Parked vehicles are group-filtered and therefore cannot become a false
+    # range return; no-hit is represented by the configured 4 m maximum.
+    plant.data.qpos[plant.qa:plant.qa+3]+=[.5,0.,0.]
+    mujoco.mj_forward(plant.model,plant.data)
+    assert sensor.distance_sensor().current_distance==400
 
 
 def test_pressure_group_and_integer_parameters(px4_plant):

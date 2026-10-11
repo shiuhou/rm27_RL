@@ -140,6 +140,12 @@ def main():
     p.add_argument("scene", type=Path)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--autopilot", choices=("ardupilot", "px4"), default="ardupilot")
+    p.add_argument(
+        "--profile",
+        choices=("diagnostic", "ekf"),
+        default="diagnostic",
+        help="PX4 guidance profile: diagnostic truth-assisted or EKF telemetry",
+    )
     p.add_argument("--instance", type=int, default=31)
     p.add_argument("--dynamics", type=Path, help="Verify simulation dynamics against this profile")
     p.add_argument("--view", action="store_true", help="Watch the live flight")
@@ -158,6 +164,12 @@ def main():
     p.add_argument('--speedup', type=float)
     p.add_argument('--dynamics', type=Path)
     p.add_argument('--autopilot', choices=('ardupilot', 'px4'), default='ardupilot')
+    p.add_argument(
+        '--profile',
+        choices=('diagnostic', 'ekf'),
+        default='diagnostic',
+        help='PX4 guidance profile: diagnostic truth-assisted or EKF telemetry',
+    )
     args = parser.parse_args()
     if args.command == 'build-cad-drone':
         from .integration.cad_drone import build as build_cad_drone
@@ -176,18 +188,23 @@ def main():
         else:
             from .autopilot.micro_flight import run
 
-        return run(
-            args.scene, args.output, args.instance, view=args.view, speedup=args.speedup, dynamics=args.dynamics
-        )
+        kwargs = dict(view=args.view, speedup=args.speedup, dynamics=args.dynamics)
+        if args.autopilot == 'px4':
+            kwargs['profile'] = args.profile
+        return run(args.scene, args.output, args.instance, **kwargs)
     elif args.command == 'route-flight':
         from .experiments.route_experiment import RouteExperiment
         if args.autopilot == 'px4':
             from .autopilot.px4.flight import run
         else:
             from .autopilot.micro_flight import run
-        return run(args.scene, args.output, args.instance,
-                   route=RouteExperiment(args.scene, args.audit, args.mission), view=args.view,
-                   speedup=args.speedup, dynamics=args.dynamics)
+        kwargs = dict(
+            route=RouteExperiment(args.scene, args.audit, args.mission),
+            view=args.view, speedup=args.speedup, dynamics=args.dynamics,
+        )
+        if args.autopilot == 'px4':
+            kwargs['profile'] = args.profile
+        return run(args.scene, args.output, args.instance, **kwargs)
     else:
         import mujoco.viewer
 
