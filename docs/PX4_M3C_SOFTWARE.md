@@ -63,7 +63,26 @@ mission qualification needs the appropriate topic evidence and independent
 mission scorer; file decoding alone is insufficient. Existing `.BIN` historical
 analysis remains available under the ArduPilot research entries.
 
-The six root session tests use fake wire bytes only. Research test commands,
+The six root session tests use fake wire bytes only. The saved-input end-to-end
+tool `rm27.telemetry.logging_replay` additionally wraps the complete 52,640,764
+byte development V4 SITL ULog into MAVLink2, starts the finite session, retries
+the reliable header, checks ACKs, stops and drains it. The accepted
+`px4-ulog-saved-session-01` result reassembles all 211,409 packets byte-identically
+with SHA256 `65c69ac1752f4bc865aa8aa6c941fc853c02e6edd4fc2dded8e41c1fc4a8dc6f`.
+Dropping packet100 in `px4-ulog-saved-session-loss-01` correctly rejects the
+sequence gap and writes no partial ULog. Source bytes remain unchanged.
+This is saved-input replay over a synthetic wire, without device capture or
+UART timing; upstream source completeness and real VIO eligibility stay unknown.
+
+```bash
+/home/shiuhou/venvs/mujoco/bin/python -m rm27.telemetry.logging_replay \
+  PATH_TO_SAVED.ulg --output artifacts/ulog-wire-replay-new
+# Expected terminal loss rejection, not a successful logging session:
+/home/shiuhou/venvs/mujoco/bin/python -m rm27.telemetry.logging_replay \
+  PATH_TO_SAVED.ulg --drop-packet 100 --output artifacts/ulog-wire-loss-new
+```
+
+Research test commands,
 read-only fixture reports and local evidence limitations are listed in
 [.maixpy/README.md](../.maixpy/README.md). No device deployment or live capture
 qualification is implied by these software tests.
