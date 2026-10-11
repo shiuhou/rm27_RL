@@ -20,9 +20,10 @@ from .recoverability import RecoverabilityModel
 def settings():return json.loads((ROOT/'configs/contact_teacher.json').read_text())
 
 
-def prepare(cfg,output):
+def prepare(cfg,output,*,source_path=None,asset_root_map=None):
     output=Path(output);output.mkdir(parents=True,exist_ok=False)
-    c,bundle,slot,_=compose(configured(cfg,'adaptive_nominal'),'full',output)
+    c,bundle,slot,_=compose(configured(cfg,'adaptive_nominal'),'full',output,
+                          source_path=source_path,asset_root_map=asset_root_map)
     path=output/'model.mjb';mujoco.mj_saveModel(bundle[0],str(path))
     return (c,bundle,slot),(path,hashlib.sha256(path.read_bytes()).hexdigest())
 

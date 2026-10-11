@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "scope": "Phase 4 development interface timing; inherited 180 g teacher/student policy, not hardware tuning",
+  "command_hz": 250,
+  "causal_observer_dt_s": 0.004,
+  "deployment_overrides": {"action_hz": 250}
+}

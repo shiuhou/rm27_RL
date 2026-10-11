@@ -115,6 +115,15 @@ bounded reacquisition climb while navigation is valid; final LAND requires a
 fresh aligned tag, then freezes that registration for near-ground handover.
 Reacquisition failure is a failed run; physical safety fault acceptance is pending.
 
+Frozen independent short-route batches now pass: sensor-only MTF 20/20
+(`px4-s3-mtf-batch-02`, maximum resting XY 4.154 mm, p95 4.098 mm) and
+current-flight OpenVINS plus downward AprilTag return 20/20
+(`px4-vio-return-batch-01`, maximum 3.743 mm, p95 2.978 mm). All attempts
+complete normal LAND and automatic disarm without an unexpected PX4 failsafe.
+These errors come from the independent physical scorer. The latter establishes
+image-guided short return, not target approach/contact or S4/S5 acceptance.
+The recorded batch manifests freeze the exact pre-fault-study implementation.
+
 The earlier report of missing tags at 0.2/0.12 m was a rendering bug: named
 cameras inherited the field's 20 cm near clipping plane. The corrected renderer
 uses a 2 mm near plane with projection preserved. `px4-dock-tags-04` visibility
@@ -132,10 +141,13 @@ This is simulation tuning; remaining gates and timeout are unchanged.
 - S2: the fixed low-speed 1 ms recovery batch passes 20/20 under the strict
   V2 scorer. S1's complete forbidden-region audit remains a separate partial
   prerequisite; this result does not extend the claim to other contact speeds.
-- S3: 20 independent sensor-only starts and the pre-registered fault matrix.
-  A single numerical flow/MTF development run is insufficient.
-- P4: PX4 Teacher/Student/Phase 4/5 integration, thrust/strategy evaluation and
-  AP/PX4 paired comparison remain partial.
+- S3: nominal numerical flow/MTF 20/20 passes; the pre-registered fault matrix
+  remains unfinished.
+- P4: Teacher/Student attitude/rate and synthetic-navigation studies now have
+  a PX4 backend. Hover passes, but frozen Teacher contact holdout v1 fails
+  (nominal 0/8; overall 1/14 task successes and one safe abort).
+  [Research evidence](PX4_CONTACT_RESEARCH.md) preserves the failing attempts.
+  Strategy repair, Student retraining and paired comparison remain unfinished.
 - P5/S4/S5: implement current-flight native VIO/ODOMETRY, image-driven approach,
   recovery, dock identification and slot guidance; complete 20 nominal and
   50 variable-condition runs plus fault handling. Recorded images and VIO

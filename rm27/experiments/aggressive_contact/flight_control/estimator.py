@@ -15,7 +15,8 @@ B=np.diag([1.,-1.,-1.])
 
 
 class TelemetryEstimator:
-    def __init__(self,world_origin_nwu,velocity_std=.05,max_age_s=.1):
+    def __init__(self,world_origin_nwu,velocity_std=.05,max_age_s=.1,source_name='ARDUPILOT_EKF_TELEMETRY'):
+        self.source_name=source_name
         self.origin=np.array(world_origin_nwu,float);self.velocity_std=velocity_std;self.max_age=max_age_s
         self.offset=None;self.offset_samples=[];self.locked=False;self.position=None;self.attitudes=deque(maxlen=100)
         self.last=None;self.last_pos_time=-np.inf;self.local_registration=np.zeros(3)
@@ -63,7 +64,7 @@ class TelemetryEstimator:
                 t,R,w=self.attitudes[0]
                 if t-tp>.025:raise ValueError('No aligned attitude')
                 R=R@Rotation.from_rotvec(w*(tp-t)).as_matrix()
-            self.last=VehicleEstimate(self.origin+B@(p-self.local_registration),B@v,R,w,tp+self.offset,'ARDUPILOT_EKF_TELEMETRY')
+            self.last=VehicleEstimate(self.origin+B@(p-self.local_registration),B@v,R,w,tp+self.offset,self.source_name)
             self.last_pos_time=tp
         age=now-self.last.timestamp
         if age<-.005 or age>self.max_age:raise ValueError(f'Telemetry age outside contract: {age:.6f}')

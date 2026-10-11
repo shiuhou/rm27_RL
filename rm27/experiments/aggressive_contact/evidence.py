@@ -39,6 +39,10 @@ def snapshot(output, cfg):
     files += [ROOT / 'tests/test_contact_flight_control.py']
     files += list((ROOT / 'configs/contact_phase5').glob('*'))
     files += [ROOT / 'tests/test_contact_estimator_quality.py']
+    files += list((ROOT / 'rm27/autopilot/px4').glob('*.py'))
+    files += list((ROOT / 'configs/px4').glob('*.json'))
+    files += list((ROOT / 'configs').glob('px4_*research*.json'))
+    files += [ROOT / 'configs/px4_contact_policy.json', ROOT / 'tests/test_px4_contact_research.py']
     hashes = {}
     for path in files:
         if not path.exists():

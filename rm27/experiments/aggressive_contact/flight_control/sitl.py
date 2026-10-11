@@ -33,7 +33,12 @@ class SpinMapping:
     def __call__(self,f):return float(np.clip((f/self.force-self.low)/(self.high-self.low),0,1))
 
 
-def run(output,mode='hover',observation='telemetry',instance=45,duration=8.,parameter_file=None,speedup=2.,action_layer='rate',skill_mode='balanced',study_file=None):
+def run(output,mode='hover',observation='telemetry',instance=45,duration=8.,parameter_file=None,speedup=2.,action_layer='rate',skill_mode='balanced',study_file=None,autopilot='ardupilot',policy='student'):
+    if autopilot=='px4':
+        from .px4_sitl import run as px4_run
+        return px4_run(output,mode,observation,instance,duration,parameter_file,speedup,action_layer,skill_mode,study_file,policy)
+    if autopilot!='ardupilot' or policy!='student':
+        raise ValueError('explicit supported autopilot/policy required')
     output=Path(output).resolve();output.mkdir(parents=True,exist_ok=False);cfg=load_config();snapshot(output,cfg)
     prepared,template=prepare(cfg,output/'plant');c,bundle,slot=prepared
     plant=ContactPlant(bundle);bridge=Bridge(plant)
@@ -214,4 +219,6 @@ def run(output,mode='hover',observation='telemetry',instance=45,duration=8.,para
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--output',required=True);p.add_argument('--mode',choices=['hover','rate_step','maneuver'],default='hover');p.add_argument('--observation',choices=['telemetry','truth','synthetic'],default='telemetry');p.add_argument('--instance',type=int,default=45);p.add_argument('--duration',type=float,default=8);p.add_argument('--parameters');p.add_argument('--speedup',type=float,default=2);p.add_argument('--study')
     p.add_argument('--action-layer',choices=['rate','attitude'],default='rate');p.add_argument('--skill-mode',choices=['aggressive','balanced','conservative'],default='balanced')
-    a=p.parse_args();r=run(a.output,a.mode,a.observation,a.instance,a.duration,a.parameters,a.speedup,a.action_layer,a.skill_mode,a.study);print(json.dumps(r,indent=2));raise SystemExit(0 if r['passed'] else 1)
+    p.add_argument('--autopilot',choices=['ardupilot','px4'],default='ardupilot')
+    p.add_argument('--policy',choices=['student','teacher'],default='student')
+    a=p.parse_args();r=run(a.output,a.mode,a.observation,a.instance,a.duration,a.parameters,a.speedup,a.action_layer,a.skill_mode,a.study,a.autopilot,a.policy);print(json.dumps(r,indent=2));raise SystemExit(0 if r['passed'] else 1)

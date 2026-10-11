@@ -1,9 +1,29 @@
 """Frozen local SITL matrix; distinct ports and artifact directories per worker."""
-import argparse,contextlib,json
+import argparse,contextlib,hashlib,json
+from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from ..evidence import snapshot,write_json,save_failure
 from ..model import load_config
+
+
+def summarize(rows, spec):
+    execution=all('evaluation_failure' not in x['result'] and 'failure' not in x['result'] and
+                  'exception' not in x['result'] for x in rows)
+    expected={c['name']:c.get('expectation','task_success') for c in spec['cases']}
+    successes=sum(x['result'].get('passed') is True for x in rows)
+    aborts=sum(x['result'].get('safe_abort') is True for x in rows)
+    accepted=all(x['result'].get('safe_abort' if expected[x['name']]=='safe_abort' else 'passed') is True for x in rows)
+    complete=len(rows)==len(spec['cases'])
+    acceptance=spec.get('acceptance','execution_integrity')
+    failures=Counter(reason for x in rows if not x['result'].get('passed')
+        for reason in x['result'].get('contact_evaluation',{}).get('failure_modes',
+        [x['result'].get('failure',x['result'].get('exception','unclassified'))]))
+    return dict(passed=complete and execution and (accepted if acceptance=='task_success' else True),
+        scope=acceptance,execution_passed=complete and execution,task_expectations_passed=complete and accepted,
+        task_success_count=successes,safe_abort_count=aborts,total_attempts=len(rows),required_count=len(spec['cases']),
+        autopilot=spec.get('autopilot','ardupilot'),run_type='headless closed-loop SITL independent launches',
+        gate_version='existing Phase 4/5 contact/recovery evaluator',failure_categories=dict(failures),results=rows)
 
 
 def trial(job):
@@ -17,19 +37,34 @@ def trial(job):
 def run(config,output,workers=3):
     output=Path(output);output.mkdir(parents=True,exist_ok=False);spec=json.loads(Path(config).read_text())
     snapshot(output,load_config());write_json(output/'manifest.json',spec);rows=[]
+    hashes=json.loads((output/'provenance.json').read_text())['source_sha256']
+    from ..model import ROOT
+    frozen={str(ROOT/path):value for path,value in hashes.items()}
+    if spec.get('autopilot')=='px4':
+        binary=ROOT/'artifacts/deps/PX4-Autopilot/build/px4_sitl_default/bin/px4'
+        frozen[str(binary)]=hashlib.sha256(binary.read_bytes()).hexdigest()
+    write_json(output/'frozen_inputs.json',frozen)
     with ProcessPoolExecutor(max_workers=workers) as pool:
         for offset in range(0,len(spec['cases']),workers):
             group=spec['cases'][offset:offset+workers];jobs=[]
+            changed=[p for p,h in frozen.items() if not Path(p).exists() or hashlib.sha256(Path(p).read_bytes()).hexdigest()!=h]
+            if changed:
+                rows.extend(dict(name=case['name'],result=dict(passed=False,failure='Frozen inputs changed: '+str(changed))) for case in group)
+                write_json(output/'summary.json',summarize(rows,spec))
+                continue
             for i,case in enumerate(group):
+                autopilot=case.get('autopilot',spec.get('autopilot','ardupilot'))
                 study=output/(case['name']+'.json');write_json(study,case.get('study',{}))
                 jobs.append(dict(output=str(output/case['name']),mode='maneuver',observation=case.get('observation','telemetry'),
-                    action_layer='attitude',instance=45+i,duration=case.get('duration',9.),speedup=2.,
-                    parameter_file=case.get('parameters','configs/contact_phase4/attitude_unshaped.parm'),
+                    action_layer=case.get('action_layer','attitude'),instance=45+i,duration=case.get('duration',9.),speedup=2.,
+                    parameter_file=case.get('parameters','configs/px4/response.json' if autopilot=='px4' else 'configs/contact_phase4/attitude_unshaped.parm'),
+                    autopilot=autopilot,policy=case.get('policy','student'),
                     skill_mode=case.get('mode','balanced'),study_file=str(study)))
             for case,result in zip(group,pool.map(trial,jobs)):
                 rows.append(dict(name=case['name'],result=result));write_json(output/'partial.json',rows)
                 print(case['name'],result['passed'],result.get('safe_abort'),flush=True)
-    r=dict(passed=all('evaluation_failure' not in x['result'] and 'failure' not in x['result'] and 'exception' not in x['result'] for x in rows),scope='execution integrity, not flight success rate',results=rows)
+                write_json(output/'summary.json',summarize(rows,spec))
+    r=summarize(rows,spec)
     write_json(output/'summary.json',r);return r
 
 if __name__=='__main__':

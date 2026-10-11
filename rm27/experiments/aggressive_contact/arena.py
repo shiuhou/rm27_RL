@@ -20,11 +20,11 @@ from .experiment import run_episode
 from .model import ROOT, TargetState, scenario, truth_estimate, unit, target_frame
 
 
-def compose(cfg, scene_kind, output):
+def compose(cfg, scene_kind, output, *, source_path=None, asset_root_map=None):
     """Only rewrite an output copy; hash all original assets before loading."""
     settings = json.loads((ROOT/"configs/contact_arena.json").read_text())
     src = settings["sources"][scene_kind]
-    source = ROOT/src["path"]
+    source = Path(source_path).resolve() if source_path else ROOT/src["path"]
     if hashlib.sha256(source.read_bytes()).hexdigest() != src["sha256"]:
         raise ValueError("Arena source changed: audit geometry before updating its hash")
     field = ROOT/"rm27/simulation/field/rmuc2026_battlefield_mjcf"
@@ -45,6 +45,12 @@ def compose(cfg, scene_kind, output):
         if str(old).startswith(prefix):
             new = field/str(old)[len(prefix):]
             remapped.append(dict(old=str(old), new=str(new)))
+        for before,after in (asset_root_map or {}).items():
+            prefix=str(Path(before))+"/"
+            if str(old).startswith(prefix):
+                new=Path(after)/str(old)[len(prefix):]
+                remapped.append(dict(old=str(old),new=str(new)))
+                break
         assets[str(new)] = hashlib.sha256(new.read_bytes()).hexdigest()
         asset.set("file", str(new))
     if compiler is not None:
