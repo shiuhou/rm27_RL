@@ -192,8 +192,10 @@ This is simulation tuning; remaining gates and timeout are unchanged.
   completed flights after its controller was interrupted. The bounded V4
   continuous corridor and all20 native-step memberships pass. Maximum
   independent resting XY is3.482 mm, p95 3.469 mm. The50-condition V2 batch
-  is running but has an unhandled takeoff
-  contact failure, so it cannot pass. Complete-route downward faults continue.
+  is complete and fails45/50: takeoff contact, disarmed confirmation, two final
+  alignments and one native recovery-corridor membership fail. Complete-route
+  downward faults fail9 tasks/3 safe terminations/3 unhandled out of15. New
+  causal implementations and reserved gates remain separate.
   See [complete image mission](PX4_IMAGE_MISSION.md).
   Stochastic noise development also exposes native covariance failures. An
   isolated Joseph variant completes one formerly failing recorded segment,

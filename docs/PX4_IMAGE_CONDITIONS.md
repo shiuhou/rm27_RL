@@ -94,11 +94,16 @@ its physical termination gate. A50-case gate requires at least48 successful
 tasks and verified handling of every remaining attempt. No50-case gate has
 passed yet. Each completed recording is archived losslessly after scoring.
 
-The50-case V2 batch is running in `px4-image-conditions-batch-01`. Four
-early unhandled failures prevent a passing result: attempt04 has unstable
+The50-case V2 batch is complete and fails **45/50**, with five unhandled
+attempts and zero safe terminations in `px4-image-conditions-batch-01`.
+Four control failures prevent a passing result: attempt04 has unstable
 dock contact during TAKEOFF;09 rejects disarmed rest;15 rejects final LAND
-alignment;18 also rejects final LAND alignment. All remaining cases continue with unchanged inputs and all failed
-attempts remain in the batch. Complete-route downward faults separately run
+alignment;18 also rejects final LAND alignment. Attempt47 completes the task
+but its native recovery yaw leaves the certified42–48 degree geometry domain
+(minimum41.774 degrees). Its original membership gate rejects; eventual
+landing does not override missing clearance certification.
+All50 cases completed with unchanged inputs and all failed
+attempts remain in the batch. Complete-route downward faults separately failed
 in `px4-full-return-fault-batch-01`; its wrong-ID attempt09 rejects final
 alignment after successfully reacquiring the assigned tag.
 
@@ -180,3 +185,63 @@ variants; it requires58 tasks and verified handling of every remaining case.
 `tools.px4.stable_condition_batch` freezes sources, binary, parameters, data
 and certificate. No replacement reserved gate is claimed passed before its
 actual complete summary. All failed original/development attempts remain.
+
+## Actual target loss during approach
+
+The original primary-dropout conditions occur during early ROUTE, before
+target approach. `tools.px4.approach_target_fault` adds a separate pixel fault
+only after the image actor enters VISUAL_APPROACH: the image detector selects
+the current blue armor pixels and replaces them with an occluder or the wrong
+team colour. Background, native camera clock and all IMU inputs are preserved;
+no physical target identity/position or detector result is supplied.
+
+Development seed424013 occludes the target for1.8 s before commitment. The
+actor rejects continuing contact, enters RETREAT within its original bounded
+loss policy and performs normal assigned-AprilTag return/LAND/disarm. Its task
+remains failed. Independent EV fusion, local surfaces, hover and rest pass in
+`px4-approach-target-loss-development-score-01`; resting XY0.904 mm, no target
+contact. Development424014 uses0.6 s occlusion, resumes target approach and
+passes the full task and every independent audit in
+`px4-approach-target-temporary-development-score-01`; resting XY3.270 mm.
+
+`configs/px4_approach_target_faults_preregistered_v1.json` reserves five temporary
+losses, five sustained losses and five wrong-colour cases (seeds470001–470015).
+`tools.px4.approach_fault_batch` separately requires five full tasks and ten
+physical pre-contact safe returns, with all attempts independently handled.
+These development results do not yet qualify that reserved set.
+
+## Localization frame change development
+
+The baseline ODOMETRY adapter encodes reset_counter but a changed native epoch
+does not itself prove that the original rigid registration applies to the new
+origin. `tools.px4.registered_epoch` rejects any changed epoch after registration
+and latches the rejection until a new registration is explicitly provided.
+It neither realigns to truth nor silently resumes old coordinates.
+
+`tools.px4.epoch_boundary_development` injects a declared epoch increment and
+0.5 m coordinate jump into one actual native publication during initial dock
+hover. Images/IMU still come from the current flight. This is a simulated
+contract fault, not an actual OpenVINS restart. New-epoch output is blocked;
+fresh navigation inside the known footprint admits the separately tested
+range-height LAND fallback. The first physical termination passes but its
+independent score fails because idle native IPC times out. That failed attempt
+is retained in `px4-registered-epoch-development-01` and `-score-01`.
+
+The corrected lifecycle closes the rejected native session explicitly before
+continuing sensor/PX4 physics. Fresh seed424016 passes development and all
+independent ULog/physical checks in `px4-registered-epoch-development-02`
+and `-score-02`, resting XY3.466 mm. ULog shows actual EV fusion before the
+fault and actual range-height fusion during fallback. This remains a failed
+task and a single development termination. It does not qualify a10 s hover,
+reset at an arbitrary route position or continued mission after reset.
+
+## Geometry domain under declared heading uncertainty
+
+The original V4 certificate covers yaw42–48 degrees. A separate V5 development
+configuration requests40–50 degrees: surveyed45 degree heading, up to3 degree
+initial error and an additional2 degree recovery allowance. The same geometry,
+surface tolerances, translation/roll/pitch domains and physical recovery gates
+remain. Continuous clearance must be proven for the entire new domain before
+any new geometry acceptance; its running audit is not a passing certificate.
+Original V4 membership failures remain failures. No active reserved input is
+edited or accepted against a different certificate.

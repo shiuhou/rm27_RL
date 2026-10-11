@@ -26,9 +26,30 @@ python -m rm27 --help
 及故障矩陣仍需驗收。[PX4 Teacher／Student 接觸研究入口與失敗證據](docs/PX4_CONTACT_RESEARCH.md)。
 
 目前也已接通當前飛行圖像／OpenVINS → 目標接近 → 接觸與恢復 →
-下視 AprilTag 回庫降落。舊版完整任務批次為 11/20，未通過；護圈接觸點
-對準與影像高度修正版已通過一次開發飛行，新的獨立批次仍待驗收；
+下視 AprilTag 回庫降落。舊版完整任務批次為 11/20，未通過；V3 完整
+名義任務已通過 20/20。後續檢查發現原 runner 的物理監視器能中止任務，
+因此另建僅以 PX4 遙測和當前圖像控制的版本，正在重新驗收完整批次；
+變動工況和完整航線故障矩陣仍未通過。
 不能當作完整遷移已通過。[完整任務程式、證據與操作方式](docs/PX4_IMAGE_MISSION.md)。
+
+下視識別和降落有專用程式：`rm27/perception/sitl/return_camera.py` 讀取
+圖像並識別指定 AprilTag；`rm27/autopilot/px4/visual_return.py` 檢查 ID、
+時效和相對位置；任務 runner 負責對準、下降、丟圖重獲、LAND 和停槳。
+[回庫控制與故障處理](docs/PX4_RETURN_TERMINATION.md) 記錄實際證據和限制。
+
+修正版的獨立單次入口如下，使用新的輸出目錄和空閒 instance：
+
+```bash
+cd /home/shiuhou/Projects/rm27_drones_px4
+MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python \
+  -m tools.px4.run_initial_admission artifacts/px4-dock-tags-05/scene.xml \
+  --audit artifacts/px4-guard-tip-corridor-audit-01/summary.json \
+  --config configs/px4_image_mission_causal_gap_development_v5.json \
+  --camera-config configs/px4_sim_camera_guard_tip_dev_v8.json \
+  --conditions configs/px4_stable_initial_vio_development_v1.json \
+  --ground-rest-confirmation --retry-final-alignment --causal-mission-inputs \
+  --instance 40 --output artifacts/px4-causal-image-mission-new
+```
 
 ```bash
 MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python \
