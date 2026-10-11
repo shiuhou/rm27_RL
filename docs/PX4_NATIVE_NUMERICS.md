@@ -60,6 +60,17 @@ contact, actual landed/automatic disarm and stopped motors. Its original
 mission remains failed. This is one development attempt with the same noisy
 input seed, not a reserved fault batch or a VIO repair qualification.
 
+Explicit native-process interruption development also passes
+(`px4-native-disconnect-development-01`,0.524 mm physical rest). The subsequent
+reserved matrix `px4-native-disconnect-batch-02` passes **5/5 terminations,
+0/5 tasks** using seeds458101–458105 and declared interruption delays
+0.32–0.48 s after TAKEOFF. Maximum physical resting XY is3.383 mm, p95
+3.224 mm. Every ULog confirms actual range-height fusion, and every run has
+normal LAND, no unexpected failsafe, physical rest, automatic disarm and
+stopped motors. The batch01 launcher fails before creating a flight because
+it names a missing profile; its log is preserved. These results qualify only
+the bounded initial dock native-disconnect policy.
+
 ## Reproduce diagnosis
 
 ```bash
