@@ -110,7 +110,12 @@ class DeploymentPolicy:
         import json
         from pathlib import Path
         from .spline import SplinePolicy
-        root=Path(bundle);cfg=json.loads((root/'nominal_config.json').read_text())
+        root=Path(bundle)
+        if (root/'capabilities.json').exists():
+            capabilities=json.loads((root/'capabilities.json').read_text())
+            if mode not in capabilities['supported_modes']:
+                raise ValueError('Mode is not supported by this fitted bundle: '+mode)
+        cfg=json.loads((root/'nominal_config.json').read_text())
         params=json.loads((root/'task_parameters.json').read_text())[mode]
         info=json.loads((root/'nominal_vehicle.json').read_text())['vehicle_info']
         nominal=TargetState(np.array(cfg['target']['center_m']),np.array(cfg['target']['normal']),np.zeros((3,3)),initial.timestamp)

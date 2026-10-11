@@ -28,7 +28,8 @@ Student timing is overridden explicitly in `configs/px4_contact_policy.json`.
 Teacher features use contact time relative to airborne release, avoiding a
 negative contact-age feature caused by the initialization clock. New Teacher
 runs save causal observations and rate/force labels to `teacher_data.npz` for
-future PX4-specific fitting. No trained PX4 Student is claimed yet.
+PX4-specific fitting. A conservative fitted hybrid reference now exists; its
+closed-loop research acceptance remains failed, as described below.
 
 The source scene is verified by hash and rebuilt for each run. Reviewed asset
 root relocation is recorded in `configs/px4_research_inputs.json`; no stale
@@ -103,3 +104,37 @@ causal actor; its first rate-interface development flight
 `px4-phase4-ap-teacher-development-01` fails its envelope and misses the target.
 Motor replay matches exactly. These are development findings; no matched
 holdout comparison or replacement accepted contact strategy is claimed.
+
+## Fresh PX4 hybrid reference
+
+`px4-teacher-reference-data-01` contains twelve independently seeded center-aim
+Teacher episodes, all physically successful: eight train and four validation.
+The v1 failed holdout is excluded. `distillation.px4_reference_training` fits
+position/velocity/acceleration using train episodes only and retains geometric
+feedback, the causal observer and source timestamps. It supports conservative
+mode only; the bundle rejects other modes. This is a fitted hybrid reference,
+not a direct action network.
+
+Fit 01 failed its 2 mm validation gate because feature time included measured
+observation age. Fit 02 removes that age and follows the Teacher's observation
+clock; validation position RMSE is 0.409/0.377/0.440 mm. One fresh development
+Student flight passes, with recovery 0.817 s and exact motor replay.
+
+The separately frozen `px4-hybrid-reference-holdout-01` then fails: **9/14 task
+successes**, one verified safe abort, nominal **7/8**. Delayed/dropout estimates
+expose edge, undesignated and secondary contact and recovery failures. All
+attempts are retained; neither the fitting score nor the development flight
+qualifies the strategy. Further repair requires new development data and a new
+reserved gate. The complete 150 g image mission uses the separate low-speed
+image commitment/recovery controller, not this 180 g research reference.
+
+```bash
+/home/shiuhou/venvs/mujoco/bin/python \
+  -m rm27.experiments.aggressive_contact.distillation.px4_reference_training \
+  artifacts/px4-teacher-reference-data-01 --output artifacts/px4-reference-fit-new
+
+/home/shiuhou/venvs/mujoco/bin/python \
+  -m rm27.experiments.aggressive_contact.flight_control.batch \
+  --config configs/px4_hybrid_reference_holdout_v2.json --workers 2 \
+  --output artifacts/px4-hybrid-holdout-new
+```

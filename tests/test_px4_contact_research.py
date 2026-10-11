@@ -54,6 +54,7 @@ def test_teacher_contact_feature_is_independent_of_airborne_initialization_clock
         actor=SimpleNamespace(target=SimpleNamespace(position=np.zeros(3)),start_time=offset,
             p={'duration_s':6.},deployment={},inertia=np.eye(3),mixer=np.eye(4),
             cfg={'controller':{'attitude_damping':1.,'attitude_frequency_rad_s':1.}},
+            last_reference=np.zeros(3),last_reference_state=np.zeros(16),
             command=lambda *args:(np.ones(4),None))
         pilot=TeacherPolicy.__new__(TeacherPolicy)
         pilot.actor=actor;pilot.mode=2;pilot.previous_action=np.r_[np.zeros(3),1.8];pilot.records=[]

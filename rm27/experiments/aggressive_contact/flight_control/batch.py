@@ -40,6 +40,16 @@ def run(config,output,workers=3):
     hashes=json.loads((output/'provenance.json').read_text())['source_sha256']
     from ..model import ROOT
     frozen={str(ROOT/path):value for path,value in hashes.items()}
+    # The selected Student lives in ignored artifacts. Freeze its actual
+    # bundle too, so source stability cannot hide changed fitted coefficients.
+    frozen[str(Path(config).resolve())]=hashlib.sha256(Path(config).read_bytes()).hexdigest()
+    for case in spec['cases']:
+        paths=[]
+        bundle=case.get('study',{}).get('student_bundle')
+        if bundle:paths.extend((ROOT/bundle).rglob('*'))
+        if case.get('parameters'):paths.append(ROOT/case['parameters'])
+        for path in paths:
+            if path.is_file():frozen[str(path.resolve())]=hashlib.sha256(path.read_bytes()).hexdigest()
     backends={case.get('autopilot',spec.get('autopilot','ardupilot')) for case in spec['cases']}
     for backend in backends:
         binary=ROOT/('artifacts/deps/PX4-Autopilot/build/px4_sitl_default/bin/px4' if backend=='px4'

@@ -118,14 +118,18 @@ class TeacherPolicy:
         action=project(command,s.omega_body,self.actor.inertia,self.actor.mixer,gain)
         action=RateThrust(np.clip(action.body_rates_flu_rad_s,-20,20),action.collective_force_N)
         self.previous_action=np.r_[action.body_rates_flu_rad_s,action.collective_force_N]
-        self.records.append((now,s.timestamp,feature,self.previous_action.copy()))
+        reference=np.r_[self.actor.last_reference,self.actor.last_reference_state[:6]]
+        self.records.append((now,s.timestamp,feature,self.previous_action.copy(),reference,
+            self.causal.contact_time is not None))
         return action
 
     def save(self,path):
         np.savez_compressed(path,control_time_s=np.array([r[0] for r in self.records]),
             source_time_s=np.array([r[1] for r in self.records]),
             observation=np.array([r[2] for r in self.records]),
-            teacher_rate_thrust=np.array([r[3] for r in self.records]))
+            teacher_rate_thrust=np.array([r[3] for r in self.records]),
+            reference_pva=np.array([r[4] for r in self.records]),
+            causal_contact_detected=np.array([r[5] for r in self.records]))
 
 
 def run(output, mode='hover', observation='telemetry', instance=45, duration=8.,
@@ -150,13 +154,13 @@ def run(output, mode='hover', observation='telemetry', instance=45, duration=8.,
     plant=ContactPlant(bundle)
     write_json(output/'plant_config.json',c)
     write_json(output/'vehicle_info.json',plant.info)
-    bundle_path=(ROOT/inputs['bundle']).resolve()
+    study=json.loads(Path(study_file).read_text()) if study_file else {}
+    bundle_path=(ROOT/study.get('student_bundle',inputs['bundle'])).resolve()
     interface=json.loads((ROOT/'configs/px4_contact_policy.json').read_text())
     deployment=json.loads((bundle_path/'deployment_options.json').read_text())
     deployment.update(interface['deployment_overrides'])
     write_json(output/'research_inputs.json',dict(configuration=inputs,interface=interface,
         bundle_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in bundle_path.iterdir() if p.is_file()}))
-    study=json.loads(Path(study_file).read_text()) if study_file else {}
     if study.get('diagnostic_correction','none')!='none' or study.get('sensor'):
         raise ValueError('PX4 Phase 5 uses external_navigation; privileged actor corrections are unsupported')
     if study.get('teacher_design_overrides') and policy!='teacher':

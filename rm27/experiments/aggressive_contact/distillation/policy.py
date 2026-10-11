@@ -52,6 +52,9 @@ class StudentSkill:
                    None if self.contact_time is None else self.contact_time-self.start_time,age,self.use_observer)
         self.buffer.append(obs)
         if self.hybrid:
+            reference_elapsed=elapsed
+            if self.deployment.get('reference_time_source')=='observation':
+                reference_elapsed=sensed.timestamp-self.start_time
             if self.deployment.get('predict'):
                 from .deployment import propagate
                 sensed=propagate(sensed,clock,act,self.mass,self.deployment['predict'])
@@ -60,7 +63,7 @@ class StudentSkill:
                     self.recovery_anchor=self.causal.anchor+self.target.normal*self.p['retreat_m']
                     self.recovery_anchor[2]+=self.p['recovery_lift_m']
                 desired=(self.recovery_anchor,np.zeros(3),np.zeros(3),np.zeros(3))
-            else:desired=self.reference.sample(elapsed)
+            else:desired=self.reference.sample(reference_elapsed)
             f=self.feedback;f.contact_time=self.contact_time
             # Independent causal observer, same nominal actuator compensation.
             f.previous_motor_command=self.causal.previous_motor.copy()
