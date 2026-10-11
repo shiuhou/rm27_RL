@@ -179,16 +179,20 @@ This is simulation tuning; remaining gates and timeout are unchanged.
   failed. Startup-configured 250 Hz observer development passes two fresh
   physical tasks, with 5/7 ms inference and 3.593/1.480 mm resting XY. Primary
   camera source-time laundering is repaired and regression tested. A new
-  reserved nominal batch is running and resumed without repeating completed
-  flights after its controller was interrupted. The bounded V4 continuous
-  recovery corridor passes; reserved native-step membership is independently
-  checked. The50-condition V2 batch is running but has an unhandled takeoff
+  reserved nominal V3 batch now passes **20/20**, resumed without repeating
+  completed flights after its controller was interrupted. The bounded V4
+  continuous corridor and all20 native-step memberships pass. Maximum
+  independent resting XY is3.482 mm, p95 3.469 mm. The50-condition V2 batch
+  is running but has an unhandled takeoff
   contact failure, so it cannot pass. Complete-route downward faults continue.
   See [complete image mission](PX4_IMAGE_MISSION.md).
   Stochastic noise development also exposes native covariance failures. An
   isolated Joseph variant completes one formerly failing recorded segment,
   but a fresh flight still fails; [numerical diagnosis](PX4_NATIVE_NUMERICS.md)
   records both and continued physical termination development.
+  The bounded initial dock VIO-disconnect matrix separately passes5/5
+  physical terminations,0/5 tasks, with actual range-height fusion and no
+  unexpected failsafe. Full-route interruption and navigation reset remain open.
 - P6: ULog intake, finite logging session and M3C single-UART tools are present;
   six fake-wire root tests pass. See [software report](PX4_M3C_SOFTWARE.md).
   Full saved-SITL-log wire replay and loss rejection now pass; end-to-end

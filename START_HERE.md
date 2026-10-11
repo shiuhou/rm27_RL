@@ -34,7 +34,7 @@ python -m rm27 --help
 MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python \
   -m rm27.autopilot.px4.image_mission artifacts/px4-dock-tags-05/scene.xml \
   --audit artifacts/px4-guard-tip-corridor-audit-01/summary.json \
-  --config configs/px4_image_guard_tip_dev_v11.json \
+  --config configs/px4_image_mission_v3.json \
   --camera-config configs/px4_sim_camera_guard_tip_dev_v8.json \
   --instance 40 --output artifacts/px4-image-mission-new
 ```

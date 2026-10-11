@@ -36,6 +36,13 @@ pass. The source inputs and failed prior attempts remain in their respective
 artifact directories. Reserved acceptance flights must independently satisfy
 membership; successful nominal flight alone cannot establish S1 completion.
 
+The reserved nominal V3 set now passes20/20 native-step membership in
+`px4-image-nominal-v3-native-membership-01`. Each run contains3100 consecutive
+1 ms samples spanning3.099 s; no sample lies outside V4. The same20 runs
+pass their independent recorded local surface and physical recovery gates.
+This establishes the bounded front-contact/recovery family for those nominal
+tasks; arbitrary grazing and disturbed trajectories remain separate.
+
 The same tagged scene passes current-aircraft front/back/grazing/non-target
 motor-off probes in `px4-guard-tip-contact-classification-01`. Its finest
 0.125 ms classifications and momentum checks pass; the coarse1 ms grazing

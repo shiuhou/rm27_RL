@@ -200,6 +200,16 @@ recovery step is additionally checked against the unchanged V4 continuous
 certificate in `px4-image-nominal-v3-native-membership-01`. Both reports require
 all20 attempts before `passed` can become true. Inspect their actual summaries.
 
+Both V3 reports are now complete and **passed20/20**. The same frozen150 g
+task completes image target approach, first-impact recovery, assigned AprilTag
+return, normal LAND and automatic disarm. Every run has actual EKF2 EV
+position/velocity/height fusion and recorded local surface clearance. Every
+recovery has3100 consecutive1 ms samples within the V4 continuous corridor.
+Maximum independently scored resting XY is3.482 mm, p95 3.469 mm; maximum
+10 s hover XY is12.760 mm and height39.515 mm. Maximum contact inference
+delay is7 ms. These are host headless closed-loop SITL results, not hardware
+accuracy, stochastic-noise qualification or passing variable/fault acceptance.
+
 ```bash
 /home/shiuhou/venvs/mujoco/bin/python -m tools.px4.resume_image_batch \
   artifacts/interrupted-image-batch --workers 2 --instance 50 \
