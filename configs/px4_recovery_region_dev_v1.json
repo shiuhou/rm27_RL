@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "gate_version": "PX4_CONTINUOUS_RECOVERY_REGION_DEVELOPMENT_V1",
+  "armor_geom": "rm27_base_armor",
+  "armor_site": "rm27_base_armor_center",
+  "contact_point_body_flu_m": [-0.06, 0.06, -0.018],
+  "allowed_surface_dimensions_m": [0.09, 0.055],
+  "backing_surface_tolerance_m": 0.01,
+  "penetration_tolerance_m": 0.0002,
+  "pose_bounds": [[-0.002, 0.6], [-0.01, 0.01], [-0.01, 0.01], [-10, 10], [-10, 10], [35, 55]],
+  "maximum_depth": 36,
+  "maximum_cells": 100000,
+  "scope": "New continuous local guard-tip pose-family development. Axes are tip normal distance, patch tangent X/Y and world-body roll/pitch/yaw degrees. Unknown cells fail. This domain must not be narrowed using reserved flight outcomes."
+}
