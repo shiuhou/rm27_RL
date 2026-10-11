@@ -13,6 +13,7 @@ class Registration:
     rotation_ned_parent: tuple
     translation_ned_parent: tuple
     rotation_child_frd: tuple
+    publication_clock_domain: str | None = None
 
     def __post_init__(self):
         for name in ('rotation_ned_parent','rotation_child_frd'):
@@ -23,22 +24,33 @@ class Registration:
         if t.shape!=(3,) or not np.isfinite(t).all():raise ValueError('invalid registered translation')
 
 class OdometryAdapter:
-    def __init__(self, registration, max_age_s=.1):
+    def __init__(self, registration, max_age_s=.1, *, allow_unqualified_simulation=False):
         if max_age_s<=0:raise ValueError('max_age must be positive')
         self.registration=registration;self.max_age_s=max_age_s;self.previous=None;self.reset_counter=0
-    def packet(self, estimate, now_ns):
+        if allow_unqualified_simulation and registration.clock_domain!='mujoco_simulation':
+            raise ValueError('development admission is restricted to MuJoCo simulation')
+        self.allow_unqualified_simulation=allow_unqualified_simulation
+    def packet(self, estimate, now_ns, *, publication_now_ns=None):
         if not isinstance(estimate,LocalizationEstimate):raise ValueError('expected LocalizationEstimate v2')
         e=estimate;r=self.registration;t=e.source_time
         if not e.valid or not e.initialized or e.tracking_state!=TrackingState.TRACKING or e.relocalizing or e.scale_state!=ScaleState.METRIC:
             raise ValueError('localization is not valid metric tracking')
         if (e.parent_frame,e.child_frame)!=(r.parent_frame,r.child_frame):raise ValueError('frame registration mismatch')
-        for stamp in (e.source_time,e.publish_time):
-            if stamp.unit!='ns' or stamp.clock_domain!=r.clock_domain or stamp.evidence_status!='VERIFIED':raise ValueError('timestamp is not verified in registered clock')
+        domains=(r.clock_domain,r.publication_clock_domain or r.clock_domain)
+        for stamp,domain in zip((e.source_time,e.publish_time),domains):
+            if stamp.unit!='ns' or stamp.clock_domain!=domain or stamp.evidence_status!='VERIFIED':raise ValueError('timestamp is not verified in registered clock')
         age=(now_ns-t.raw_value)/1e9
-        if not 0<=age<=self.max_age_s or not t.raw_value<=e.publish_time.raw_value<=now_ns:raise ValueError('stale/future localization')
+        if not 0<=age<=self.max_age_s:raise ValueError('stale/future localization')
+        if domains[0]==domains[1]:
+            if not t.raw_value<=e.publish_time.raw_value<=now_ns:raise ValueError('stale/future publication')
+        else:
+            if publication_now_ns is None:raise ValueError('registered publication-clock current time required')
+            publication_age=(publication_now_ns-e.publish_time.raw_value)/1e9
+            if not 0<=publication_age<=self.max_age_s:raise ValueError('stale/future publication')
         if e.velocity is None or e.velocity_unit!='m/s' or e.velocity_frame!=e.parent_frame:raise ValueError('registered parent-frame velocity required')
         quality=e.quality or {}
-        if quality.get('flight_qualified') is not True:raise ValueError('flight qualification evidence required')
+        if quality.get('flight_qualified') is not True and not self.allow_unqualified_simulation:
+            raise ValueError('flight qualification evidence required')
         def covariance(name):
             c=np.asarray(quality.get(name),float)
             if c.shape!=(6,6) or not np.isfinite(c).all() or not np.allclose(c,c.T) or np.linalg.eigvalsh(c).min()<-1e-12:raise ValueError('finite PSD '+name+' required')
