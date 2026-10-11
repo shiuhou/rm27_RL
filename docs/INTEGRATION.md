@@ -74,13 +74,15 @@ G1's 1 kg vehicle has ~436 mm propeller width. Existing M4-A propellers span
 slot as-is. New vehicle static clearance is 11.25 mm per side; this does not
 establish return-to-slot accuracy or propeller-wall aerodynamic behavior.
 
-The current real stack is MicoAir743v2-AIO-35A with user-selected PX4 v1.17.0
-(updated 2026-10-10), an MTF-02P optical-flow/range sensor, and an M10G-5883
-used only for its compass. The installed PX4 build, board target, ports and
-orientations await the real `.ulg` and full parameter export. Existing ArduPilot
-SITL evidence does not establish PX4 integration. GNSS is not an intended navigation input. See
+The user confirms a 150 g assembled aircraft, including its 2S 450 mAh battery,
+M3C and OS04A10, with PX4 v1.17.0 running on MicoAir743v2-AIO-35A.
+The full parameter export is retained as read-only evidence. MTF-02P and the
+historical compass-only M10G-5883 intent are recorded separately from the export's
+actual fusion configuration; current real fusion awaits ULog verification.
+PX4 implementation and new simulation evidence are tracked in
+[PX4_MIGRATION_STATUS.md](PX4_MIGRATION_STATUS.md). GNSS is not an intended navigation input. See
 [the real-hardware baseline](REAL_HARDWARE.md). These
-components are not yet represented by calibrated sensor models in MuJoCo.
+components have engineering sensor models, without real sensor calibration.
 
 The RM2027 preliminary mass-size relation gives a maximum dimension of about
 116.3 mm at 180 g. The current 120 mm proxy is therefore a useful simulation

@@ -12,6 +12,47 @@ python -m rm27 --help
 
 所有指令都在 repo 根目錄執行。不需要啟動 IsaacLab，也不需要設定 `PYTHONPATH`。
 
+## PX4 v1.17.0 迁移工作区
+
+迁移代码位于 `/home/shiuhou/Projects/rm27_drones_px4`，分支为
+`codex/px4-v1.17-migration`。[验收状态和限制](docs/PX4_MIGRATION_STATUS.md)。
+以下均为本机 SITL，150 g 参数中的惯量、推力和电机滞后仍是工程估计。
+
+```bash
+cd /home/shiuhou/Projects/rm27_drones_px4
+# 由 PX4 EKF 遥测控制短程往返；数值光流下限 8 cm，无 GPS/ODOMETRY。
+/home/shiuhou/venvs/mujoco/bin/python -m rm27 micro-flight \
+  artifacts/px4-dock-150g-02/scene.xml --autopilot px4 --profile mtf \
+  --dynamics configs/dynamics_150g.json --instance 26 \
+  --output artifacts/px4-mtf-new
+
+# 低速接触/恢复/回库：诊断真值辅助，不是视觉验收。
+/home/shiuhou/venvs/mujoco/bin/python -m rm27 route-flight \
+  artifacts/px4-base-target-150g-02/scene.xml --autopilot px4 \
+  --audit artifacts/px4-corridor-audit-02/summary.json \
+  --mission configs/px4_corridor_mission_s2.json \
+  --dynamics configs/dynamics_150g.json --instance 24 \
+  --output artifacts/px4-contact-new
+/home/shiuhou/venvs/mujoco/bin/python -m rm27.autopilot.px4.recovery \
+  artifacts/px4-contact-new --output artifacts/px4-contact-score-new
+```
+
+加 `--view --speedup 1` 可观看当前闭环飞行；无桌面时省略 `--view`。
+每次使用新的 output。读 `summary.json`，恢复门槛还需查看独立 scorer。
+`--profile ekf` 使用合成外部定位；`flow` 使用 1 cm 数值光流下限；
+`combined` 使用合成外部定位加数值光流。均不代表实机视觉已合格。
+
+```bash
+# 精确重放已录制的电机输入，验证物理状态。
+/home/shiuhou/venvs/mujoco/bin/python -m rm27.autopilot.px4.replay \
+  artifacts/px4-mtf-new --output artifacts/px4-mtf-replay-new
+MUJOCO_GL=egl PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+  /home/shiuhou/venvs/mujoco/bin/python -m pytest tests -q
+```
+
+响应探针和图像/OpenVINS 输入命令见
+[仿真感知说明](rm27/perception/sitl/README.md)。
+
 ## 最新研究：Phase 5 無 GPS EKF 接觸／恢復
 
 [完整報告與精度要求](docs/ESTIMATOR_AWARE_HYBRID_MANEUVER_REPORT.md)。真實 ArduPilot SITL 已使用合成外部定位測量、關閉 GPS；actor 讀取 EKF 遙測。留出測試 9/12 通過，尚未接入真實相機／VIO，也不是完整機庫往返。

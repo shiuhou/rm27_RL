@@ -11,6 +11,10 @@ def replay(run, output):
     if hashlib.sha256(scene.read_bytes()).hexdigest()!=meta['scene_sha256']:raise ValueError('scene changed')
     dynamics=run/'dynamics.json'
     plant=MicroPlant(scene,dynamics_profile=dynamics if dynamics.exists() else None)
+    if 'physics_timestep_s' in meta:
+        step=float(meta['physics_timestep_s'])
+        if not np.isfinite(step) or step<=0:raise ValueError('invalid recorded physics step')
+        plant.model.opt.timestep=step
     count=0; maximum=0.;failure=None
     try:
         with (run/'frames.jsonl').open() as handle:

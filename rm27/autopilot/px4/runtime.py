@@ -27,7 +27,15 @@ class Runtime:
         self.source=verify(source); self.profile=profile
         self.binary=self.source/'build/px4_sitl_default/bin/px4'
         self.process=None; self.server=self.sim=self.api=self.log=None
-        self.decoder=ActuatorDecoder(); self.sensor=SensorProducer(plant)
+        self.decoder=ActuatorDecoder()
+        self.external_vision=profile not in ('flow','mtf')
+        if profile in ('flow','mtf','combined'):
+            from .flow import FlowSensorProducer
+            self.sensor=FlowSensorProducer(plant)
+            if profile=='mtf':self.sensor.minimum_range_m=.08
+            if profile=='combined':
+                self.sensor.odometry=lambda:SensorProducer.odometry(self.sensor)
+        else:self.sensor=SensorProducer(plant)
         self.last_odom=-1.; self.telemetry={}; self.parameters={}; self.events=[]
         self.sim_port=4560+instance; self.api_port=18000+instance*2; self.host_port=self.api_port+1
         self.system=instance+1; self.started=None
@@ -138,7 +146,7 @@ class Runtime:
         while time.monotonic()<deadline:
             if self.process.poll() is not None:raise RuntimeError('PX4 exited; see sitl.log')
             now=float(self.plant.data.time)
-            if now-self.last_odom>=.02-1e-8:
+            if self.external_vision and now-self.last_odom>=.02-1e-8:
                 self.hil.send(self.sensor.odometry()); self.last_odom=now
             if not self.pending and not select.select([self.sim],[],[],.05)[0]:
                 # Initial module startup requires clock progression before output exists.
@@ -155,6 +163,9 @@ class Runtime:
                 self.advance(controls)
                 self.hil.send(self.sensor.hil_sensor())
                 self.hil.send(self.sensor.distance_sensor())
+                if hasattr(self.sensor,'optical_flow'):
+                    flow=self.sensor.optical_flow()
+                    if flow is not None:self.hil.send(flow)
                 return {'timestamp':float(self.plant.data.time),'actuator_time_usec':msg.time_usec,'controls':controls.tolist(),'state':self.plant.state(),'truth':self.plant.truth()}
         self.diagnostics()
         raise TimeoutError('PX4 actuator stream timed out')

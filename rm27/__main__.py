@@ -142,9 +142,9 @@ def main():
     p.add_argument("--autopilot", choices=("ardupilot", "px4"), default="ardupilot")
     p.add_argument(
         "--profile",
-        choices=("diagnostic", "ekf"),
+        choices=("diagnostic", "ekf", "flow", "mtf", "combined"),
         default="diagnostic",
-        help="PX4 guidance profile: diagnostic truth-assisted or EKF telemetry",
+        help="PX4 diagnostic guidance or EKF telemetry using external vision, flow, or combined sensors",
     )
     p.add_argument("--instance", type=int, default=31)
     p.add_argument("--dynamics", type=Path, help="Verify simulation dynamics against this profile")
@@ -166,9 +166,9 @@ def main():
     p.add_argument('--autopilot', choices=('ardupilot', 'px4'), default='ardupilot')
     p.add_argument(
         '--profile',
-        choices=('diagnostic', 'ekf'),
+        choices=('diagnostic', 'ekf', 'flow', 'mtf', 'combined'),
         default='diagnostic',
-        help='PX4 guidance profile: diagnostic truth-assisted or EKF telemetry',
+        help='PX4 diagnostic guidance or EKF telemetry using external vision, flow, or combined sensors',
     )
     args = parser.parse_args()
     if args.command == 'build-cad-drone':

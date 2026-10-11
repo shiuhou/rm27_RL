@@ -26,6 +26,6 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('scene',type=Path);p.add_argument('--dynamics',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--count',type=int,default=10);p.add_argument('--instance',type=int,default=0)
     p.add_argument('--route-audit',type=Path,help='Run route-flight with this audited corridor instead of micro-flight')
     p.add_argument('--mission',type=Path,help='Optional route mission JSON')
-    p.add_argument('--profile',choices=('diagnostic','ekf'),default='diagnostic')
+    p.add_argument('--profile',choices=('diagnostic','ekf','flow','mtf','combined'),default='diagnostic')
     a=p.parse_args();r=batch(a.scene,a.output,a.dynamics,a.count,a.instance,route_audit=a.route_audit,mission=a.mission,profile=a.profile);return 0 if r['passed'] else 1
 if __name__=='__main__':raise SystemExit(main())

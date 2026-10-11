@@ -1,28 +1,30 @@
 # Current real-aircraft hardware baseline
 
-Status: hardware configuration recorded on 2026-09-12; firmware selection updated
-by the user on 2026-10-10 to **PX4 v1.17.0**. Installed build, parameters, sensor
-ports and orientations await verification from the original PX4 ULog (`.ulg`)
-and full parameter export. The
+Status: updated from the user's confirmed assembly on 2026-10-11. The aircraft
+runs **PX4 v1.17.0**, and its supplied full parameter export is recorded in
+`configs/real_hardware.json`. Installed binary hash, current ULog, sensor
+orientations and actual fusion remain separate evidence requirements. The
 machine-readable counterpart is [`configs/real_hardware.json`](../configs/real_hardware.json).
 
 ## Current aircraft
 
 | Item | Current information | Evidence status |
 |---|---|---|
-| Ready-to-fly mass | approximately 180 g | User reported; exact measurement pending |
+| Ready-to-fly mass | 150 g, including battery, M3C, camera and wiring | User confirmed |
 | Envelope | 120 × 120 mm provisional | Temporary authorized model |
 | Motors | 1103 9600KV | User reported |
 | Propellers | 2 inch | User reported; model/blade count pending |
-| Battery | Unknown | Cell count, capacity and voltage pending |
+| Battery | 2S 450 mAh | User confirmed; voltage under load unmeasured |
 | Flight controller | MicoAir743v2-AIO-35A | User reported |
-| Firmware | PX4 v1.17.0 | User selected on 2026-10-10; installed build verification pending |
+| Firmware | PX4 v1.17.0 | User confirms running; installed binary hash pending |
+| Companion board / camera | M3C / OS04A10 | User confirmed; camera/IMU calibration pending |
 | Flow/range sensor | MTF-02P | User confirmed |
 | GNSS/compass | M10G-5883, compass only | User confirmed intended use; installation pending |
 
 The current values above supersede candidate combinations found in old project
 conversation records. In particular, do not substitute 9500KV motors, 2.5-inch
-props, or an assumed 2S/3S battery without new evidence.
+props, or a different battery without new evidence. The former 180 g value is
+retained only for historical simulation comparisons.
 
 ## Flight controller
 
@@ -77,8 +79,10 @@ Official source:
 
 ## Relationship to the current simulation
 
-The root MuJoCo micro-aircraft currently uses the reported mass, motor KV class,
-propeller diameter and provisional envelope. The following remain engineering
+The PX4 worktree has distinct 180 g comparison and 150 g target dynamics
+profiles. The target profile retains the provisional geometry, 40 ms motor lag
+and 1.103625 N per-motor maximum thrust, without rescaling thrust with mass.
+The following remain engineering
 estimates rather than properties calibrated from this aircraft:
 
 - inertia tensor;
@@ -90,10 +94,11 @@ estimates rather than properties calibrated from this aircraft:
 - barometer, optical-flow, rangefinder and compass error models;
 - controller gains suitable for the real aircraft.
 
-The simulation's millimetre dock return uses MuJoCo truth in its outer guidance
-loop. It is not evidence of MTF, GPS, vision or real-aircraft landing accuracy.
-The existing flight gates and frozen G1 baseline use ArduPilot SITL; their
-results do not establish PX4 v1.17.0 integration or real-flight performance.
+Historical millimetre dock results use MuJoCo truth in their outer guidance.
+PX4 diagnostic and estimator-guided results are separately identified in
+[PX4_MIGRATION_STATUS.md](PX4_MIGRATION_STATUS.md). Numerical optical flow is
+not measured MTF performance, and rendered simulation images are not OS04A10
+calibration. Frozen G1 ArduPilot results retain their original scope.
 Never write `configs/micro_hover.parm` directly to the real flight controller.
 
 ## Pending flight-log intake

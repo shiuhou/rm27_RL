@@ -43,9 +43,19 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
     if not math.isfinite(speedup) or speedup<=0:raise ValueError('speedup must be positive')
     scene=Path(scene).resolve();output=Path(output).resolve();output.mkdir(parents=True,exist_ok=False)
     plant=MicroPlant(scene,dynamics_profile=dynamics)
+    if route:
+        # The current aircraft contact replay converges at 1 ms versus .5 ms;
+        # 2 ms versus 1 ms misses the 10% peak-force criterion. Dock-only
+        # flights retain their native 2 ms step and 250 Hz HIL scheduling.
+        plant.model.opt.timestep=.001
     if dynamics: (output/'dynamics.json').write_bytes(Path(dynamics).read_bytes())
     summary={'passed':False,'autopilot':'px4','firmware':'v1.17.0','run_type':'closed-loop SITL','headless':not view,'estimation_source':'synthetic ODOMETRY to EKF2','guidance':'diagnostic truth-assisted' if profile=='diagnostic' else 'EKF telemetry','gate_version':'MICRO_FLIGHT existing physical thresholds','events':[],'failure':None}
+    telemetry_guidance=profile!='diagnostic'
+    if profile in ('flow','mtf'):summary['estimation_source']='numerical optical flow, scene-ray range, simulated compass and IMU; no GPS or ODOMETRY'
+    if profile=='mtf':summary['flow_minimum_range_m']=.08
+    elif profile=='combined':summary['estimation_source']='synthetic ODOMETRY plus numerical flow/range/compass and IMU'
     metadata={'scene':str(scene),'scene_sha256':hashlib.sha256(scene.read_bytes()).hexdigest(),'mass_kg':float(plant.model.body_mass[plant.body]),'origin_nwu':plant.origin.tolist(),'profile':profile,'dynamics_profile':str(dynamics),'runner_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+    metadata['physics_timestep_s']=float(plant.model.opt.timestep)
     source_root=Path(__file__).resolve().parents[3]
     metadata['git_commit']=subprocess.check_output(['git','rev-parse','HEAD'],cwd=source_root,text=True).strip()
     difference=subprocess.check_output(['git','diff','--binary','HEAD'],cwd=source_root)
@@ -60,8 +70,9 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
         (output/'route_audit.json').write_text(json.dumps(route.audit,indent=2)+'\n')
     (output/'metadata.json').write_text(json.dumps(metadata,indent=2))
     phase='INITIALIZE';phase_start=0.;stable_since=None;next_send=0.;next_action=10.;next_heartbeat=0.;next_params=0.
-    hover=[];landing=None;land_observed=False;land_requested=False;land_monitor=LandingMonitor();max_tilt=max_force=max_penetration=0.;start=time.monotonic();viewer=None
+    hover=[];physical_hover=[];landing=None;land_observed=False;land_requested=False;landing_commitment=None;land_monitor=LandingMonitor();max_tilt=max_force=max_penetration=0.;start=time.monotonic();viewer=None
     yaw=math.atan2(plant.data.xmat[plant.body].reshape(3,3)[1,0],plant.data.xmat[plant.body].reshape(3,3)[0,0])
+    flow_bootstrap=profile=='mtf'
     integral=np.zeros(2);last_send=None;rt=None
     def event(name,**fields):
         entry={'event':name,'physics_time':float(plant.data.time),**fields};summary['events'].append(entry);print(json.dumps(entry),flush=True)
@@ -70,6 +81,16 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
         phase=name;phase_start=float(plant.data.time);stable_since=None
         if name=='RETURN':integral[:]=0
         event(name)
+    def bootstrap(thrust):
+        nonlocal next_send
+        t=float(plant.data.time)
+        if t<next_send:return
+        from scipy.spatial.transform import Rotation
+        # Surveyed initial yaw and level attitude are fixed task references;
+        # no physical state is read to hold the vehicle during bootstrap.
+        q=Rotation.from_euler('z',-yaw).as_quat()[[3,0,1,2]]
+        rt.mav.set_attitude_target_send(int(t*1000),rt.system,1,7,q.tolist(),0.,0.,0.,thrust)
+        next_send=t+.02
     def target(p,xy_limit=.06,z_limit=0.,feedforward=None,kp=.8,kpz=None):
         nonlocal next_send,last_send
         t=float(plant.data.time)
@@ -119,13 +140,13 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                 # independent physics scoring and safety diagnostics only.
                 physical_local=plant.qpos[:3]-plant.origin
                 physical_speed=float(np.linalg.norm(plant.qvel[:3]))
-                if profile=='ekf' and 'local_position' in tel:
+                if telemetry_guidance and 'local_position' in tel:
                     local=to_ap(np.asarray(tel['local_position'],dtype=float))
                     speed=float(np.linalg.norm(to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float))))
                 else:
                     local=physical_local;speed=physical_speed
                 mission_contacts=contacts=plant.contacts()
-                if profile=='ekf':
+                if telemetry_guidance:
                     # Contact is not an input to the sensor-only mission
                     # state machine.  PX4's landed state and range stream
                     # provide the task-side touchdown signal.
@@ -157,7 +178,8 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                     if phase not in ('LAND','POST') and (not tel.get('armed') or tel.get('mode') not in allowed_mode):raise RuntimeError('Unexpected mode/disarm')
                 if t>(route.physics_deadline if route else 160):raise RuntimeError('Physics deadline')
                 if phase=='INITIALIZE':
-                    if 'local_position' in tel: target([0,0,.02])
+                    if flow_bootstrap:bootstrap(0.)
+                    elif 'local_position' in tel: target([0,0,.02])
                     verified=all(k in rt.parameters and math.isclose(rt.parameters[k],v,abs_tol=1e-5,rel_tol=1e-5) for k,v in rt.expected.items())
                     if t>50 and not verified:raise RuntimeError('Parameter mismatch: '+str({k:(v,rt.parameters.get(k)) for k,v in rt.expected.items() if k not in rt.parameters or not math.isclose(rt.parameters[k],v,abs_tol=1e-5,rel_tol=1e-5)}))
                     if verified and t>=next_action and 'local_position' in tel:
@@ -167,6 +189,20 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                     if verified and tel.get('armed') and tel.get('mode')=='OFFBOARD':
                         summary['parameters_verified']=True;transition('TAKEOFF')
                 elif phase=='TAKEOFF':
+                    if flow_bootstrap:
+                        # The manufacturer's flow minimum is 8 cm, above the
+                        # parked sensor. Lift on attitude/thrust, using range
+                        # and fresh estimator validity for the handover.
+                        if t-tel.get('distance_time',-100)>.1:raise RuntimeError('Bootstrap range stale')
+                        height=tel['distance_m']
+                        hover_fraction=rt.expected['MPC_THR_HOVER']
+                        bootstrap(hover_fraction*float(np.clip(1+1.8*(.25-height),.85,1.2)))
+                        flags=tel.get('estimator_flags',0)
+                        valid=flags & mavlink.ESTIMATOR_VELOCITY_HORIZ and flags & mavlink.ESTIMATOR_POS_HORIZ_REL
+                        if height>=.16 and valid and t-tel.get('estimator_time',-100)<.3:
+                            flow_bootstrap=False;phase_start=t;next_send=0.;event('flow_navigation_handover',range_m=height)
+                        elif t-phase_start>10:raise RuntimeError('No valid flow navigation after attitude takeoff')
+                        continue
                     target([0,0,min(.6,.02+.25*(t-phase_start))],z_limit=.25)
                     if abs(local[2]-.6)<.08 and speed<.08:
                         stable_since=t if stable_since is None else stable_since
@@ -177,10 +213,11 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                     target([0,0,.6])
                     if mission_contacts or abs(local[2]-.6)>.1 or speed>.15:raise RuntimeError('Hover bound violated')
                     hover.append([t,*local,speed,math.degrees(tilt)])
+                    physical_hover.append([t,*physical_local])
                     if t-hover[0][0]>=(route.mission['pre_route_hover_s'] if route else 10):transition('ROUTE' if route else 'OFFSET')
                 elif phase=='ROUTE':
-                    route_position=plant.origin+local if profile=='ekf' else plant.qpos[:3]
-                    route_velocity=to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float)) if profile=='ekf' else plant.qvel[:3]
+                    route_position=plant.origin+local if telemetry_guidance else plant.qpos[:3]
+                    route_velocity=to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float)) if telemetry_guidance else plant.qvel[:3]
                     previous_impact=route.impact
                     route.check(route_position);p=route.target(t,route_position,speed,mission_contacts,route_velocity)
                     if previous_impact is None and route.impact is not None:
@@ -198,12 +235,12 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                     elif t-phase_start>25:raise RuntimeError('Return alignment failed')
                 elif phase=='DESCEND':
                     target([0,0,max(.12,.6-.04*(t-phase_start))],z_limit=.04)
-                    estimated_vertical_speed=float(to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float))[2]) if profile=='ekf' else float(plant.qvel[2])
+                    estimated_vertical_speed=float(to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float))[2]) if telemetry_guidance else float(plant.qvel[2])
                     if abs(local[2]-.12)<.005 and abs(estimated_vertical_speed)<.01:transition('ALIGN')
                     elif t-phase_start>25:raise RuntimeError('Approach did not settle')
                 elif phase=='ALIGN':
                     target([0,0,.12])
-                    estimated_horizontal_speed=float(np.linalg.norm(to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float))[:2])) if profile=='ekf' else float(np.linalg.norm(plant.qvel[:2]))
+                    estimated_horizontal_speed=float(np.linalg.norm(to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float))[:2])) if telemetry_guidance else float(np.linalg.norm(plant.qvel[:2]))
                     if np.linalg.norm(local[:2])<.003 and estimated_horizontal_speed<.006 and abs(local[2]-.12)<.005:
                         stable_since=t if stable_since is None else stable_since
                         if t-stable_since>=.75:transition('FINAL_DESCEND')
@@ -212,7 +249,15 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                 elif phase=='FINAL_DESCEND':
                     if tel.get('mode')!='LAND':
                         target([0,0,max(-.02,.12-.03*(t-phase_start))],z_limit=.03)
-                        if local[2]<.06 and (not land_requested or t>=next_action):
+                        land_height=.12 if profile=='mtf' else .06
+                        if local[2]<land_height and (not land_requested or t>=next_action):
+                            if profile=='mtf' and landing_commitment is None:
+                                flags=tel.get('estimator_flags',0)
+                                if not flags & mavlink.ESTIMATOR_POS_HORIZ_REL or t-tel.get('estimator_time',-100)>.3 or np.linalg.norm(local[:2])>.003:
+                                    raise RuntimeError('No valid slot alignment at landing commitment')
+                                landing_commitment=dict(local_position=local.tolist(),timestamp_s=t,
+                                    policy='PX4 normal LAND below flow minimum; range/landed state complete the task; independent physics scores slot accuracy')
+                                summary['landing_commitment']=landing_commitment
                             rt.mode('LAND');land_requested=True;event('request_LAND')
                             next_action=t+1
                     if tel.get('mode')=='LAND' and tel.get('armed'):land_observed=True
@@ -220,16 +265,16 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                     # the earlier 6 mm pre-contact abort rejected otherwise
                     # valid runs when estimator and physics samples straddled
                     # the boundary by one 4 ms HIL tick.
-                    if local[2]<.1 and np.linalg.norm(local[:2])>.007:raise RuntimeError('Alignment lost near rim')
+                    if local[2]<.1 and np.linalg.norm(local[:2])>.007 and not (profile=='mtf' and landing_commitment):raise RuntimeError('Alignment lost near rim')
                     if mission_contacts or landed:
                         if speed>.15:raise RuntimeError('Landing too fast')
-                        landing={'physics_time':t,'local_position':local.tolist(),'speed_m_s':speed,'contacts':contacts,'touchdown_source':'px4_landed_state' if profile=='ekf' else 'mujoco_contact'}
-                        if profile!='ekf':land_monitor.check(t,local,contacts)
+                        landing={'physics_time':t,'local_position':local.tolist(),'speed_m_s':speed,'contacts':contacts,'touchdown_source':'px4_landed_state' if telemetry_guidance else 'mujoco_contact'}
+                        if not telemetry_guidance:land_monitor.check(t,local,contacts)
                         event('touchdown',**landing);next_action=t+1;transition('LAND')
                     elif t-phase_start>25:raise RuntimeError('Descent contact timeout')
                 elif phase=='LAND':
                     if tel.get('mode')=='LAND' and tel.get('armed'):land_observed=True
-                    if profile!='ekf':land_monitor.check(t,local,contacts)
+                    if not telemetry_guidance:land_monitor.check(t,local,contacts)
                     if not tel.get('armed'):
                         confirm_auto_disarm(tel,t,land_observed)
                         summary['auto_disarm']={'confirmed':True,'landed_state':tel['landed_state'],'post_disarm_mode':tel.get('mode')}
@@ -239,9 +284,23 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                         if t>=next_action:rt.mode('LAND');next_action=t+1
                     if t-phase_start>15:raise RuntimeError('Auto-disarm timeout')
                 elif phase=='POST':
-                    settled = landed if profile=='ekf' else bool(contacts)
-                    height_tolerance=.01 if profile=='ekf' else .005
-                    if tel.get('armed') or not settled or speed>.01 or np.linalg.norm(local[:2])>.007 or abs(local[2]-.02)>height_tolerance:raise RuntimeError('Disarmed resting gate failed')
+                    settled = landed if telemetry_guidance else bool(contacts)
+                    height_tolerance=.01 if telemetry_guidance else .005
+                    height=local[2]
+                    if profile in ('flow','mtf'):
+                        # Range-referenced EKF2 has a floating terrain datum.
+                        # Check measured ground clearance for resting height;
+                        # do not interpret local z as a surveyed floor height.
+                        if t-tel.get('distance_time',-100)>.1:raise RuntimeError('Resting range stale')
+                        height=tel['distance_m'];height_tolerance=.005
+                    resting_horizontal=np.linalg.norm(local[:2])
+                    if profile=='mtf' and landing_commitment:
+                        resting_horizontal=np.linalg.norm(landing_commitment['local_position'][:2])
+                        # Flow is intentionally invalid below 8 cm. Fresh
+                        # landed state and range establish rest; position is
+                        # assessed by the separate physical scorer.
+                        speed=abs(tel.get('local_velocity',[0,0,1])[2])
+                    if tel.get('armed') or not settled or speed>.01 or resting_horizontal>.007 or abs(height-.02)>height_tolerance:raise RuntimeError('Disarmed resting gate failed')
                     if t-phase_start>=1 and np.max(np.abs(plant.data.actuator_force[plant.motors]))<1e-5:
                         summary['passed']=True;event('complete');break
             if not summary['passed']:raise TimeoutError('Wall-clock deadline')
@@ -249,6 +308,19 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
         summary['failure']=f'{type(exc).__name__}: {exc}';(output/'failure.txt').write_text(traceback.format_exc())
     finally:
         if viewer:viewer.close()
+        final_local=plant.qpos[:3]-plant.origin
+        if physical_hover:
+            h=np.asarray(physical_hover);xy=np.linalg.norm(h[:,1:3],axis=1);z=np.abs(h[:,3]-.6)
+            summary['independent_hover_score']=dict(duration_s=float(h[-1,0]-h[0,0]),
+                horizontal_maximum_m=float(xy.max()),horizontal_p95_m=float(np.percentile(xy,95)),
+                vertical_maximum_m=float(z.max()),vertical_p95_m=float(np.percentile(z,95)),
+                passed=bool(xy.max()<=.2 and z.max()<=.1),source='MuJoCo truth, scoring only')
+        if summary['passed']:
+            physical_pass=bool(plant.contacts() and np.linalg.norm(final_local[:2])<=.007 and abs(final_local[2]-.02)<=.005)
+            summary['independent_resting_score']=dict(passed=physical_pass,source='MuJoCo truth, scoring only',
+                horizontal_error_m=float(np.linalg.norm(final_local[:2])),height_error_m=float(abs(final_local[2]-.02)))
+            if not physical_pass or not summary.get('independent_hover_score',{}).get('passed'):
+                summary['passed']=False;summary['failure']='Independent physical hover or dock resting gate failed'
         summary.update(phase=phase,physics_time_s=float(plant.data.time),landing=landing,hover_samples=len(hover),max_tilt_deg=max_tilt,max_contact_force_N=max_force,max_penetration_m=max_penetration,final_position_local_nwu=(plant.qpos[:3]-plant.origin).tolist())
         (output/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
         if rt:(output/'parameters_readback.json').write_text(json.dumps(rt.parameters,indent=2)+'\n')

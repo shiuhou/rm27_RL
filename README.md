@@ -2,6 +2,12 @@
 
 日常啟動與查看指令：[START_HERE.md](START_HERE.md)（繁體中文速查表）。
 
+PX4 v1.17.0 migration implementation, actual simulation results and remaining
+gates: [PX4_MIGRATION_STATUS.md](docs/PX4_MIGRATION_STATUS.md). The independent
+PX4 worktree contains the 150 g target model, HIL bridge, estimator-guided
+micro-flight, contact recovery, rendered image inputs and native OpenVINS
+evaluation. Full visual mission qualification remains in progress.
+
 RoboMaster 2027 simulation and research workspace. The current priority is one
 vehicle repeatedly completing dock → blue base armor impact → recovery → assigned
 dock slot round trips. Quantity expands only after single-vehicle acceptance;
