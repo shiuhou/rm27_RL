@@ -1,0 +1,297 @@
+{
+  "schema_version": 1,
+  "autopilot": "px4",
+  "acceptance": "task_success",
+  "split": "paired comparison development; no reserved holdout reuse",
+  "scope": "180 g equal geometry/Teacher design/seed and existing physical scorer; compare both current backends and both action layers; failures retained",
+  "cases": [
+    {
+      "name": "ardupilot-rate-178101",
+      "autopilot": "ardupilot",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "rate",
+      "duration": 10,
+      "parameters": "configs/contact_phase5/externalnav.parm",
+      "study": {
+        "migration_comparison": true,
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 178101
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0
+          }
+        }
+      }
+    },
+    {
+      "name": "px4-rate-178101",
+      "autopilot": "px4",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "rate",
+      "duration": 10,
+      "parameters": "configs/px4/response.json",
+      "study": {
+        "migration_comparison": true,
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 178101
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0
+          }
+        }
+      }
+    },
+    {
+      "name": "ardupilot-attitude-178101",
+      "autopilot": "ardupilot",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "attitude",
+      "duration": 10,
+      "parameters": "configs/contact_phase5/externalnav.parm",
+      "study": {
+        "migration_comparison": true,
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 178101
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0
+          }
+        }
+      }
+    },
+    {
+      "name": "px4-attitude-178101",
+      "autopilot": "px4",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "attitude",
+      "duration": 10,
+      "parameters": "configs/px4/response.json",
+      "study": {
+        "migration_comparison": true,
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 178101
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0
+          }
+        }
+      }
+    },
+    {
+      "name": "ardupilot-rate-178102",
+      "autopilot": "ardupilot",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "rate",
+      "duration": 10,
+      "parameters": "configs/contact_phase5/externalnav.parm",
+      "study": {
+        "migration_comparison": true,
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 178102
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0
+          }
+        }
+      }
+    },
+    {
+      "name": "px4-rate-178102",
+      "autopilot": "px4",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "rate",
+      "duration": 10,
+      "parameters": "configs/px4/response.json",
+      "study": {
+        "migration_comparison": true,
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 178102
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0
+          }
+        }
+      }
+    },
+    {
+      "name": "ardupilot-attitude-178102",
+      "autopilot": "ardupilot",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "attitude",
+      "duration": 10,
+      "parameters": "configs/contact_phase5/externalnav.parm",
+      "study": {
+        "migration_comparison": true,
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 178102
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0
+          }
+        }
+      }
+    },
+    {
+      "name": "px4-attitude-178102",
+      "autopilot": "px4",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "attitude",
+      "duration": 10,
+      "parameters": "configs/px4/response.json",
+      "study": {
+        "migration_comparison": true,
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 178102
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0
+          }
+        }
+      }
+    },
+    {
+      "name": "ardupilot-rate-178103",
+      "autopilot": "ardupilot",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "rate",
+      "duration": 10,
+      "parameters": "configs/contact_phase5/externalnav.parm",
+      "study": {
+        "migration_comparison": true,
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 178103
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0
+          }
+        }
+      }
+    },
+    {
+      "name": "px4-rate-178103",
+      "autopilot": "px4",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "rate",
+      "duration": 10,
+      "parameters": "configs/px4/response.json",
+      "study": {
+        "migration_comparison": true,
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 178103
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0
+          }
+        }
+      }
+    },
+    {
+      "name": "ardupilot-attitude-178103",
+      "autopilot": "ardupilot",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "attitude",
+      "duration": 10,
+      "parameters": "configs/contact_phase5/externalnav.parm",
+      "study": {
+        "migration_comparison": true,
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 178103
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0
+          }
+        }
+      }
+    },
+    {
+      "name": "px4-attitude-178103",
+      "autopilot": "px4",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "attitude",
+      "duration": 10,
+      "parameters": "configs/px4/response.json",
+      "study": {
+        "migration_comparison": true,
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 178103
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0
+          }
+        }
+      }
+    }
+  ]
+}

@@ -128,6 +128,15 @@ qualifies the strategy. Further repair requires new development data and a new
 reserved gate. The complete 150 g image mission uses the separate low-speed
 image commitment/recovery controller, not this 180 g research reference.
 
+The subsequent `px4-ap-teacher-pair-development-01` executes twelve current
+paired flights: three independent equal sensor seeds for each backend and
+rate/attitude interface, with the same 180 g geometry, centre-aim Teacher and
+physical scorer. PX4 rate succeeds 3/3; AP rate, AP attitude and PX4 attitude
+each succeed 0/3. The batch fails its all-task gate and retains misses, edge/
+undesignated contact and recovery failures. Replay and launch inputs remain
+available per attempt. This is development comparison evidence; it does not
+qualify AP/PX4 equivalence, the fitted Student or a complete mission.
+
 ```bash
 /home/shiuhou/venvs/mujoco/bin/python \
   -m rm27.experiments.aggressive_contact.distillation.px4_reference_training \
