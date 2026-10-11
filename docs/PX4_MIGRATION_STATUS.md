@@ -35,6 +35,7 @@ manufacturer's 8 cm minimum and attitude/thrust takeoff before flow handover.
 | Old route batch | `px4-s2-batch-01/summary.json` | Return/disarm 20/20, but strict recovery 0/20 in `px4-s2-eval-batch-04` |
 | Separation controller, 2 ms | `px4-s2-eval-batch-05/summary.json` | Strict recovery 20/20; max entry 0.468 s, held confirmation 1.468 s, no repeated armor collisions |
 | Current-aircraft contact convergence | `px4-contact-convergence-03/summary.json` | Passed at native 1 ms: impulse difference 3.38%, peak difference 2.10% versus 0.5 ms. 2 ms fails peak convergence (11.55%) |
+| Current-aircraft contact classification | `px4-contact-classification-02/summary.json` | Passed front/back/grazing/non-target probes; motors off, zero gravity; full local forbidden-region audit remains pending |
 | Separation controller, 1 ms | `px4-s2-1ms-score-01/summary.json` | Development pass: entry 0.412 s, held confirmation 1.412 s; independent 20-run batch `px4-s2-batch-03` pending |
 | Numerical flow micro-flight | `px4-flow-micro-03/summary.json` | Passed without GPS/ODOMETRY: 10 s hover maximum XY 5.24 mm, height 46.70 mm; independent physical scorer |
 | 8 cm flow minimum micro-flight | `px4-mtf-micro-06/summary.json` | Passed return/rest/auto-disarm: hover maximum XY 5.53 mm, height 24.85 mm, physical resting XY 2.26 mm. PX4 failsafe occurred after near-ground flow loss; further qualification required |
@@ -95,8 +96,9 @@ regression inputs, not a live flight or M3C runtime qualification.
 
 ## Remaining implementation and acceptance
 
-- S1: current-aircraft grazing/back/non-target classifications and complete
-  local forbidden-region audit. One converged front impact is insufficient.
+- S1: complete local forbidden-region audit. Current-aircraft classification
+  and converged front impact evidence are present; the remaining prerequisite
+  cannot be inferred from these probes.
 - S2: finish and strictly score the independent 1 ms batch; S1 prerequisites
   must pass before reporting full S2 acceptance.
 - S3: 20 independent sensor-only starts and the pre-registered fault matrix.
@@ -107,8 +109,9 @@ regression inputs, not a live flight or M3C runtime qualification.
   recovery, dock identification and slot guidance; complete 20 nominal and
   50 variable-condition runs plus fault handling. Recorded images and VIO
   scores do not qualify these gates.
-- P6: existing ULog intake, finite UART logging session and M3C single-UART tools
-  are present; end-to-end coverage and operation report still need completion.
+- P6: ULog intake, finite logging session and M3C single-UART tools are present;
+  six fake-wire root tests pass. See [software report](PX4_M3C_SOFTWARE.md).
+  End-to-end live capture and device runtime qualification remain pending.
   UART 115200 and ~50 Hz HIGHRES_IMU do not qualify 200 Hz raw IMU or real VIO.
 - Default backend remains explicit during migration. Complete mission and
   hardware qualification are separate decisions; no hardware is modified.

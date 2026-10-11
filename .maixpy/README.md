@@ -39,8 +39,12 @@ The `.msg` files are small definitions from the audited PX4 revision, required b
 the layout tests. Synthetic BMI088 IDs are fixture labels, not a real capture.
 Tests do not start the hardware scripts, and passing them does not qualify VIO.
 
-The finite reassembler returns ACK *intents*: no serial IO. Live controller remains
-planned. Hardware helpers open/configure UARTs only when explicitly launched;
+The finite reassembler returns ACK *intents*: no serial IO. The root
+`rm27.telemetry.logging_session` controller now implements finite start/ACK,
+stream, stop and drain handling over an injected transport. Fake-wire root tests
+cover rejection, loss, retry, CRC, timeouts and completion; no hardware execution
+is claimed. See [software scope and budgets](../docs/PX4_M3C_SOFTWARE.md).
+Hardware helpers open/configure UARTs only when explicitly launched;
 their presence is not permission to execute them or rerun completed Stage A/B.
 
 ## Not included / local-only evidence
