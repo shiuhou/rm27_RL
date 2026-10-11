@@ -36,7 +36,7 @@ manufacturer's 8 cm minimum and attitude/thrust takeoff before flow handover.
 | Separation controller, 2 ms | `px4-s2-eval-batch-05/summary.json` | Strict recovery 20/20; max entry 0.468 s, held confirmation 1.468 s, no repeated armor collisions |
 | Current-aircraft contact convergence | `px4-contact-convergence-03/summary.json` | Passed at native 1 ms: impulse difference 3.38%, peak difference 2.10% versus 0.5 ms. 2 ms fails peak convergence (11.55%) |
 | Current-aircraft contact classification | `px4-contact-classification-02/summary.json` | Passed front/back/grazing/non-target probes; motors off, zero gravity; full local forbidden-region audit remains pending |
-| Separation controller, 1 ms | `px4-s2-1ms-score-01/summary.json` | Development pass: entry 0.412 s, held confirmation 1.412 s; independent 20-run batch `px4-s2-batch-03` pending |
+| Separation controller, 1 ms | `px4-s2-eval-batch-06/summary.json` | Strict PX4 S2 recovery **20/20**; every hold sample and subsequent contact checked, no secondary collisions, all returned and auto-disarmed |
 | Numerical flow micro-flight | `px4-flow-micro-03/summary.json` | Passed without GPS/ODOMETRY: 10 s hover maximum XY 5.24 mm, height 46.70 mm; independent physical scorer |
 | 8 cm flow minimum micro-flight | `px4-mtf-micro-06/summary.json` | Passed return/rest/auto-disarm: hover maximum XY 5.53 mm, height 24.85 mm, physical resting XY 2.26 mm. PX4 failsafe occurred after near-ground flow loss; further qualification required |
 | Rate and attitude response | `px4-response-{rate,attitude}-{roll,pitch,yaw}-*/summary.json` | Six passing development axis probes; exact selected runs below; airborne response fixture, not landing/contact qualification |
@@ -44,7 +44,7 @@ manufacturer's 8 cm minimum and attitude/thrust takeoff before flow handover.
 | Native publication instrumentation | `openvins-native-evidence-build-01/summary.json` | Passed separate pinned build; original research source and binary remain read-only |
 | Native recorded VIO | `px4-current-flight-openvins-06/summary.json` | Execution passed; observed initialization, features, covariance, source/publication clocks and epochs |
 | Recorded VIO development score | `px4-current-flight-vio-score-05/summary.json` | Passed development thresholds: XY p95 0.19599 m, height p95 0.01623 m, coverage 87.18%; one initial SE3 registration, scale fixed to 1 |
-| Root tests | `px4-root-tests-09.log` | 383 passed, 2 ROS-only skips; headless EGL rendering included |
+| Root tests | `px4-root-tests-10.log` | 391 passed, 2 ROS-only skips; headless EGL rendering and live transport contracts included |
 
 Artifact paths in this table are relative to `artifacts/`.
 The response runs selected on development input are `rate-roll-02`,
@@ -61,7 +61,10 @@ limits. Earlier evaluator outputs `px4-s2-eval-batch-01` through `-03` are
 superseded: they masked repeat collisions or counted unsafe hold samples.
 The frozen separation controller is `configs/px4_corridor_mission_s2.json`:
 0.03 m/s approach, 0.025 m retreat bias, 0.12 m/s retreat reference and
-4 m/s² outward acceleration for 0.12 s dispatched on the impact tick.
+4 m/s² outward acceleration for 0.12 s dispatched on the impact tick. The
+strict batch is `artifacts/px4-s2-eval-batch-06`; its inputs are
+`artifacts/px4-s2-batch-03` (20/20), all at the 150 g target model and 1 ms
+route physics timestep.
 
 Failed attempts remain available: `px4-s0-batch-02` (9/10), early Corridor
 tracking/deadline failures, `px4-mtf-micro-01` through `-05`, response yaw
@@ -99,8 +102,9 @@ regression inputs, not a live flight or M3C runtime qualification.
 - S1: complete local forbidden-region audit. Current-aircraft classification
   and converged front impact evidence are present; the remaining prerequisite
   cannot be inferred from these probes.
-- S2: finish and strictly score the independent 1 ms batch; S1 prerequisites
-  must pass before reporting full S2 acceptance.
+- S2: the fixed low-speed 1 ms recovery batch passes 20/20 under the strict
+  V2 scorer. S1's complete forbidden-region audit remains a separate partial
+  prerequisite; this result does not extend the claim to other contact speeds.
 - S3: 20 independent sensor-only starts and the pre-registered fault matrix.
   A single numerical flow/MTF development run is insufficient.
 - P4: PX4 Teacher/Student/Phase 4/5 integration, thrust/strategy evaluation and
