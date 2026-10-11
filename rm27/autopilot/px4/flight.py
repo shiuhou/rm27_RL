@@ -38,7 +38,7 @@ def confirm_auto_disarm(telemetry, timestamp, land_observed):
         raise RuntimeError('No fresh PX4 landed/disarmed confirmation')
 
 
-def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, route=None, profile='diagnostic'):
+def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, route=None, profile='diagnostic', runtime_factory=Runtime):
     speedup=(1. if view else 5.) if speedup is None else float(speedup)
     if not math.isfinite(speedup) or speedup<=0:raise ValueError('speedup must be positive')
     scene=Path(scene).resolve();output=Path(output).resolve();output.mkdir(parents=True,exist_ok=False)
@@ -52,6 +52,7 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
     summary={'passed':False,'autopilot':'px4','firmware':'v1.17.0','run_type':'closed-loop SITL','headless':not view,'estimation_source':'synthetic ODOMETRY to EKF2','guidance':'diagnostic truth-assisted' if profile=='diagnostic' else 'EKF telemetry','gate_version':'MICRO_FLIGHT existing physical thresholds','events':[],'failure':None}
     telemetry_guidance=profile!='diagnostic'
     if profile in ('flow','mtf'):summary['estimation_source']='numerical optical flow, scene-ray range, simulated compass and IMU; no GPS or ODOMETRY'
+    elif profile=='vio':summary['estimation_source']='instrumented native OpenVINS plus numerical flow/range/compass and IMU; development only'
     if profile=='mtf':summary['flow_minimum_range_m']=.08
     elif profile=='combined':summary['estimation_source']='synthetic ODOMETRY plus numerical flow/range/compass and IMU'
     metadata={'scene':str(scene),'scene_sha256':hashlib.sha256(scene.read_bytes()).hexdigest(),'mass_kg':float(plant.model.body_mass[plant.body]),'origin_nwu':plant.origin.tolist(),'profile':profile,'dynamics_profile':str(dynamics),'runner_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
@@ -119,7 +120,7 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
         if view:
             from ...simulation.live_view import FlightView
             viewer=FlightView(plant)
-        with Runtime(plant,output,instance,profile=profile) as rt, (output/'frames.jsonl').open('w') as frames, (output/'mavlink.jsonl').open('w') as messages:
+        with runtime_factory(plant,output,instance,profile=profile) as rt, (output/'frames.jsonl').open('w') as frames, (output/'mavlink.jsonl').open('w') as messages:
             pacing=time.monotonic()
             while time.monotonic()-start<300:
                 row=rt.step(); t=float(plant.data.time);tel=rt.telemetry
