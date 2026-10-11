@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from rm27.telemetry.recording import open_recording,recording_sha256
 
 import mujoco
 import numpy as np
@@ -146,7 +147,7 @@ def audit_recording(recording,configuration,output):
         local=rotation.T@(point-center)
         return (model.geom(geom).name.startswith('drone_1_guard_') and
             abs(local[0])<=width/2 and abs(local[1])<=length/2 and abs(local[2])<=settings['backing_surface_tolerance_m'])
-    with (recording/'frames.jsonl').open() as stream:
+    with open_recording(recording/'frames.jsonl') as stream:
         for line in stream:
             row=json.loads(line);position=np.asarray(row['truth']['position_nwu'])
             if not np.all((position>=low)&(position<=high)):continue
@@ -197,7 +198,7 @@ def audit_recording(recording,configuration,output):
         gate_version=settings['gate_version'],frames=frames,forbidden_hits=hits,
         allowed_target_backing_intersections=allowed,local_mesh_triangle_count=sum(len(t) for _,t,_ in meshes),
         scene_sha256=scene_hash,configuration_sha256=hashlib.sha256(configuration.read_bytes()).hexdigest(),
-        recording_sha256=hashlib.sha256((recording/'frames.jsonl').read_bytes()).hexdigest(),
+        recording_sha256=recording_sha256(recording/'frames.jsonl'),
         runner_sha256=hashlib.sha256(RUNNER_BYTES).hexdigest(),
         limitations='Recorded poses only; enclosing spheres can give conservative false hits. Visual surfaces are not physical colliders or solid-containment proof. Full static recovery-volume sweep remains required.')
     (output/'summary.json').write_text(json.dumps(result,indent=2)+'\n')

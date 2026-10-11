@@ -9,6 +9,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from rm27.telemetry.recording import open_recording
 
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -117,7 +118,7 @@ def evaluate_run(run):
     if summary.get('passed') is not True or (summary.get('route') or {}).get('passed') is not True or not impact:
         return dict(passed=False, gate_version=GATE_VERSION, failures=['route_did_not_complete'],
                     flight_passed=summary.get('passed') is True)
-    with (run / 'frames.jsonl').open() as stream:
+    with open_recording(run / 'frames.jsonl') as stream:
         result = evaluate_rows((json.loads(line) for line in stream), impact)
     disarmed = (summary.get('auto_disarm') or {}).get('confirmed') is True
     if not disarmed:

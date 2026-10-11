@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+from rm27.telemetry.recording import open_recording
 
 import cv2
 import mujoco
@@ -24,7 +25,7 @@ ROOT=Path(__file__).resolve().parents[3]
 
 def digest(path):
     h=hashlib.sha256()
-    with Path(path).open('rb') as stream:
+    with open_recording(path,'rb') as stream:
         for chunk in iter(lambda:stream.read(1024*1024),b''):h.update(chunk)
     return h.hexdigest()
 
@@ -62,7 +63,7 @@ def export(run, output, *, camera_config=ROOT/'configs/px4_sim_camera.json', dur
     detector=ImageTargetDetector(DetectorConfig(fovy_deg=config['fovy_deg']))
     next_image=0.;period=1./config['camera_hz'];camera_count=imu_count=safe_count=0
     last_time=-1.;image_hashes={};start_time=None
-    with MujocoCamera(model,**kwargs) as camera,(run/'frames.jsonl').open() as stream, (sensors/'cam0/data.csv').open('w') as camfile, (sensors/'imu0/data.csv').open('w') as imufile, (output/'targets.jsonl').open('w') as targetfile:
+    with MujocoCamera(model,**kwargs) as camera,open_recording(run/'frames.jsonl') as stream, (sensors/'cam0/data.csv').open('w') as camfile, (sensors/'imu0/data.csv').open('w') as imufile, (output/'targets.jsonl').open('w') as targetfile:
         camwriter,imuwriter=csv.writer(camfile),csv.writer(imufile)
         camwriter.writerow(['#timestamp [ns]','filename'])
         imuwriter.writerow(['#timestamp [ns]','w_x [rad/s]','w_y [rad/s]','w_z [rad/s]','a_x [m/s^2]','a_y [m/s^2]','a_z [m/s^2]'])

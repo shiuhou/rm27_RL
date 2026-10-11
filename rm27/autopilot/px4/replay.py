@@ -1,6 +1,7 @@
 """Replay recorded physical motor fractions; no autopilot or navigation proof."""
 import argparse, hashlib, json
 from pathlib import Path
+from rm27.telemetry.recording import open_recording
 import numpy as np
 from ...simulation.micro_plant import MicroPlant
 
@@ -17,7 +18,7 @@ def replay(run, output):
         plant.model.opt.timestep=step
     count=0; maximum=0.;failure=None
     try:
-        with (run/'frames.jsonl').open() as handle:
+        with open_recording(run/'frames.jsonl') as handle:
             for line in handle:
                 row=json.loads(line);target=row['timestamp']
                 # Initial module startup may advance zero-input physics before the first row.

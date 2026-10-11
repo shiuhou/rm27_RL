@@ -8,6 +8,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from rm27.telemetry.recording import open_recording, recording_sha256
 
 import mujoco
 import numpy as np
@@ -37,7 +38,7 @@ def run(recording,output):
     if digest(scene)!=metadata['scene_sha256']:raise ValueError('Original scene changed')
     impact=summary['route']['impact'];impact_time=impact['time_s']
     start=None;rows=[]
-    with (recording/'frames.jsonl').open() as stream:
+    with open_recording(recording/'frames.jsonl') as stream:
         for line in stream:
             row=json.loads(line);t=row['timestamp']
             if t<=impact_time-.08:start=row
@@ -85,7 +86,7 @@ def run(recording,output):
     native_step=float(metadata.get('physics_timestep_s',.002))
     native=next((r for r in checks if np.isclose(r['coarse_dt_s'],native_step,atol=1e-10,rtol=0)),None)
     result=dict(passed=bool(native and native['passed'] and checks[-1]['passed']),run_type='recorded-input current-aircraft contact convergence',
-        s1_complete=False,source_run=str(recording),scene_sha256=digest(scene),recording_sha256=digest(recording/'frames.jsonl'),
+        s1_complete=False,source_run=str(recording),scene_sha256=digest(scene),recording_sha256=recording_sha256(recording/'frames.jsonl'),
         runner_sha256=digest(__file__),results=results,comparisons=checks,
         thresholds=dict(impulse_relative_difference=.05,peak_relative_difference=.1,classification='front'),
         native_timestep_s=native_step,native_step_converged=bool(native and native['passed']),

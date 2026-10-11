@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+from rm27.telemetry.recording import open_recording
 import numpy as np
 from .route_experiment import path_distance
 
@@ -15,7 +16,7 @@ def analyze(run_dir, output):
     points = np.asarray(meta['route_audit']['waypoints_world_m'])
     errors, speeds, samples = [], [], []
     contact_frames = 0
-    with (run_dir/'frames.jsonl').open() as stream:
+    with open_recording(run_dir/'frames.jsonl') as stream:
         for i, line in enumerate(stream):
             row = json.loads(line)
             if row['phase'] != 'ROUTE':

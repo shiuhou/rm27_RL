@@ -6,6 +6,7 @@ alignment. A successful recorded-input score does not qualify live navigation.
 import argparse
 import json
 from pathlib import Path
+from rm27.telemetry.recording import open_recording
 
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -27,7 +28,7 @@ def evaluate(vio,dataset,output):
     if digest(run/'frames.jsonl')!=sensor['original_recording_sha256']:raise ValueError('flight recording changed')
     poses=[json.loads(line) for line in (vio/'pose.jsonl').open()]
     truth=[]
-    with (run/'frames.jsonl').open() as stream:
+    with open_recording(run/'frames.jsonl') as stream:
         for line in stream:
             row=json.loads(line);t=row['timestamp']
             if t>sensor['end_time_s']+.01:break

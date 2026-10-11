@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+from rm27.telemetry.recording import open_recording
 import textwrap
 
 import matplotlib
@@ -19,7 +20,7 @@ def plot(run_dir):
     metadata = json.loads((run_dir / "metadata.json").read_text())
     origin = np.asarray(metadata["origin_nwu"], dtype=float)
     samples, phases = [], []
-    with (run_dir / "frames.jsonl").open() as frames:
+    with open_recording(run_dir / "frames.jsonl") as frames:
         for line in frames:
             row = json.loads(line)
             position = np.asarray(row["truth"]["position_nwu"], dtype=float) - origin

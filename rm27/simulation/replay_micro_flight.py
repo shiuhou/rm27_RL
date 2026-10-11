@@ -6,6 +6,7 @@ import json
 import math
 import os
 from pathlib import Path
+from rm27.telemetry.recording import open_recording
 
 
 def encoded(value):
@@ -107,7 +108,7 @@ def replay(run_dir, render=False):
 
         previous_count = None
         last_phase = None
-        with (run_dir / "frames.jsonl").open() as frames:
+        with open_recording(run_dir / "frames.jsonl") as frames:
             for line in frames:
                 row = json.loads(line)
                 count = row["frame_count"]
