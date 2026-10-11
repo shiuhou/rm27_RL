@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "scope": "PX4 prototype simulation workflow; perception remains a fixed dependency",
+  "scene": "configs/scene.json",
+  "dynamics": "configs/dynamics_150g.json",
+  "base_target": "configs/base_target.json",
+  "down_camera": "configs/px4_sim_down_camera.json",
+  "corridor": "configs/px4_prototype_corridor.json",
+  "mission": "configs/px4_prototype_mission.json",
+  "camera": "configs/px4_prototype_camera.json",
+  "conditions": "configs/px4_prototype_conditions.json"
+}

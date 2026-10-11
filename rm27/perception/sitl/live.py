@@ -34,10 +34,13 @@ DEFAULT_NATIVE = ROOT / 'artifacts/openvins-native-evidence-build-01/installatio
 
 
 class LiveVio:
-    def __init__(self, plant, output, *, installation=DEFAULT_NATIVE, camera_config=None):
+    def __init__(self, plant, output, *, installation=DEFAULT_NATIVE, camera_config=None,
+                 player=None, player_mounts=()):
         self.plant = plant
         self.output = Path(output) / 'vio'
         self.installation = Path(installation)
+        self.player=Path(player) if player else ROOT/'tools/openvins/live_simulation_ros2.py'
+        self.player_mounts=tuple(player_mounts)
         self.camera_config_path=Path(camera_config) if camera_config else ROOT/'configs/px4_sim_camera.json'
         self.process = self.connection = self.server = self.camera = self.log = None
         self.ipc = None; self.decoder = PacketDecoder(); self.contract = NativeContract()
@@ -79,11 +82,13 @@ class LiveVio:
             command = ['docker', 'run', '--rm', '--name', self.container, '--network', 'none',
                 '--cpus', '4', '--memory', '12g', '--user', f'{os.getuid()}:{os.getgid()}',
                 '-e', 'ROS_DOMAIN_ID=119', '-e', 'ROS_LOCALHOST_ONLY=1', '-e', 'OPENBLAS_NUM_THREADS=1',
-                '-v', f'{ROOT / "tools/openvins/live_simulation_ros2.py"}:/player.py:ro',
+                '-v', f'{self.player}:/player.py:ro',
                 '-v', f'{ROOT / "rm27/perception/sitl/transport.py"}:/transport.py:ro',
                 '-v', f'{install["workspace"]}:/ws:ro', '-v', f'{self.output}:/out',
                 '-v', f'{self.ipc}:/ipc', install['image'], 'bash', '-c',
                 'source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && python3 /player.py']
+            for source,destination in self.player_mounts:
+                command[2:2]=['-v',f'{Path(source).resolve()}:{destination}:ro']
             self.log = (self.output / 'container.log').open('x')
             self.process = subprocess.Popen(command, stdout=self.log, stderr=subprocess.STDOUT)
             self.connection, _ = self.server.accept(); self.connection.settimeout(2.)
@@ -97,7 +102,8 @@ class LiveVio:
             self.manifest = dict(command=command, run_type='live current-flight native VIO',
                 flight_qualified=False, truth_mounted=False, installation_sha256=digest(self.installation),
                 binary_sha256=install['binary_sha256'], camera_configuration=c, estimator_settings=settings,
-                runner_sha256=digest(__file__), player_sha256=digest(ROOT/'tools/openvins/live_simulation_ros2.py'),
+                runner_sha256=digest(__file__), player_sha256=digest(self.player),
+                player_mount_sha256={str(p):digest(p) for p,_ in self.player_mounts},
                 configuration_sha256={p.name:digest(p) for p in config_dir.iterdir()},
                 registration_policy='one time-matched PX4 flow estimate; no ongoing truth alignment')
             (self.output / 'launch.json').write_text(json.dumps(self.manifest, indent=2) + '\n')

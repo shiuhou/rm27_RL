@@ -1,5 +1,6 @@
 """PX4 micro-flight and audited-route runner with independent physical gates."""
 import hashlib
+from dataclasses import dataclass, asdict
 import json
 import math
 from pathlib import Path
@@ -13,6 +14,18 @@ from ...simulation.micro_plant import MicroPlant
 from ..bridge.frames import to_ap
 from .runtime import Runtime
 from .visual_return import VisualReturnGuard
+
+
+@dataclass(frozen=True)
+class FlightPolicy:
+    """Task input and landing semantics; physical thresholds stay in the scorer."""
+    causal_inputs: bool = False
+    ground_rest_confirmation: bool = False
+    retry_alignment: bool = False
+
+
+LEGACY_POLICY = FlightPolicy()
+PROTOTYPE_MISSION_POLICY = FlightPolicy(True, True, True)
 
 
 class LandingMonitor:
@@ -39,7 +52,7 @@ def confirm_auto_disarm(telemetry, timestamp, land_observed):
         raise RuntimeError('No fresh PX4 landed/disarmed confirmation')
 
 
-def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, route=None, profile='diagnostic', runtime_factory=Runtime,wall_deadline_s=300.):
+def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, route=None, profile='diagnostic', runtime_factory=Runtime,wall_deadline_s=300., policy=LEGACY_POLICY):
     speedup=(1. if view else 5.) if speedup is None else float(speedup)
     if not math.isfinite(speedup) or speedup<=0:raise ValueError('speedup must be positive')
     scene=Path(scene).resolve();output=Path(output).resolve();output.mkdir(parents=True,exist_ok=False)
@@ -70,10 +83,25 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
         (output/'mission.json').write_text(text)
         metadata['mission_sha256']=hashlib.sha256(text.encode()).hexdigest()
         (output/'route_audit.json').write_text(json.dumps(route.audit,indent=2)+'\n')
+    metadata['flight_policy']=asdict(policy)
+    if hasattr(plant,'physical_fixture_evidence'):
+        metadata['physical_fixture']=plant.physical_fixture_evidence
     (output/'metadata.json').write_text(json.dumps(metadata,indent=2))
     phase='INITIALIZE';phase_start=0.;stable_since=None;next_send=0.;next_action=10.;next_heartbeat=0.;next_params=0.
     hover=[];physical_hover=[];landing=None;land_observed=False;land_requested=False;landing_commitment=None;land_monitor=LandingMonitor();max_tilt=max_force=max_penetration=0.;start=time.monotonic();viewer=None
-    yaw=math.atan2(plant.data.xmat[plant.body].reshape(3,3)[1,0],plant.data.xmat[plant.body].reshape(3,3)[0,0])
+    physical_violations=[]
+    if policy.causal_inputs:
+        if not telemetry_guidance or not route:
+            raise ValueError('Causal mission requires telemetry guidance and a surveyed-yaw route')
+        yaw=float(route.mission['surveyed_initial_yaw_nwu_rad'])
+        summary['actor_input_policy']='PX4 telemetry and current image observations; physical monitors score after actor completion'
+    else:
+        yaw=math.atan2(plant.data.xmat[plant.body].reshape(3,3)[1,0],plant.data.xmat[plant.body].reshape(3,3)[0,0])
+    def physical_reject(reason,**fields):
+        if policy.causal_inputs:
+            physical_violations.append(dict(time_s=float(plant.data.time),reason=reason,**fields))
+        else:
+            raise RuntimeError(reason)
     flow_bootstrap=profile in ('mtf','vio')
     integral=np.zeros(2);last_send=None;rt=None;tag_correction=None;visual_guard=None
     reacquire_count=0
@@ -160,6 +188,9 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                 if telemetry_guidance and 'local_position' in tel:
                     local=to_ap(np.asarray(tel['local_position'],dtype=float))
                     speed=float(np.linalg.norm(to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float))))
+                elif policy.causal_inputs:
+                    if tel.get('armed'):raise RuntimeError('No PX4 local navigation while armed')
+                    local=np.zeros(3);speed=0.
                 else:
                     local=physical_local;speed=physical_speed
                 if telemetry_guidance and tag_correction is not None and phase in ('RETURN','REACQUIRE','DESCEND','ALIGN','FINAL_DESCEND','LAND','POST'):
@@ -177,19 +208,26 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                 row.update(phase=phase,telemetry=tel.copy(),contacts=contacts,all_qpos=plant.data.qpos.tolist(),all_qvel=plant.data.qvel.tolist(),all_act=plant.data.act.tolist(),all_motor_thrust_N=plant.data.actuator_force.tolist())
                 frames.write(json.dumps(row,allow_nan=False)+'\n')
                 if not np.isfinite(np.r_[plant.data.qpos,plant.data.qvel,plant.data.qacc]).all():raise RuntimeError('Nonfinite physics')
-                if tilt>math.radians(route.maximum_tilt_deg if phase=='ROUTE' else 25) or speed>(route.maximum_speed_m_s if phase=='ROUTE' else 2) or (phase!='ROUTE' and (local[2]>1.1 or np.linalg.norm(local[:2])>.5)):
-                    raise RuntimeError(f'Flight envelope exceeded: position={local}, speed={speed}, tilt={math.degrees(tilt)}')
+                mission_tilt=tilt
+                if policy.causal_inputs:
+                    q=np.asarray(tel.get('quaternion',[]),float)
+                    valid_attitude=(q.shape==(4,) and np.isfinite(q).all() and abs(np.linalg.norm(q)-1)<=.02 and
+                        0<=t-tel.get('attitude_time',-100)<=.3)
+                    if not valid_attitude and phase!='INITIALIZE':raise RuntimeError('No fresh valid PX4 attitude')
+                    mission_tilt=(math.acos(float(np.clip(1-2*(q[1]**2+q[2]**2),-1,1))) if valid_attitude else 0.)
+                if mission_tilt>math.radians(route.maximum_tilt_deg if phase=='ROUTE' else 25) or speed>(route.maximum_speed_m_s if phase=='ROUTE' else 2) or (phase!='ROUTE' and (local[2]>1.1 or np.linalg.norm(local[:2])>.5)):
+                    raise RuntimeError(f'Flight envelope exceeded: position={local}, speed={speed}, tilt={math.degrees(mission_tilt)}')
                 for qa,va,initial in plant.inactive:
-                    if np.linalg.norm(plant.data.qpos[qa:qa+2]-initial[:2])>.001 or abs(plant.data.qpos[qa+2]-initial[2])>.002:raise RuntimeError('Inactive vehicle moved')
-                    if t>1 and np.max(np.abs(plant.data.qvel[va:va+6]))>.001:raise RuntimeError('Inactive vehicle not resting')
+                    if np.linalg.norm(plant.data.qpos[qa:qa+2]-initial[:2])>.001 or abs(plant.data.qpos[qa+2]-initial[2])>.002:physical_reject('Inactive vehicle moved')
+                    if t>1 and np.max(np.abs(plant.data.qvel[va:va+6]))>.001:physical_reject('Inactive vehicle not resting')
                     q=plant.data.qpos[qa+3:qa+7]
-                    if 1-2*(q[1]**2+q[2]**2)<math.cos(math.radians(1)):raise RuntimeError('Inactive vehicle tilted')
+                    if 1-2*(q[1]**2+q[2]**2)<math.cos(math.radians(1)):physical_reject('Inactive vehicle tilted')
                 inactive=np.setdiff1d(np.arange(plant.model.nu),plant.motors)
-                if np.any(plant.data.ctrl[inactive]) or np.any(plant.data.actuator_force[inactive]):raise RuntimeError('Inactive motor received thrust')
+                if np.any(plant.data.ctrl[inactive]) or np.any(plant.data.actuator_force[inactive]):physical_reject('Inactive motor received thrust')
                 for c in contacts:
                     max_force=max(max_force,c['force_N']);max_penetration=max(max_penetration,-c['distance_m'])
-                    if 'rm27_dock_collision_bottom' not in c['geoms'] and not (phase=='ROUTE' and route.contact_allowed(c)):raise RuntimeError('Unintended contact: '+str(c['geoms']))
-                    if 'rm27_dock_collision_bottom' in c['geoms'] and (c['force_N']>10 or c['distance_m']<-.005):raise RuntimeError('Unstable landing contact')
+                    if 'rm27_dock_collision_bottom' not in c['geoms'] and not (phase=='ROUTE' and route.contact_allowed(c)):physical_reject('Unintended contact',contact=c)
+                    if 'rm27_dock_collision_bottom' in c['geoms'] and (c['force_N']>10 or c['distance_m']<-.005):physical_reject('Unstable landing contact')
                 if phase in ('OFFSET','RETURN','ALIGN') and mission_contacts:raise RuntimeError('Unexpected airborne contact')
                 if phase!='INITIALIZE':
                     if t-tel.get('heartbeat_time',-100)>2:raise RuntimeError('Heartbeat stale')
@@ -273,7 +311,10 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                         stable_since=t if stable_since is None else stable_since
                         if t-stable_since>=.5:transition('DESCEND')
                     else:stable_since=None
-                    if t-phase_start>15:raise RuntimeError('AprilTag reacquisition timed out')
+                    maximum_gap=route.mission.get('maximum_return_image_gap_s',15.) if policy.causal_inputs and route else 15.
+                    image_gap=(t-visual_guard.source_time if visual_guard.source_time is not None else float('inf'))
+                    if t-phase_start>15 or (not visual_guard.fresh(t) and image_gap>maximum_gap):
+                        raise RuntimeError('AprilTag reacquisition timed out')
                 elif phase=='DESCEND':
                     target([0,0,max(.12,.6-.04*(t-phase_start))],z_limit=.04)
                     estimated_vertical_speed=float(to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float))[2]) if telemetry_guidance else float(plant.qvel[2])
@@ -294,10 +335,17 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                         if local[2]<land_height and (not land_requested or t>=next_action):
                             if profile in ('mtf','vio') and landing_commitment is None:
                                 flags=tel.get('estimator_flags',0)
-                                if not flags & mavlink.ESTIMATOR_POS_HORIZ_REL or t-tel.get('estimator_time',-100)>.3 or np.linalg.norm(local[:2])>.003:
+                                if not flags & mavlink.ESTIMATOR_POS_HORIZ_REL or t-tel.get('estimator_time',-100)>.3:
                                     raise RuntimeError('No valid slot alignment at landing commitment')
-                                if visual_guard and not visual_guard.aligned(t):
-                                    raise RuntimeError('No fresh aligned AprilTag at landing commitment')
+                                if np.linalg.norm(local[:2])>.003 or (visual_guard and not visual_guard.aligned(t)):
+                                    if not policy.retry_alignment:
+                                        raise RuntimeError('No fresh aligned AprilTag at landing commitment')
+                                    if reacquire_count>=2:
+                                        raise RuntimeError('AprilTag reacquisition attempts exhausted')
+                                    reacquire_count+=1;summary['tag_reacquire_count']=reacquire_count
+                                    event('landing_alignment_retry',source='fresh PX4 navigation and assigned image',attempt=reacquire_count)
+                                    transition('ALIGN' if visual_guard and visual_guard.fresh(t) else 'REACQUIRE')
+                                    continue
                                 landing_commitment=dict(local_position=local.tolist(),timestamp_s=t,
                                     policy='PX4 normal LAND below flow minimum; range/landed state complete the task; independent physics scores slot accuracy')
                                 if visual_guard:
@@ -346,8 +394,19 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                         # landed state and range establish rest; position is
                         # assessed by the separate physical scorer.
                         speed=abs(tel.get('local_velocity',[0,0,1])[2])
-                    if tel.get('armed') or not settled or speed>.01 or resting_horizontal>.007 or abs(height-.02)>height_tolerance:raise RuntimeError('Disarmed resting gate failed')
-                    if t-phase_start>=1 and np.max(np.abs(plant.data.actuator_force[plant.motors]))<1e-5:
+                    ground_confirmed=bool(policy.ground_rest_confirmation and profile in ('mtf','vio') and landing_commitment and
+                        not tel.get('armed') and settled and 0<=t-tel.get('landed_time',-100)<=.3 and
+                        0<=t-tel.get('heartbeat_time',-100)<=.3 and np.max(np.abs(row['controls']))<1e-6)
+                    if (tel.get('armed') or not settled or (not ground_confirmed and speed>.01) or
+                            resting_horizontal>.007 or abs(height-.02)>height_tolerance):
+                        raise RuntimeError('Disarmed resting gate failed')
+                    if ground_confirmed:
+                        summary['ground_rest_confirmation']=dict(source='fresh PX4 landed/range/heartbeat and stopped actuator output',
+                            estimated_vertical_velocity_m_s=tel.get('local_velocity',[0,0,None])[2],
+                            below_flow_minimum=True,physical_velocity_source='independent scorer only')
+                    stopped=(np.max(np.abs(row['controls']))<1e-6 if policy.ground_rest_confirmation else
+                        np.max(np.abs(plant.data.actuator_force[plant.motors]))<1e-5)
+                    if t-phase_start>=1 and stopped:
                         summary['passed']=True;event('complete');break
             if not summary['passed']:raise TimeoutError('Wall-clock deadline')
     except (Exception,KeyboardInterrupt) as exc:
@@ -367,13 +426,23 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                 passed=bool(xy.max()<=.2 and z.max()<=.1),source='MuJoCo truth, scoring only')
         if summary['passed']:
             physical_pass=bool(plant.contacts() and np.linalg.norm(final_local[:2])<=.007 and abs(final_local[2]-.02)<=.005)
+            if policy.ground_rest_confirmation:
+                physical_pass=physical_pass and np.linalg.norm(plant.qvel[:3])<=.01 and np.max(np.abs(plant.data.actuator_force[plant.motors]))<1e-5
             summary['independent_resting_score']=dict(passed=physical_pass,source='MuJoCo truth, scoring only',
-                horizontal_error_m=float(np.linalg.norm(final_local[:2])),height_error_m=float(abs(final_local[2]-.02)))
+                horizontal_error_m=float(np.linalg.norm(final_local[:2])),height_error_m=float(abs(final_local[2]-.02)),
+                physical_speed_m_s=float(np.linalg.norm(plant.qvel[:3])),
+                maximum_actual_motor_force_N=float(np.max(np.abs(plant.data.actuator_force[plant.motors]))))
             if not physical_pass or not summary.get('independent_hover_score',{}).get('passed'):
                 summary['passed']=False;summary['failure']='Independent physical hover or dock resting gate failed'
             elif route and summary.get('route',{}).get('passed') is not True:
                 summary['safe_return_completed']=True
                 summary['passed']=False;summary['failure']='Route task failed; normal return and landing completed'
+        if policy.causal_inputs:
+            summary['independent_physical_monitor']=dict(passed=not physical_violations,violations=physical_violations,
+                source='independent physics scoring only; no actor feedback')
+            if physical_violations:
+                summary['passed']=False
+                summary['failure']=summary.get('failure') or 'Independent physical monitor rejected task'
         summary.update(phase=phase,physics_time_s=float(plant.data.time),landing=landing,hover_samples=len(hover),max_tilt_deg=max_tilt,max_contact_force_N=max_force,max_penetration_m=max_penetration,final_position_local_nwu=(plant.qpos[:3]-plant.origin).tolist())
         (output/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
         if rt:(output/'parameters_readback.json').write_text(json.dumps(rt.parameters,indent=2)+'\n')

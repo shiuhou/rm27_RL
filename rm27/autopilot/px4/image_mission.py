@@ -37,7 +37,7 @@ def independent_recovery(run, inferred, normal):
     return score
 
 
-def execute(scene, audit_path, output, *, configuration=None, camera_configuration=None, instance=40, speedup=2., view=False):
+def execute(scene, audit_path, output, *, configuration=None, camera_configuration=None, instance=40, speedup=2., view=False, flight_runner=None):
     scene=Path(scene).resolve();output=Path(output).resolve()
     camera_path=Path(camera_configuration) if camera_configuration else ROOT/'configs/px4_sim_camera_mission_dev.json'
     configuration=Path(configuration) if configuration else ROOT/'configs/px4_image_mission_dev.json'
@@ -143,7 +143,8 @@ def execute(scene, audit_path, output, *, configuration=None, camera_configurati
             if self.audit_stream:self.audit_stream.close();self.audit_stream=None
             super().close()
 
-    code=run(scene,output,instance,dynamics=ROOT/'configs/dynamics_150g.json',profile='vio',
+    runner=flight_runner if flight_runner is not None else run
+    code=runner(scene,output,instance,dynamics=ROOT/'configs/dynamics_150g.json',profile='vio',
         view=view,speedup=speedup,route=route,runtime_factory=ImageRuntime,wall_deadline_s=600.)
     source_directory=output/'image_inputs';source_directory.mkdir(exist_ok=False)
     source_paths={}

@@ -115,6 +115,8 @@ def build(config, output, dynamics=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
+    from .autopilot.px4.simulation import add_parser, dispatch
+    add_parser(sub)
     p = sub.add_parser('build-cad-drone', help='Convert aircraft STEP and place one static aircraft in the isolated dock')
     p.add_argument('--scene', type=Path, default=ROOT/'artifacts/isolated-dock-base-20260916-v6/scene.xml')
     p.add_argument('--output', type=Path, required=True)
@@ -171,7 +173,9 @@ def main():
         help='PX4 diagnostic guidance or EKF telemetry using external vision, flow, or combined sensors',
     )
     args = parser.parse_args()
-    if args.command == 'build-cad-drone':
+    if args.command == 'px4-sim':
+        raise SystemExit(dispatch(args))
+    elif args.command == 'build-cad-drone':
         from .integration.cad_drone import build as build_cad_drone
         build_cad_drone(args.output, args.scene)
     elif args.command == 'build-isolated-dart':

@@ -9,7 +9,7 @@ from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
-import subprocess
+from types import MethodType
 
 import numpy as np
 
@@ -18,7 +18,6 @@ from ..autopilot.px4.return_faults import ImageFault,FaultCamera,assess
 from .degraded_return import PermanentBlackout
 from .vio_initial_admission import InitialContract
 from .fast_bearing import detect as fast_bearing
-from ..perception.sitl.image_target_detector import ImageTargetDetector
 
 
 class ConditionCamera:
@@ -85,9 +84,11 @@ class SensorCondition:
         return message
 
 
-def execute(scene,audit,mission,camera,configuration,output,*,instance=46):
+def execute(scene,audit,mission,camera,configuration,output,*,instance=46,
+            flight_runner=None,admission=None,view=False,speedup=2.):
     output=Path(output).resolve();settings=json.loads(Path(configuration).read_text())
-    source=Path(__file__).read_bytes();original=image_mission.run
+    source=Path(__file__).read_bytes()
+    original=flight_runner if flight_runner is not None else image_mission.run
     cameras=[];fault=None;sensor_fault=None
     camera_settings=json.loads(Path(camera).read_text());factor=settings.get('imu_noise_factor',1.)
     if not np.isfinite(factor) or not .5<=factor<=2.:raise ValueError('bounded IMU noise multiplier required')
@@ -115,19 +116,14 @@ def execute(scene,audit,mission,camera,configuration,output,*,instance=46):
     player_copy=output.with_name(output.name+'-native-player.py')
     player_copy.write_text(player)
     clock_path=Path(__file__).with_name('sensor_clock.py').resolve()
-    original_popen=subprocess.Popen
-    def development_popen(command,*args,**kwargs):
-        if isinstance(command,list) and command[:2]==['docker','run']:
-            command=list(command)
-            original_mount=str(player_path)+':/player.py:ro'
-            if original_mount in command:
-                command[command.index(original_mount)]=str(player_copy)+':/player.py:ro'
-                command[2:2]=['-v',str(clock_path)+':/sensor_clock.py:ro']
-        return original_popen(command,*args,**kwargs)
-
     def run_conditions(*args,**kwargs):
         base=kwargs['runtime_factory']
         class ConditionRuntime(base):
+            def __init__(self,*args,**kwargs):
+                super().__init__(*args,**kwargs)
+                self.vio_player=player_copy
+                self.vio_player_mounts=((clock_path,'/sensor_clock.py'),)
+
             def __enter__(self):
                 nonlocal fault,sensor_fault
                 if settings.get('sensor_fault'):
@@ -139,9 +135,11 @@ def execute(scene,audit,mission,camera,configuration,output,*,instance=46):
                         setattr(self.sensor,name,changed_sensor)
                 result=super().__enter__()
                 self.admission_stream=None
+                if settings.get('efficient_bearing'):
+                    self.vio.detector.detect=MethodType(fast_bearing,self.vio.detector)
                 if settings.get('initial_vio_admission'):
                     self.admission_stream=(self.output/'initial_vio_admission.jsonl').open('x',buffering=1)
-                    contract=InitialContract(self.vio.contract,self.vio,self.admission_stream)
+                    contract=InitialContract(self.vio.contract,self.vio,self.admission_stream,admission=admission)
                     self.vio.contract=contract
                     original_observe=self.vio.observe_telemetry
                     def observe(telemetry,now):
@@ -191,16 +189,9 @@ def execute(scene,audit,mission,camera,configuration,output,*,instance=46):
         kwargs['runtime_factory']=ConditionRuntime
         return original(*args,**kwargs)
 
-    original_bearing=ImageTargetDetector.detect
-    if settings.get('efficient_bearing'):
-        ImageTargetDetector.detect=fast_bearing
-    image_mission.run=run_conditions;subprocess.Popen=development_popen
-    try:
-        image_mission.execute(scene,audit,output,configuration=mission,
-            camera_configuration=effective_camera,instance=instance)
-    finally:
-        image_mission.run=original;subprocess.Popen=original_popen
-        ImageTargetDetector.detect=original_bearing
+    image_mission.execute(scene,audit,output,configuration=mission,
+        camera_configuration=effective_camera,instance=instance,flight_runner=run_conditions,
+        view=view,speedup=speedup)
     summary=json.loads((output/'summary.json').read_text());records=fault.records if fault else []
     if settings.get('return_fault',{}).get('kind')=='permanent_missing':
         term=summary.get('fault_termination',{})
@@ -215,7 +206,8 @@ def execute(scene,audit,mission,camera,configuration,output,*,instance=46):
     result.update(configuration=settings,runner_sha256=hashlib.sha256(source).hexdigest(),
         native_player_sha256=hashlib.sha256(player_copy.read_bytes()).hexdigest(),
         native_clock_sha256=hashlib.sha256(clock_path.read_bytes()).hexdigest(),
-        camera_seed=camera_settings['seed'],run_type='headless closed-loop SITL complete image/VIO mission',
+        camera_seed=camera_settings['seed'],
+        run_type=('live-view' if view else 'headless')+' closed-loop SITL complete image/VIO mission',
         scope='Declared simulated disturbances; not measured hardware noise, wind or camera calibration')
     (output/'condition_runner.py').write_bytes(source)
     (output/'condition_summary.json').write_text(json.dumps(result,indent=2)+'\n')

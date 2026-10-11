@@ -30,14 +30,16 @@ def initial_consistent(estimate,history,*,maximum_xy_velocity_disagreement=.2,
 
 
 class InitialContract:
-    def __init__(self,contract,vio,stream):
+    def __init__(self,contract,vio,stream,*,admission=None):
         self.contract,self.vio,self.stream=contract,vio,stream
+        self.admission=admission
         self.admitted=False;self.history=[]
 
     def estimate(self,row):
         estimate=self.contract.estimate(row)
         if self.admitted or not estimate.valid:return estimate
-        accepted,reason=initial_consistent(estimate,self.history)
+        check=self.admission if self.admission is not None else initial_consistent
+        accepted,reason=check(estimate,self.history)
         self.stream.write(json.dumps(dict(source_time_ns=estimate.source_time.raw_value,
             admitted=accepted,reason=reason,estimate=asdict(estimate)),allow_nan=False)+'\n')
         if not accepted:raise ValueError(reason)

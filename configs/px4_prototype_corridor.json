@@ -1,0 +1,27 @@
+{
+  "waypoints_world_m": [
+    [
+      0.651751442,
+      1.082427939,
+      2.34
+    ],
+    [
+      -10.8,
+      1.082427939,
+      2.34
+    ],
+    [
+      -10.8,
+      0.02,
+      2.34
+    ],
+    [
+      -11.106118305954526,
+      0.020000000000000007,
+      1.6260170604913153
+    ]
+  ],
+  "spacing_m": 0.02,
+  "tracking_margin_m": 0.08,
+  "scope": "Existing surveyed route only; not continuous collision certification"
+}
