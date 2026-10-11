@@ -4,6 +4,15 @@ Updated 2026-10-11. Worktree: `/home/shiuhou/Projects/rm27_drones_px4`;
 branch: `codex/px4-v1.17-migration`. The full migration is **in progress**.
 Hardware operations remain outside this software task.
 
+The retained V3 complete task passes20/20 under its frozen original runner.
+That runner still lets physical monitors abort the actor; strict actor-input
+isolation is being qualified in a separate causal copy, with new nominal,
+condition and return-fault sets. Development causal task, actual final-alignment
+retry, permanent image-loss termination and upstream command-loss termination
+have passed independent fusion/surface/recovery audits. The completed original
+full-return fault gate fails:9 tasks,3 terminations,3 unhandled out of15.
+Details are in `PX4_IMAGE_CONDITIONS.md` and `PX4_RETURN_TERMINATION.md`.
+
 ## Fixed inputs and physical scope
 
 PX4 v1.17.0 is pinned to `d6f12ad1c4f70ad3230afd7d86e971421e02fef4`.

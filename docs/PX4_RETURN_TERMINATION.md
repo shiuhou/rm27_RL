@@ -64,6 +64,23 @@ onsets 0.45/0.75/1.05/1.35/1.65 s are fixed before its first attempt.
 Task success remains **0/5**. This is a short-return profile, not the complete
 target-contact mission or the remaining navigation/communication fault matrix.
 
+## Final alignment and landed confirmation development
+
+The complete-route fault study has exposed a final admission boundary:
+fresh image alignment can drift just beyond3 mm after the stable ALIGN hold.
+`tools.px4.ground_rest` saves an explicit experimental flight-runner copy
+that resumes alignment instead of tearing down an airborne process. The
+original3 mm admission and bounded retry count remain. A declared new image
+pixel-translation experiment checks actual entry into that recovery branch.
+
+The same runner confirms landed/disarmed state using fresh PX4 telemetry,
+range and stopped actuator output below the flow floor. Independent physical
+rest, velocity and motor-force gates remain mandatory. A new0.03 m/s POST-only
+estimated-velocity bias flight passes the full image/VIO mission and its
+separate audits. See [condition report](PX4_IMAGE_CONDITIONS.md) for actual
+artifacts and limits. Active frozen batches continue to use their original
+runner; these are development changes, not a relabelled acceptance.
+
 The shared implementation now lives in `autopilot/px4/return_termination.py`;
 the original development entry reuses it. Complete `image_mission` runs may
 explicitly select `return_termination_configuration`. Camera reacquisition
@@ -83,6 +100,25 @@ motors are observed, with independently scored resting XY 2.561 mm and
 score in `px4-full-permanent-return-loss-development-score-01` checks the first
 physical impact, no secondary contacts, stable recovery and the earlier hover.
 One development case does not establish five-case fault acceptance.
+
+The completed original complete-route fault gate fails:9 tasks,3 independently
+safe terminations and3 unhandled cases out of15 in
+`px4-full-return-fault-batch-01/summary.json`. Wrong-ID attempt09 rejects final
+alignment; permanent-loss14/15 contact dock dividers/rim. Landing and eventual
+disarm do not override the unintended-contact failure. A causal actor copy,
+bounded alignment retry and3 s image-gap budget now have separate passing
+development evidence; fresh reserved sets require their own acceptance.
+
+Complete-route upstream command-loss development also passes through the
+causal actor in `px4-causal-command-loss-development-01` and its independent
+`-score-01`. Only after fresh assigned-tag alignment within3 mm and slow valid
+navigation for0.25 s are upstream setpoints stopped. The same PX4 process must
+enter onboard Offboard-loss LAND without an external LAND command, land,
+automatically disarm and satisfy independent25 mm physical termination.
+ACK/STATUSTEXT received before and during continuation are retained. Five
+new reserved seeds are in `configs/px4_causal_command_loss_preregistered_v1.json`;
+`tools.px4.command_loss_batch` freezes, launches and scores them. This does
+not qualify command loss at arbitrary route positions or invalid navigation.
 
 ```bash
 cd /home/shiuhou/Projects/rm27_drones_px4

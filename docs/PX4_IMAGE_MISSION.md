@@ -9,6 +9,15 @@ The existing downward identification/landing implementation is in
 aligns, descends, reacquires after temporary loss and hands over to normal PX4
 LAND before confirming automatic disarm. IDs22–24 identify the other slots.
 
+The retained V3 nominal20/20 uses the original flight runner. A later review
+found physical monitors could abort its actor and actual motor force could
+trigger completion. Those results establish physical tasks in that runner,
+not strict isolation of every mission input. The separate causal runner uses
+surveyed initial yaw, PX4 telemetry and actual images for control/completion;
+physical violations only reject its independently scored result. New reserved
+nominal/condition/fault gates qualify that implementation separately. See
+[condition development](PX4_IMAGE_CONDITIONS.md).
+
 `image_route.py` adds surveyed corridor travel, image acquisition and metric
 pose approach to the simulated blue armor, bounded contact commitment, fresh
 IMU/rate contact inference, recovery and corridor return. Actor inputs contain

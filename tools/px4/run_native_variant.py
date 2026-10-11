@@ -8,7 +8,10 @@ from rm27.autopilot.px4 import live_flight
 from rm27.autopilot.px4.return_fault_batch import frozen_inputs, ROOT, digest
 from rm27.experiments.image_conditions import execute
 from rm27.autopilot.px4 import image_mission
+from rm27.perception.sitl import live
+from rm27.experiments import vio_initial_admission
 from .native_failure_termination import guarded_runtime
+from .initial_vio_admission import StableInitialAdmission
 
 
 def run(args):
@@ -17,7 +20,8 @@ def run(args):
     manifest_path = args.output.with_name(args.output.name + '-variant-manifest.json')
     hashes = frozen_inputs(args.scene, args.conditions)
     files = [installation, args.config, args.camera_config, args.audit, Path(__file__),
-             Path(__file__).with_name('native_failure_termination.py')]
+             Path(__file__).with_name('native_failure_termination.py'),
+             Path(__file__).with_name('initial_vio_admission.py')]
     hashes.update({str(p.resolve()):digest(p) for p in files})
     hashes.update(install['files_sha256'])
     binary = Path(install['workspace'])/'install/ov_msckf/lib/ov_msckf/run_subscribe_msckf'
@@ -26,6 +30,9 @@ def run(args):
         variant=install['variant'], gate='DEVELOPMENT_ONLY', flight_qualified=False,
         injected_native_delay_s=args.inject_native_failure_delay,
         termination_enabled=args.terminate_native_failure,
+        stable_initial_admission=args.stable_initial_admission,
+        estimator_sigma_px=args.estimator_sigma_px,
+        additional_sources={str(p):p.read_text() for p in files if p.suffix=='.py'},
         git_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
         launcher_source=Path(__file__).read_text())
     with manifest_path.open('x') as stream:
@@ -36,6 +43,22 @@ def run(args):
             keywords['installation'] = installation
             super().__init__(*positional, **keywords)
     live_flight.LiveVio = VariantVio
+    original_config = live.prepare_config
+    original_admission = vio_initial_admission.initial_consistent
+    def variant_config(*positional,**keywords):
+        if args.estimator_sigma_px is not None:
+            if not .5<=args.estimator_sigma_px<=4.:
+                raise ValueError('Explicit bounded estimator pixel-noise sigma required')
+            settings = dict(keywords.get('settings') or {})
+            settings['estimator'] = dict(settings.get('estimator') or {},
+                up_msckf_sigma_px=args.estimator_sigma_px,up_slam_sigma_px=args.estimator_sigma_px)
+            keywords['settings'] = settings
+        return original_config(*positional,**keywords)
+    live.prepare_config = variant_config
+    if args.stable_initial_admission:
+        if json.loads(args.conditions.read_text()).get('initial_vio_admission') is not True:
+            raise ValueError('Stable initial admission requires its explicit condition configuration')
+        vio_initial_admission.initial_consistent = StableInitialAdmission()
     original_run = image_mission.run
     def variant_run(*positional,**keywords):
         if args.terminate_native_failure:
@@ -58,6 +81,8 @@ def run(args):
     finally:
         live_flight.LiveVio = original
         image_mission.run = original_run
+        live.prepare_config = original_config
+        vio_initial_admission.initial_consistent = original_admission
 
 
 if __name__ == '__main__':
@@ -68,4 +93,6 @@ if __name__ == '__main__':
     parser.add_argument('--instance',type=int,default=46)
     parser.add_argument('--terminate-native-failure',action='store_true')
     parser.add_argument('--inject-native-failure-delay',type=float)
+    parser.add_argument('--stable-initial-admission',action='store_true')
+    parser.add_argument('--estimator-sigma-px',type=float)
     raise SystemExit(run(parser.parse_args()))

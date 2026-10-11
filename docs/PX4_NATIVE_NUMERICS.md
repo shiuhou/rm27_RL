@@ -37,6 +37,15 @@ eigenvalue is−2.598e−9 against the declared3.311e−12 roundoff bound.
 `px4-native-covariance-diagnostic-02` preserves that result. The guard rejects
 it; the variant is not noise-qualified or a completed numerical repair.
 
+A second fresh development explicitly uses2 px estimator observation noise
+and the temporally stable initial-admission guard. It still fails in
+INITIALIZE before arming, at9.952 s
+(`px4-covariance-noise-development-02`). Its prior minimum eigenvalue is
+−2.903e−11 against a1.705e−12 roundoff bound; no initial VIO registration is
+accepted. The independent matrices remain in
+`px4-native-covariance-diagnostic-03`. Changing observation noise or rejecting
+an initial pose is not evidence of a numerical repair.
+
 ## Continued physical termination
 
 `tools.px4.run_native_variant --terminate-native-failure` adds a development
