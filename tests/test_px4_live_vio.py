@@ -9,6 +9,9 @@ from rm27.perception.sitl.transport import PacketDecoder, encode_packet, MAX_PAC
 from rm27.autopilot.px4.odometry import OdometryAdapter, Registration
 from test_px4_odometry_clocks import estimate
 from rm27.autopilot.px4.live_flight import VioRuntime
+from rm27.perception.sitl.live import LiveVio
+from rm27.perception.sitl.mujoco_camera import CameraFrame
+from rm27.perception.sitl.image_target_detector import ImageTargetDetector
 
 
 def test_live_runtime_rejects_implicit_diagnostic_profile():
@@ -36,3 +39,34 @@ def test_unqualified_development_cannot_admit_hardware_or_hide_qualification():
         OdometryAdapter(r).packet(e,1_020_000_000,publication_now_ns=9_020_000_000)
     packet=OdometryAdapter(r,allow_unqualified_simulation=True).packet(e,1_020_000_000,publication_now_ns=9_020_000_000)
     assert packet.time_usec==1_000_000 and e.quality['flight_qualified'] is False
+
+
+def test_live_camera_preserves_delayed_source_in_native_wire_and_saved_pixels(tmp_path):
+    from collections import Counter
+    from io import StringIO
+    import json
+    from types import SimpleNamespace
+
+    wire=[]
+    live=LiveVio.__new__(LiveVio)
+    live.connection=SimpleNamespace(sendall=wire.append)
+    live.detector=ImageTargetDetector();live.targets=StringIO();live.inputs=StringIO()
+    live.counts=Counter();live.output=tmp_path;live.last_camera_source_us=-1
+    (tmp_path/'images').mkdir()
+    pixels=np.zeros((120,160,3),np.uint8)
+    pixels[35:64,96:125]=(20,100,240);pixels[15:25,105:115]=(20,230,40)
+    frame=CameraFrame(pixels,1_000_000,160,120)
+    live.publish_camera(frame,1_300_000)
+    assert live.last_target.valid and not live.last_target.safe_for_control
+    assert live.last_target.measurement_age_us==300_000
+    packet=PacketDecoder().feed(wire[0])[0]
+    assert packet['source_time_ns']==1_000_000_000
+    saved=json.loads(live.inputs.getvalue())
+    assert saved['source_time_ns']==1_000_000_000
+    assert saved['received_time_ns']==1_300_000_000
+    assert (tmp_path/'images'/saved['filename']).exists()
+    live.publish_camera(frame,1_400_000)
+    live.publish_camera(replace(frame,timestamp_us=900_000),1_400_000)
+    assert len(wire)==1 and live.counts['camera_non_increasing']==2
+    live.publish_camera(replace(frame,timestamp_us=1_500_000),1_400_000)
+    assert len(wire)==1 and live.counts['camera_future']==1 and live.last_frame is None

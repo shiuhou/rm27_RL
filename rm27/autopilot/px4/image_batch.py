@@ -13,7 +13,8 @@ from .return_fault_batch import frozen_inputs, ROOT, digest
 from ...telemetry.ulog import analyze
 
 
-def assess(summary, vio, log, *, surfaces=None, require_surfaces=False):
+def assess(summary, vio, log, *, surfaces=None, require_surfaces=False,
+           observer=None, required_observer_interval_us=None):
     flags=log.get('fusion',{})
     fused=any(all(instance.get(k,{}).get('ever') is True for k in
         ('cs_ev_pos','cs_ev_vel','cs_ev_hgt')) for instance in flags.values())
@@ -31,11 +32,17 @@ def assess(summary, vio, log, *, surfaces=None, require_surfaces=False):
         no_unexpected_failsafe=not failsafes)
     if require_surfaces:
         checks['recorded_local_surfaces']=(surfaces or {}).get('passed') is True
+    if required_observer_interval_us is not None:
+        observer=observer or {}
+        median=observer.get('observed_median_interval_us')
+        checks['measured_imu_observer']=(observer.get('requested_interval_us')==required_observer_interval_us and
+            median is not None and 0<median<=required_observer_interval_us and
+            observer.get('non_increasing_timestamps')==0)
     return dict(passed=all(checks.values()),checks=checks,unexpected_failsafes=failsafes)
 
 
 def trial(job):
-    command,destination,hashes,surface_configuration=job
+    command,destination,hashes,surface_configuration,options=job
     changed=[p for p,h in hashes.items() if not Path(p).exists() or digest(p)!=h]
     if changed:return dict(passed=False,failure='Frozen inputs changed: '+str(changed))
     with destination.with_suffix('.log').open('x') as stream:
@@ -55,11 +62,18 @@ def trial(job):
         except Exception as exc:
             surfaces=dict(passed=False,failure=f'{type(exc).__name__}: {exc}')
             (destination/'local_surface_audit_failure.json').write_text(json.dumps(surfaces,indent=2)+'\n')
-    qualification=assess(summary,vio,log,surfaces=surfaces,require_surfaces=bool(surface_configuration))
+    observer=read(destination/'observer_rate.json')
+    qualification=assess(summary,vio,log,surfaces=surfaces,require_surfaces=bool(surface_configuration),
+        observer=observer,required_observer_interval_us=options.get('required_observer_interval_us'))
+    archives=[]
+    if options.get('compress_recordings') and (destination/'frames.jsonl').exists():
+        from ...telemetry.recording import compress_recording
+        archives.append(compress_recording(destination/'frames.jsonl'))
     return dict(passed=process.returncode==0 and qualification['passed'],command=command,
         returncode=process.returncode,path=str(destination),summary=summary,
         qualification=qualification,vio_summary=vio,ulog_summary_path=str(destination/'ulog_analysis/summary.json'),
-        local_surface_audit_path=str(destination/'local_surface_audit/summary.json') if surfaces else None)
+        local_surface_audit_path=str(destination/'local_surface_audit/summary.json') if surfaces else None,
+        observer_rate=observer,recording_archives=archives)
 
 
 def report(attempts,spec):
@@ -93,6 +107,10 @@ def run(scene,audit,configuration,output,*,workers=3,instance=50):
     hashes=frozen_inputs(scene,configuration)
     for p in (audit,mission,camera,ROOT/'configs/px4'/f'{profile}.json'):
         hashes[str(p)]=digest(p)
+    mission_settings=json.loads(mission.read_text())
+    if mission_settings.get('return_termination_configuration'):
+        p=ROOT/mission_settings['return_termination_configuration'];hashes[str(p)]=digest(p)
+    p=ROOT/'rm27/telemetry/recording.py';hashes[str(p)]=digest(p)
     surface_configuration=None
     if spec.get('surface_configuration'):
         surface_configuration=(ROOT/spec['surface_configuration']).resolve()
@@ -116,7 +134,7 @@ def run(scene,audit,configuration,output,*,workers=3,instance=50):
                 cmd=[sys.executable,'-m','rm27.autopilot.px4.image_mission',str(scene),
                     '--audit',str(audit),'--config',str(mission),'--camera-config',str(camera_path),
                     '--output',str(dest),'--instance',str(instance+i),'--speedup',str(spec['speedup'])]
-                jobs.append((cmd,dest,dict(hashes,**{str(camera_path):digest(camera_path)}),surface_configuration))
+                jobs.append((cmd,dest,dict(hashes,**{str(camera_path):digest(camera_path)}),surface_configuration,spec))
             for case,result in zip(group,pool.map(trial,jobs)):
                 row=dict(name=case['name'],camera_seed=case['camera_seed'],**result);attempts.append(row)
                 summary=report(attempts,spec)

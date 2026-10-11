@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "gate_version": "PX4_PERMANENT_RETURN_IMAGE_LOSS_V1",
+  "policy_configuration": "configs/px4_permanent_return_loss_dev_v1.json",
+  "speedup": 2.0,
+  "selection_basis": "One successful development termination, followed by five fresh independent starts and declared blackout onset times. No task success is counted.",
+  "scope": "Permanent return-camera loss only, with navigation valid and a previously aligned assigned tag. Normal LAND and automatic disarm must physically finish inside the 25 mm safe termination bound. This does not qualify 7 mm precision return, navigation loss or complete-mission faults.",
+  "cases": [
+    {"name": "permanent-loss-01", "fault_delay_s": 0.2},
+    {"name": "permanent-loss-02", "fault_delay_s": 0.5},
+    {"name": "permanent-loss-03", "fault_delay_s": 0.8},
+    {"name": "permanent-loss-04", "fault_delay_s": 1.1},
+    {"name": "permanent-loss-05", "fault_delay_s": 1.4}
+  ]
+}

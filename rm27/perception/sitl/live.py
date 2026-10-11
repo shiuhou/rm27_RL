@@ -46,6 +46,7 @@ class LiveVio:
         self.counts = Counter(); self.states = Counter(); self.latencies = []; self.rejections = Counter()
         self.source_ages=[]; self.publication_ages=[]; self.last_target=None;self.last_frame=None
         self.next_image = 0.; self.last_sensor = -1.; self.closed = False
+        self.last_camera_source_us=-1
 
     def __enter__(self):
         try:
@@ -134,16 +135,31 @@ class LiveVio:
         self.next_image += 1. / self.config['camera_hz']
         if self.next_image<t:self.next_image=t+1./self.config['camera_hz']
         frame = self.camera.capture(self.plant.data, round(t * 1e6))
+        if frame is None:
+            self.last_frame=None;self.counts['camera_dropped']+=1
+            return
+        self.publish_camera(frame,round(t*1e6))
+
+    def publish_camera(self,frame,received_us):
+        """Preserve acquisition time through detection, storage and native IPC."""
+        if frame.timestamp_us>received_us:
+            self.last_frame=None;self.last_target=None
+            self.counts['camera_future']+=1;return
         self.last_frame=frame
-        self.last_target=self.detector.detect(frame,now_us=frame.timestamp_us)
+        self.last_target=self.detector.detect(frame,now_us=received_us)
         self.targets.write(json.dumps(asdict(self.last_target),allow_nan=False)+'\n')
         self.counts['safe_target']+=self.last_target.safe_for_control
+        if frame.timestamp_us<=self.last_camera_source_us:
+            self.counts['camera_non_increasing']+=1;return
+        self.last_camera_source_us=frame.timestamp_us
+        ns=frame.timestamp_us*1000
         gray = cv2.cvtColor(frame.image_rgb, cv2.COLOR_RGB2GRAY)
         name = str(ns) + '.png'; cv2.imwrite(str(self.output / 'images' / name), gray)
         row = dict(type='camera', source_time_ns=ns, width=frame.width, height=frame.height,
                    gray_base64=base64.b64encode(gray.tobytes()).decode())
         self.connection.sendall(encode_packet(row))
         self.inputs.write(json.dumps(dict(type='camera', source_time_ns=ns, filename=name,
+            received_time_ns=received_us*1000,
             sha256=digest(self.output / 'images' / name))) + '\n'); self.counts['camera'] += 1
 
     def observe_telemetry(self, telemetry, now):

@@ -14,5 +14,12 @@ def test_packet_reception_cannot_substitute_for_actual_ekf2_fusion():
     assert not assess(summary,vio,log,require_surfaces=True)['passed']
     assert not assess(summary,vio,log,require_surfaces=True,surfaces={'passed':False})['passed']
     assert assess(summary,vio,log,require_surfaces=True,surfaces={'passed':True})['passed']
+    assert not assess(summary,vio,log,required_observer_interval_us=4000)['passed']
+    observer=dict(requested_interval_us=4000,observed_median_interval_us=20_000,non_increasing_timestamps=0)
+    assert not assess(summary,vio,log,required_observer_interval_us=4000,observer=observer)['passed']
+    observer['observed_median_interval_us']=4000
+    assert assess(summary,vio,log,required_observer_interval_us=4000,observer=observer)['passed']
+    observer['non_increasing_timestamps']=1
+    assert not assess(summary,vio,log,required_observer_interval_us=4000,observer=observer)['passed']
     summary['events']=[{'event':'STATUSTEXT','text':'Failsafe activated'}]
     assert assess(summary,vio,log)['passed'] is False

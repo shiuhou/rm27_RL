@@ -90,9 +90,10 @@ cd /home/shiuhou/Projects/rm27_drones_px4
 
 Use a fresh output directory each time. The second command reproduces the
 failed reserved v1 configuration; it is not a supported claim of task success.
-True AP/PX4 paired current flights, thrust-response selection, PX4 Student
-retraining and the complete 150 g mission remain unfinished. Hardware is not
-connected or modified.
+Current paired development flights and a fresh fitted hybrid reference are
+documented below. Their task gates fail, so they do not qualify an aggressive
+contact strategy. Complete 150 g mission acceptance remains separate.
+Hardware is not connected or modified.
 
 Development version 2 keeps the original geometry and gates, and records any
 Teacher design changes per run in `teacher_design.json`. Recentering the

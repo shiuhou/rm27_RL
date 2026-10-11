@@ -40,6 +40,9 @@ class Runtime:
         self.sim_port=4560+instance; self.api_port=18000+instance*2; self.host_port=self.api_port+1
         self.system=instance+1; self.started=None
         self.pending=deque()
+        self.telemetry_rates=dict(HEARTBEAT=5,LOCAL_POSITION_NED=50,
+            ATTITUDE_QUATERNION=100,ESTIMATOR_STATUS=10,EXTENDED_SYS_STATE=10,
+            DISTANCE_SENSOR=50)
         self.control_period=.004
         self.substeps=round(self.control_period/self.plant.model.opt.timestep)
         if abs(self.substeps*self.plant.model.opt.timestep-self.control_period)>1e-10:
@@ -56,7 +59,7 @@ class Runtime:
             airframe=etc/'init.d-posix/airframes/4999_rm27'
             airframe.write_text('. ${R}etc/init.d/rc.mc_defaults\n'+''.join(f'param set {k} {v}\n' for k,v in params.items()))
             startup=etc/'init.d-posix/px4-rc.mavlink'
-            startup.write_text(f'mavlink start -x -u {self.api_port} -o {self.host_port} -t 127.0.0.1 -r 4000000 -m onboard\n'+''.join(f'mavlink stream -u {self.api_port} -r {rate} -s {name}\n' for name,rate in [('HEARTBEAT',5),('LOCAL_POSITION_NED',50),('ATTITUDE_QUATERNION',100),('ESTIMATOR_STATUS',10),('EXTENDED_SYS_STATE',10),('DISTANCE_SENSOR',50)]))
+            startup.write_text(f'mavlink start -x -u {self.api_port} -o {self.host_port} -t 127.0.0.1 -r 4000000 -m onboard\n'+''.join(f'mavlink stream -u {self.api_port} -r {rate} -s {name}\n' for name,rate in self.telemetry_rates.items()))
             (etc/'init.d-posix/px4-rc.mavlinksim').write_text(f'simulator_mavlink start -t 127.0.0.1 {self.sim_port}\n')
             self.expected=params
             self.server=socket.socket(); self.server.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
@@ -73,7 +76,7 @@ class Runtime:
             self.started=time.monotonic()
             self.sim,_=self.server.accept(); self.sim.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
             self.hil=mavlink.MAVLink(Writer(self.sim),srcSystem=255,srcComponent=51)
-            (self.output/'launch.json').write_text(json.dumps({'command':command,'parameters':params,'binary_sha256':hashlib.sha256(self.binary.read_bytes()).hexdigest(),'ports':{'sim':self.sim_port,'api':self.api_port,'host':self.host_port},'source':str(self.source),'profile':self.profile},indent=2))
+            (self.output/'launch.json').write_text(json.dumps({'command':command,'parameters':params,'binary_sha256':hashlib.sha256(self.binary.read_bytes()).hexdigest(),'ports':{'sim':self.sim_port,'api':self.api_port,'host':self.host_port},'source':str(self.source),'profile':self.profile,'telemetry_rates_hz':self.telemetry_rates},indent=2))
             self.hil.send(self.sensor.hil_sensor())
             self.hil.send(self.sensor.distance_sensor())
             return self

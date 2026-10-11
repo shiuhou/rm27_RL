@@ -115,8 +115,10 @@ bounded reacquisition climb while navigation is valid; final LAND requires a
 fresh aligned tag, then freezes that registration for near-ground handover.
 Reacquisition returns to the reviewed 0.6 m observation altitude, requires
 0.5 s stable fresh identification, then resumes descent. Loss before the final
-LAND request also enters this path. Reacquisition exhaustion is a failed run;
-permanent loss and navigation-loss termination remain unqualified.
+LAND request also enters this path. Reacquisition exhaustion is a failed run.
+A bounded permanent-camera-loss policy now passes a separate short-return
+5/5 termination batch (0/5 task successes); complete-route and navigation-loss
+handling remain separate.
 
 Frozen independent short-route batches now pass: sensor-only MTF 20/20
 (`px4-s3-mtf-batch-02`, maximum resting XY 4.154 mm, p95 4.098 mm) and
@@ -162,14 +164,22 @@ This is simulation tuning; remaining gates and timeout are unchanged.
   a PX4 backend. Hover passes, but frozen Teacher contact holdout v1 fails
   (nominal 0/8; overall 1/14 task successes and one safe abort).
   [Research evidence](PX4_CONTACT_RESEARCH.md) preserves the failing attempts.
-  Strategy repair, Student retraining and paired comparison remain unfinished.
+  Fresh conservative hybrid-reference fitting is complete, but its separate
+  holdout fails 9/14 (nominal 7/8). Current paired Teacher development also
+  fails overall: PX4 rate 3/3, the other three backend/interface groups 0/3.
+  Aggressive strategy qualification remains unfinished; the complete image
+  mission uses a separate low-speed controller.
 - P5/S4/S5: current-flight native VIO/ODOMETRY, pixel-derived metric armor pose,
   causal IMU contact inference and dedicated downward AprilTag return are now
   connected. Frozen nominal V1 is complete and fails **11/20**, including six
   recovery failures, one reacquisition exhaustion and two invalid LAND alignments.
-  The guard-tip/image-height V9 development completes one physical task with a
-  passing sampled surface audit, 16 ms first-hit inference and 1.554 mm resting
-  XY. Canonical timing fixes, new reserved nominal acceptance, fifty variable
+  Guard-tip/image-height nominal V2 is complete and fails **19/20**: attempt 15
+  has a secondary contact after 20 ms impact inference. Return/rest/disarm
+  completes 20/20 (maximum resting XY 3.616 mm), but the whole batch remains
+  failed. Startup-configured 250 Hz observer development passes two fresh
+  physical tasks, with 5/7 ms inference and 3.593/1.480 mm resting XY. Primary
+  camera source-time laundering is repaired and regression tested. A new
+  reserved nominal batch, continuous geometry approval, fifty variable
   conditions and the full fault matrix remain required.
   See [complete image mission](PX4_IMAGE_MISSION.md).
 - P6: ULog intake, finite logging session and M3C single-UART tools are present;

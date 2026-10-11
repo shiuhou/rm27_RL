@@ -14,7 +14,6 @@ import numpy as np
 from .flight import run
 from .live_flight import VioRuntime, ROOT
 from .image_route import ImageRoute
-from .runtime import mavlink
 from ...perception.sitl.armor_pose import ArmorPoseDetector
 
 
@@ -43,9 +42,17 @@ def execute(scene, audit_path, output, *, configuration=None, camera_configurati
     camera_path=Path(camera_configuration) if camera_configuration else ROOT/'configs/px4_sim_camera_mission_dev.json'
     configuration=Path(configuration) if configuration else ROOT/'configs/px4_image_mission_dev.json'
     settings=json.loads(configuration.read_text());audit=json.loads(Path(audit_path).read_text())
+    observer_interval=settings.get('imu_observer_interval_us',20_000)
+    if type(observer_interval) is not int or observer_interval not in (4000,8000,10000,20000):
+        raise ValueError('explicit supported host-SITL IMU observer interval required')
     files=[Path(__file__),Path(__file__).with_name('image_route.py'),
         ROOT/'rm27/perception/sitl/armor_pose.py',camera_path,configuration,Path(audit_path),
         ROOT/'configs/px4'/f'{settings["estimation_profile"]}.json']
+    termination_settings=None
+    if settings.get('return_termination_configuration'):
+        path=ROOT/settings['return_termination_configuration']
+        termination_settings=json.loads(path.read_text())
+        files.extend([path,Path(__file__).with_name('return_termination.py')])
     input_hashes={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
     if hashlib.sha256(scene.read_bytes()).hexdigest()!=audit.get('scene_sha256'):
         raise ValueError('reviewed corridor scene hash mismatch')
@@ -71,10 +78,14 @@ def execute(scene, audit_path, output, *, configuration=None, camera_configurati
             self.profile=settings['estimation_profile']
             self.vio_camera_config=camera_path;self.next_pose=None;self.pose_stream=None
             self.audit_stream=None;self.physical_first_time=None
+            # Configure the PX4 startup stream. Sending SET_MESSAGE_INTERVAL
+            # before mavlink starts silently loses the request.
+            self.telemetry_rates['HIGHRES_IMU']=1e6/observer_interval
+            self.imu_times=[]
+            self.cached_return_tag=None
 
         def __enter__(self):
             rt=super().__enter__()
-            self.command(mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,105,20_000)
             self.pose_stream=(self.output/'armor_poses.jsonl').open('x',buffering=1)
             self.audit_stream=(self.output/'physical_audit.jsonl').open('x',buffering=1)
             return rt
@@ -82,7 +93,8 @@ def execute(scene, audit_path, output, *, configuration=None, camera_configurati
         def receive(self):
             messages=super().receive()
             for message in messages:
-                if message.get_type()=='HIGHRES_IMU':route.observe_imu(message)
+                if message.get_type()=='HIGHRES_IMU':
+                    route.observe_imu(message);self.imu_times.append(int(message.time_usec))
             return messages
 
         def advance(self, controls):
@@ -101,6 +113,8 @@ def execute(scene, audit_path, output, *, configuration=None, camera_configurati
         def step(self,timeout=5.):
             row=super().step(timeout)
             now=float(self.plant.data.time);frame=self.vio.last_frame
+            if self.return_observation and self.return_observation.get('valid'):
+                self.cached_return_tag=self.return_observation.copy()
             pose=None
             if frame is not None and self.next_pose!=frame.timestamp_us:
                 self.next_pose=frame.timestamp_us
@@ -109,7 +123,22 @@ def execute(scene, audit_path, output, *, configuration=None, camera_configurati
             route.observe(pose,self.telemetry,now)
             return row
 
+        def __exit__(self,kind,exc,traceback):
+            if kind is not None and termination_settings:
+                from .return_termination import CAMERA_FAILURES,handle_camera_failure
+                if str(exc) in CAMERA_FAILURES:
+                    handle_camera_failure(self,str(exc),self.cached_return_tag,termination_settings)
+            return super().__exit__(kind,exc,traceback)
+
         def close(self):
+            if self.imu_times:
+                delta=np.diff(self.imu_times);positive=delta[delta>0]
+                evidence=dict(requested_interval_us=observer_interval,messages=len(self.imu_times),
+                    observed_median_interval_us=float(np.median(positive)) if len(positive) else None,
+                    observed_maximum_interval_us=int(positive.max()) if len(positive) else None,
+                    non_increasing_timestamps=int(np.sum(delta<=0)),
+                    scope='Measured PX4 simulation publication, not raw hardware IMU or M3C UART qualification')
+                (self.output/'observer_rate.json').write_text(json.dumps(evidence,indent=2)+'\n')
             if self.pose_stream:self.pose_stream.close();self.pose_stream=None
             if self.audit_stream:self.audit_stream.close();self.audit_stream=None
             super().close()
@@ -130,12 +159,17 @@ def execute(scene, audit_path, output, *, configuration=None, camera_configurati
     summary.update(gate_version=settings['gate_version'],model_mass_kg=.15,
         scope='current-flight image/VIO complete mission; simulation assumptions, no hardware qualification')
     summary['image_route']=route.result()
-    if code==0:
+    termination_path=output/'termination_summary.json'
+    if termination_path.exists():
+        summary['fault_termination']=json.loads(termination_path.read_text())
+        summary['passed']=False
+    if (output/'physical_audit.jsonl').exists():
         score=independent_recovery(output,route.impact,route.armor_normal)
         (output/'recovery_score.json').write_text(json.dumps(score,indent=2)+'\n')
-        summary['passed']=summary.get('passed') is True and score.get('passed') is True
         summary['independent_recovery_score']=score
-        if not summary['passed']:summary['failure']='Independent physical contact/recovery gate failed'
+        if code==0:
+            summary['passed']=summary.get('passed') is True and score.get('passed') is True
+            if not summary['passed']:summary['failure']='Independent physical contact/recovery gate failed'
     (output/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
     return 0 if summary['passed'] else 1
 

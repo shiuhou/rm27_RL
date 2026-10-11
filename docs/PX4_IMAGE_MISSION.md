@@ -120,14 +120,14 @@ cd /home/shiuhou/Projects/rm27_drones_px4
 MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python \
   -m rm27.autopilot.px4.image_mission artifacts/px4-dock-tags-05/scene.xml \
   --audit artifacts/px4-guard-tip-corridor-audit-01/summary.json \
-  --config configs/px4_image_guard_tip_dev_v11.json \
+  --config configs/px4_image_mission_v3.json \
   --camera-config configs/px4_sim_camera_guard_tip_dev_v8.json \
   --instance 40 --output artifacts/px4-image-mission-new
 
 MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python \
   -m rm27.autopilot.px4.image_batch artifacts/px4-dock-tags-05/scene.xml \
   --audit artifacts/px4-guard-tip-corridor-audit-01/summary.json \
-  --config configs/px4_image_nominal_v2.json --workers 3 --instance 50 \
+  --config configs/px4_image_nominal_v3.json --workers 3 --instance 50 \
   --output artifacts/px4-image-nominal-new
 ```
 
@@ -143,6 +143,48 @@ a nearest point inside the patch cannot hide a guard overlap beyond its edge.
 The canonical V11 flight passes this stricter check in
 `px4-guard-tip-flight-surfaces-development-06`. This does not
 certify the continuous swept recovery volume between observations.
+
+V2 is now complete and fails **19/20** in `px4-image-nominal-batch-02`.
+Attempt 15 has a second armor contact 63 ms after the first impact; inference
+is 20 ms late. Its approximately 0.00493 N second force remains a failure
+under the unchanged no-secondary-contact gate. All twenty return, land and
+disarm; maximum independently scored resting XY is 3.616 mm, p95 3.467 mm.
+This held-out set is preserved and is not used to select subsequent tuning.
+
+A separate observer development initially requested 250 Hz before MAVLink
+startup and actually received 50 Hz (`px4-image-fast-observer-development-01`).
+The canonical startup now configures the stream before flight. New development
+seeds 413002/413003 both complete the physical mission, with measured median
+HIGHRES_IMU period 4 ms, impact inference 5/7 ms, no secondary impact, and
+resting XY 3.593/1.480 mm (`px4-image-startup-observer-development-01` and `-02`).
+Maximum publication gaps are 20/24 ms. This is integrated PX4 simulation IMU
+telemetry, not raw hardware IMU or a M3C UART bandwidth qualification.
+
+The live primary camera now retains the actual image acquisition time in
+native IPC, saved image names and detector input. Receipt time independently
+determines freshness; repeated/backwards camera samples are rejected by the
+native publisher and future samples are rejected. The old diagnostic
+`px4-primary-camera-time-diagnostic-01` remains failed. The regression sends
+an actual 300 ms old frame and verifies native-wire time, stored time and
+unsafe detector age. Delayed-camera acceptance still requires fresh flights.
+
+`return_termination.py` implements the separately tested bounded normal LAND
+policy for an exhausted return-camera reacquisition. An explicit mission
+configuration enables it. The same SITL process continues until landed,
+automatically disarmed and physically stopped; termination is always reported
+as failed task. Complete-route fault development is separate from the earlier
+short-return 5/5 evidence; see [return software](PX4_RETURN_TERMINATION.md).
+
+V3 reserves new seeds 314001–314020 before its first attempt. It keeps all
+physical thresholds, requires an actually measured 4 ms median observer period
+and stores completed generated frame records through verified lossless gzip.
+The two startup observer development flights also pass independent clipped-patch
+surface audits (5,831/5,683 recorded local poses) and actual ULog EV position,
+velocity and height fusion. One has all 3,100 native 1 ms recovery samples
+inside the proposed corridor; that corridor still needs its separate continuous
+clearance proof. Root suite `px4-root-tests-23.log` reports 427 passed, 5 skipped;
+subsequent affected checks pass 14 tests after failed-flight recovery scoring
+and compressed surface-reader changes.
 
 The batch freezes code, camera, reviewed corridor/assets, estimator, native VIO
 and PX4 binary before launch and retains every failed attempt. Each instance

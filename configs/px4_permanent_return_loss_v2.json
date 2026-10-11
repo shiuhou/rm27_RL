@@ -1,0 +1,36 @@
+{
+  "schema_version": 2,
+  "gate_version": "PX4_PERMANENT_RETURN_IMAGE_LOSS_V2",
+  "policy_configuration": "configs/px4_permanent_return_loss_policy_v2.json",
+  "camera_configuration": "configs/px4_sim_camera.json",
+  "speedup": 2.0,
+  "selection_basis": "Separate V2 development at seed170211/onset0.35s passed; reserve new seeds and onset times before first V2 acceptance launch. V1 remains failed2/5.",
+  "scope": "Permanent return-camera loss with navigation valid. Safe bounded termination, not precise successful docking or full mission.",
+  "cases": [
+    {
+      "name": "permanent-loss-01",
+      "fault_delay_s": 0.45,
+      "camera_seed": 170301
+    },
+    {
+      "name": "permanent-loss-02",
+      "fault_delay_s": 0.75,
+      "camera_seed": 170302
+    },
+    {
+      "name": "permanent-loss-03",
+      "fault_delay_s": 1.05,
+      "camera_seed": 170303
+    },
+    {
+      "name": "permanent-loss-04",
+      "fault_delay_s": 1.35,
+      "camera_seed": 170304
+    },
+    {
+      "name": "permanent-loss-05",
+      "fault_delay_s": 1.65,
+      "camera_seed": 170305
+    }
+  ]
+}
