@@ -53,7 +53,7 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
     telemetry_guidance=profile!='diagnostic'
     if profile in ('flow','mtf'):summary['estimation_source']='numerical optical flow, scene-ray range, simulated compass and IMU; no GPS or ODOMETRY'
     elif profile=='vio':summary['estimation_source']='instrumented native OpenVINS plus numerical flow/range/compass and IMU; development only'
-    if profile=='mtf':summary['flow_minimum_range_m']=.08
+    if profile in ('mtf','vio'):summary['flow_minimum_range_m']=.08
     elif profile=='combined':summary['estimation_source']='synthetic ODOMETRY plus numerical flow/range/compass and IMU'
     metadata={'scene':str(scene),'scene_sha256':hashlib.sha256(scene.read_bytes()).hexdigest(),'mass_kg':float(plant.model.body_mass[plant.body]),'origin_nwu':plant.origin.tolist(),'profile':profile,'dynamics_profile':str(dynamics),'runner_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
     metadata['physics_timestep_s']=float(plant.model.opt.timestep)
@@ -73,8 +73,8 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
     phase='INITIALIZE';phase_start=0.;stable_since=None;next_send=0.;next_action=10.;next_heartbeat=0.;next_params=0.
     hover=[];physical_hover=[];landing=None;land_observed=False;land_requested=False;landing_commitment=None;land_monitor=LandingMonitor();max_tilt=max_force=max_penetration=0.;start=time.monotonic();viewer=None
     yaw=math.atan2(plant.data.xmat[plant.body].reshape(3,3)[1,0],plant.data.xmat[plant.body].reshape(3,3)[0,0])
-    flow_bootstrap=profile=='mtf'
-    integral=np.zeros(2);last_send=None;rt=None
+    flow_bootstrap=profile in ('mtf','vio')
+    integral=np.zeros(2);last_send=None;rt=None;tag_correction=None;tag_last_seen=None
     def event(name,**fields):
         entry={'event':name,'physics_time':float(plant.data.time),**fields};summary['events'].append(entry);print(json.dumps(entry),flush=True)
     def transition(name):
@@ -105,7 +105,10 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
             discrepancy=np.array(tel['local_velocity'])-to_ap(plant.qvel[:3])
             if np.linalg.norm(discrepancy)>.25:raise RuntimeError('Estimated/true velocity discrepancy exceeds .25 m/s')
         else:
-            goal=to_ap(p);error=np.array(p)-to_ap(measured);discrepancy=np.zeros(3)
+            desired=np.array(p,dtype=float)
+            if phase in ('RETURN','DESCEND','ALIGN','FINAL_DESCEND') and tag_correction is not None:
+                desired[:2]+=tag_correction
+            goal=to_ap(desired);error=desired-to_ap(measured);discrepancy=np.zeros(3)
         dt=0. if last_send is None else t-last_send
         # PX4 already supplies position and velocity integrators. The legacy AP
         # outer-loop integral assumed GUID_OPTIONS disabled horizontal position.
@@ -123,7 +126,17 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
         with runtime_factory(plant,output,instance,profile=profile) as rt, (output/'frames.jsonl').open('w') as frames, (output/'mavlink.jsonl').open('w') as messages:
             pacing=time.monotonic()
             while time.monotonic()-start<300:
+                if hasattr(rt,'return_phase'):rt.return_phase=phase
                 row=rt.step(); t=float(plant.data.time);tel=rt.telemetry
+                tag=getattr(rt,'return_observation',None)
+                if tag and tag.get('valid') and t-tag['source_time_s']<=.2 and 'local_position' in tel:
+                    measured_xy=to_ap(np.asarray(tel['local_position'],dtype=float))[:2]
+                    tag_xy=np.asarray(tag['position_relative_slot_nwu_xy_m'],dtype=float)
+                    if np.linalg.norm(measured_xy-tag_xy)<=.25:
+                        tag_correction=measured_xy-tag_xy;tag_last_seen=t
+                        summary['return_tag']=dict(tag_id=tag['assigned_tag_id'],last_seen_s=t,
+                            position_relative_slot_nwu_xy_m=tag_xy.tolist(),
+                            correction_nwu_xy_m=tag_correction.tolist(),source='rendered downward image and PX4 attitude')
                 for msg in rt.receive():
                     kind=msg.get_type();messages.write(json.dumps({'received_sim_s':t,'message':msg.to_dict()},default=str)+'\n')
                     if kind=='STATUSTEXT':event(kind,text=msg.text)
@@ -146,6 +159,8 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                     speed=float(np.linalg.norm(to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float))))
                 else:
                     local=physical_local;speed=physical_speed
+                if telemetry_guidance and tag_correction is not None and phase in ('RETURN','DESCEND','ALIGN','FINAL_DESCEND','LAND','POST'):
+                    local=local.copy();local[:2]-=tag_correction
                 mission_contacts=contacts=plant.contacts()
                 if telemetry_guidance:
                     # Contact is not an input to the sensor-only mission
@@ -232,7 +247,10 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                     elif t-phase_start>20:raise RuntimeError('Offset did not settle')
                 elif phase=='RETURN':
                     target([0 if route else max(0,.12-.04*(t-phase_start)),0,.6])
-                    if t-phase_start>6 and np.linalg.norm(local[:2])<.004 and abs(local[2]-.6)<.015 and speed<.01:transition('DESCEND')
+                    if t-phase_start>6 and np.linalg.norm(local[:2])<.004 and abs(local[2]-.6)<.015 and speed<.01:
+                        if getattr(rt,'return_camera',None) and (tag_last_seen is None or t-tag_last_seen>.5):
+                            raise RuntimeError('Assigned AprilTag not freshly observed for return alignment')
+                        transition('DESCEND')
                     elif t-phase_start>25:raise RuntimeError('Return alignment failed')
                 elif phase=='DESCEND':
                     target([0,0,max(.12,.6-.04*(t-phase_start))],z_limit=.04)
@@ -250,9 +268,9 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                 elif phase=='FINAL_DESCEND':
                     if tel.get('mode')!='LAND':
                         target([0,0,max(-.02,.12-.03*(t-phase_start))],z_limit=.03)
-                        land_height=.12 if profile=='mtf' else .06
+                        land_height=.12 if profile in ('mtf','vio') else .06
                         if local[2]<land_height and (not land_requested or t>=next_action):
-                            if profile=='mtf' and landing_commitment is None:
+                            if profile in ('mtf','vio') and landing_commitment is None:
                                 flags=tel.get('estimator_flags',0)
                                 if not flags & mavlink.ESTIMATOR_POS_HORIZ_REL or t-tel.get('estimator_time',-100)>.3 or np.linalg.norm(local[:2])>.003:
                                     raise RuntimeError('No valid slot alignment at landing commitment')
@@ -266,7 +284,7 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                     # the earlier 6 mm pre-contact abort rejected otherwise
                     # valid runs when estimator and physics samples straddled
                     # the boundary by one 4 ms HIL tick.
-                    if local[2]<.1 and np.linalg.norm(local[:2])>.007 and not (profile=='mtf' and landing_commitment):raise RuntimeError('Alignment lost near rim')
+                    if local[2]<.1 and np.linalg.norm(local[:2])>.007 and not (profile in ('mtf','vio') and landing_commitment):raise RuntimeError('Alignment lost near rim')
                     if mission_contacts or landed:
                         if speed>.15:raise RuntimeError('Landing too fast')
                         landing={'physics_time':t,'local_position':local.tolist(),'speed_m_s':speed,'contacts':contacts,'touchdown_source':'px4_landed_state' if telemetry_guidance else 'mujoco_contact'}
@@ -288,14 +306,14 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                     settled = landed if telemetry_guidance else bool(contacts)
                     height_tolerance=.01 if telemetry_guidance else .005
                     height=local[2]
-                    if profile in ('flow','mtf'):
+                    if profile in ('flow','mtf','vio'):
                         # Range-referenced EKF2 has a floating terrain datum.
                         # Check measured ground clearance for resting height;
                         # do not interpret local z as a surveyed floor height.
                         if t-tel.get('distance_time',-100)>.1:raise RuntimeError('Resting range stale')
                         height=tel['distance_m'];height_tolerance=.005
                     resting_horizontal=np.linalg.norm(local[:2])
-                    if profile=='mtf' and landing_commitment:
+                    if profile in ('mtf','vio') and landing_commitment:
                         resting_horizontal=np.linalg.norm(landing_commitment['local_position'][:2])
                         # Flow is intentionally invalid below 8 cm. Fresh
                         # landed state and range establish rest; position is

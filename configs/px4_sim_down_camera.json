@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "scope": "return-to-dock simulation camera only; physical mass, lens and calibration unmeasured",
+  "camera_name": "rm27_downward_return",
+  "body_name": "drone_1",
+  "position_body_flu_m": [0.0, 0.0, -0.025],
+  "optical_axis_body_flu": [0.0, 0.0, -1.0],
+  "width": 640,
+  "height": 480,
+  "fovy_deg": 70.0,
+  "camera_hz": 20.0,
+  "assigned_slot": 1,
+  "tag_id_by_slot": {"1": 21, "2": 22, "3": 23, "4": 24},
+  "tag_size_m": 0.08,
+  "tag_family": "AprilTag 36h11"
+}

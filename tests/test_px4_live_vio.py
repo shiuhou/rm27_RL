@@ -8,6 +8,12 @@ import pytest
 from rm27.perception.sitl.transport import PacketDecoder, encode_packet, MAX_PACKET_BYTES
 from rm27.autopilot.px4.odometry import OdometryAdapter, Registration
 from test_px4_odometry_clocks import estimate
+from rm27.autopilot.px4.live_flight import VioRuntime
+
+
+def test_live_runtime_rejects_implicit_diagnostic_profile():
+    with pytest.raises(ValueError,match='explicit development profile'):
+        VioRuntime(None,None,profile='diagnostic')
 
 
 def test_fragmented_sensor_and_native_packets_preserve_source_clocks():

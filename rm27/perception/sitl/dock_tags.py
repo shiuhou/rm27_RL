@@ -52,7 +52,8 @@ class DockTagDetector:
                 if not ok or not np.isfinite(tvec).all() or tvec[2,0]<=0:continue
                 projected,_=cv2.projectPoints(object_points,rvec,tvec,calibration,np.zeros(4))
                 error=float(np.sqrt(np.mean(np.sum((projected.reshape(4,2)-pixels)**2,axis=1))))
-                candidates.append((error,rvec,tvec))
+                if np.isfinite(error) and np.isfinite(rvec).all() and np.isfinite(projected).all():
+                    candidates.append((error,rvec,tvec))
             if not candidates:continue
             error,rvec,tvec=min(candidates,key=lambda c:c[0])
             rotation=cv2.Rodrigues(rvec)[0]

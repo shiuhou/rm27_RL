@@ -67,3 +67,31 @@ be LOST while stationary or when visual updates are insufficient. An execution
 pass and a trajectory score do not grant flight qualification. Live development
 admission is restricted explicitly to the MuJoCo source clock; real sensor
 clocks still require independent qualification.
+
+## Downward return camera and slot AprilTags
+
+Create a separate scene with AprilTag 36h11 IDs 21-24 in slots 1-4 and a
+body-centered, downward-looking camera. The code square is 80 mm wide; its
+96 mm white panel fits inside the former 110 mm green pad. Tags are visual
+only and do not change collision geometry. The camera is used only during
+return, approach, alignment and final descent; the front camera remains the
+VIO/target source. The simulated camera mount/FOV is a design assumption,
+not a real calibration. The user's estimated camera mass is 2-3 g; this
+scene does not add that mass to the 150 g physics model.
+
+```bash
+MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python \
+  -m rm27.perception.sitl.dock_slots \
+  artifacts/px4-base-target-150g-02/scene.xml \
+  --output artifacts/px4-dock-tags-new
+
+MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python \
+  -m rm27.autopilot.px4.live_flight \
+  artifacts/px4-dock-tags-new/scene.xml \
+  --output artifacts/px4-live-vio-tags-new --instance 29 --speedup 2
+```
+
+Inspect both output `summary.json` files. The static audit checks visibility
+after takeoff; rim/body occlusion on the ground is expected. The current live
+development run reads the assigned tag, but the final PX4 LAND sequence has
+not yet passed its independent physical gate.

@@ -18,6 +18,12 @@ python -m rm27 --help
 `codex/px4-v1.17-migration`。[验收状态和限制](docs/PX4_MIGRATION_STATUS.md)。
 以下均为本机 SITL，150 g 参数中的惯量、推力和电机滞后仍是工程估计。
 
+四個停機位綠色區域已在獨立 PX4 仿真場景中改為 80 mm AprilTag，
+機腹中心增加專用下視相機。建立場景和運行當前視覺回庫開發鏈路的命令見
+[視覺 SITL 操作說明](rm27/perception/sitl/README.md)。下視相機實物估重
+2-3 g；仿真質量尚未加入。當前閉環回庫可讀取指定標記，但近地 LAND
+仍未通過，不應將此入口視為完整任務驗收。
+
 ```bash
 cd /home/shiuhou/Projects/rm27_drones_px4
 # 由 PX4 EKF 遥测控制短程往返；数值光流下限 8 cm，无 GPS/ODOMETRY。
