@@ -160,10 +160,12 @@ This is simulation tuning; remaining gates and timeout are unchanged.
   (nominal 0/8; overall 1/14 task successes and one safe abort).
   [Research evidence](PX4_CONTACT_RESEARCH.md) preserves the failing attempts.
   Strategy repair, Student retraining and paired comparison remain unfinished.
-- P5/S4/S5: implement current-flight native VIO/ODOMETRY, image-driven approach,
-  recovery, dock identification and slot guidance; complete 20 nominal and
-  50 variable-condition runs plus fault handling. Recorded images and VIO
-  scores do not qualify these gates.
+- P5/S4/S5: current-flight native VIO/ODOMETRY, pixel-derived metric armor pose,
+  causal IMU contact inference and dedicated downward AprilTag return are now
+  connected. Development V4 completes the entire 150 g mission once, including
+  independently scored recovery, normal LAND and automatic disarm. Twenty
+  nominal and fifty variable-condition runs plus the full fault matrix remain
+  required. See [complete image mission](PX4_IMAGE_MISSION.md).
 - P6: ULog intake, finite logging session and M3C single-UART tools are present;
   six fake-wire root tests pass. See [software report](PX4_M3C_SOFTWARE.md).
   End-to-end live capture and device runtime qualification remain pending.

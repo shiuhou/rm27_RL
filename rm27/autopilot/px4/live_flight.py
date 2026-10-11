@@ -21,9 +21,10 @@ class VioRuntime(Runtime):
         self.return_camera=None
         self.return_phase='INITIALIZE'
         self.return_observation=None
+        self.vio_camera_config=None
 
     def __enter__(self):
-        self.vio=LiveVio(self.plant,self.output)
+        self.vio=LiveVio(self.plant,self.output,camera_config=self.vio_camera_config)
         self.vio.__enter__()
         try:
             runtime=super().__enter__()

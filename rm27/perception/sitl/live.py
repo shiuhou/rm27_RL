@@ -34,16 +34,17 @@ DEFAULT_NATIVE = ROOT / 'artifacts/openvins-native-evidence-build-01/installatio
 
 
 class LiveVio:
-    def __init__(self, plant, output, *, installation=DEFAULT_NATIVE):
+    def __init__(self, plant, output, *, installation=DEFAULT_NATIVE, camera_config=None):
         self.plant = plant
         self.output = Path(output) / 'vio'
         self.installation = Path(installation)
+        self.camera_config_path=Path(camera_config) if camera_config else ROOT/'configs/px4_sim_camera.json'
         self.process = self.connection = self.server = self.camera = self.log = None
         self.ipc = None; self.decoder = PacketDecoder(); self.contract = NativeContract()
         self.adapter = None; self.registration = None
         self.history = deque(maxlen=500)
         self.counts = Counter(); self.states = Counter(); self.latencies = []; self.rejections = Counter()
-        self.source_ages=[]; self.publication_ages=[]; self.last_target=None
+        self.source_ages=[]; self.publication_ages=[]; self.last_target=None;self.last_frame=None
         self.next_image = 0.; self.last_sensor = -1.; self.closed = False
 
     def __enter__(self):
@@ -58,7 +59,7 @@ class LiveVio:
             if digest(binary) != install['binary_sha256']:
                 raise ValueError('native binary hash changed')
             self.output.mkdir(parents=True, exist_ok=False)
-            self.config = json.loads((ROOT / 'configs/px4_sim_camera.json').read_text())
+            self.config = json.loads(self.camera_config_path.read_text())
             settings = json.loads((ROOT / 'configs/px4_sim_vio_dev.json').read_text())
             config_dir = self.output / 'config'; config_dir.mkdir()
             c = self.config
@@ -133,6 +134,7 @@ class LiveVio:
         self.next_image += 1. / self.config['camera_hz']
         if self.next_image<t:self.next_image=t+1./self.config['camera_hz']
         frame = self.camera.capture(self.plant.data, round(t * 1e6))
+        self.last_frame=frame
         self.last_target=self.detector.detect(frame,now_us=frame.timestamp_us)
         self.targets.write(json.dumps(asdict(self.last_target),allow_nan=False)+'\n')
         self.counts['safe_target']+=self.last_target.safe_for_control

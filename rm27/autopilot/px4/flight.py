@@ -39,7 +39,7 @@ def confirm_auto_disarm(telemetry, timestamp, land_observed):
         raise RuntimeError('No fresh PX4 landed/disarmed confirmation')
 
 
-def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, route=None, profile='diagnostic', runtime_factory=Runtime):
+def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, route=None, profile='diagnostic', runtime_factory=Runtime,wall_deadline_s=300.):
     speedup=(1. if view else 5.) if speedup is None else float(speedup)
     if not math.isfinite(speedup) or speedup<=0:raise ValueError('speedup must be positive')
     scene=Path(scene).resolve();output=Path(output).resolve();output.mkdir(parents=True,exist_ok=False)
@@ -129,7 +129,7 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
             if getattr(rt,'return_camera',None):
                 visual_guard=VisualReturnGuard(rt.return_camera.assigned_id)
             pacing=time.monotonic()
-            while time.monotonic()-start<300:
+            while time.monotonic()-start<wall_deadline_s:
                 if hasattr(rt,'return_phase'):rt.return_phase=phase
                 row=rt.step(); t=float(plant.data.time);tel=rt.telemetry
                 tag=getattr(rt,'return_observation',None)
@@ -250,7 +250,8 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                     if previous_impact is None and route.impact is not None:
                         next_send=0. # dispatch the separation command on the impact tick
                     if p is None:
-                        summary['route']={'passed':True,'visited':route.visited,'impact':route.impact};transition('RETURN')
+                        summary['route']=route.result() if hasattr(route,'result') else {'passed':True,'visited':route.visited,'impact':route.impact}
+                        transition('RETURN')
                     else:target(p-plant.origin,route.horizontal_command_limit_m_s,route.vertical_command_limit_m_s,route.reference_velocity,route.mission['truth_position_gain_s_inv'],route.mission['truth_vertical_position_gain_s_inv'])
                 elif phase=='OFFSET':
                     target([min(.12,.04*(t-phase_start)),0,.6])
@@ -370,6 +371,9 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                 horizontal_error_m=float(np.linalg.norm(final_local[:2])),height_error_m=float(abs(final_local[2]-.02)))
             if not physical_pass or not summary.get('independent_hover_score',{}).get('passed'):
                 summary['passed']=False;summary['failure']='Independent physical hover or dock resting gate failed'
+            elif route and summary.get('route',{}).get('passed') is not True:
+                summary['safe_return_completed']=True
+                summary['passed']=False;summary['failure']='Route task failed; normal return and landing completed'
         summary.update(phase=phase,physics_time_s=float(plant.data.time),landing=landing,hover_samples=len(hover),max_tilt_deg=max_tilt,max_contact_force_N=max_force,max_penetration_m=max_penetration,final_position_local_nwu=(plant.qpos[:3]-plant.origin).tolist())
         (output/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
         if rt:(output/'parameters_readback.json').write_text(json.dumps(rt.parameters,indent=2)+'\n')

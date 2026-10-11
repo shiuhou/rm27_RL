@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "gate_version": "PX4_IMAGE_COMPLETE_NOMINAL_V1",
+  "scope": "20 independent complete image/VIO missions, 150 g; S1 local region prerequisite and S5 variation matrix remain separate",
+  "mission_configuration": "configs/px4_image_mission_dev.json",
+  "camera_configuration": "configs/px4_sim_camera_mission_dev.json",
+  "speedup": 2.0,
+  "selection_basis": "V4 development physical first-hit recovery passed; freeze before first reserved attempt",
+  "cases": [
+    {
+      "name": "nominal-01",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-02",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-03",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-04",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-05",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-06",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-07",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-08",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-09",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-10",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-11",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-12",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-13",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-14",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-15",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-16",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-17",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-18",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-19",
+      "camera_seed": 170011
+    },
+    {
+      "name": "nominal-20",
+      "camera_seed": 170011
+    }
+  ]
+}
