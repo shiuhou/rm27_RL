@@ -83,6 +83,8 @@ def run(scene,audit,configuration,output,*,workers=2,instance=55):
     files=[audit,ROOT/spec['mission_configuration'],ROOT/spec['camera_configuration'],
         ROOT/spec['surface_configuration'],ROOT/spec['recovery_configuration'],
         Path(__file__),Path(__file__).with_name('image_conditions.py'),Path(__file__).with_name('sensor_clock.py'),
+        Path(__file__).with_name('vio_initial_admission.py'),
+        Path(__file__).with_name('fast_bearing.py'),
         Path(__file__).with_name('recovery_membership.py'),Path(__file__).with_name('recovery_corridor.py'),
         Path(__file__).with_name('target_region_audit.py'),ROOT/'rm27/telemetry/recording.py']
     mission=json.loads((ROOT/spec['mission_configuration']).read_text())

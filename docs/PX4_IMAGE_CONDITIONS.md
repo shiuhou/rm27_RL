@@ -39,6 +39,30 @@ physical termination. The reduced diagnostic V2 removes stochastic noise
 and applies the force only during ROUTE to separate initialization from later
 disturbance handling. Further fixes require fresh development and acceptance.
 
+The reduced V2 composite now completes one physical mission in
+`px4-image-composite-development-02`: fixed primary/downward brightness 0.85/0.9,
+0.003 N lateral force during ROUTE and a 0.05 m range jump at HOVER. Contact
+inference is 4 ms, there is no second impact, and resting XY is 2.892 mm.
+Separate fusion/surface/corridor membership checks remain additional evidence.
+
+Noise also exposes a host detector cost: the original bearing detector builds
+a full image mask for each small component. An equivalent implementation
+uses component bounding statistics and one selected region. Randomized output
+comparisons retain the original ambiguity, confidence and freshness results.
+A noisy actual-scene frame benchmark retains exactly equal outputs and
+measures 0.3911 s versus 0.00221 s (177×) in
+`px4-noisy-bearing-compatibility-01`; this one-frame host measurement does not
+qualify M3C real-time performance. It is an explicit experiment option.
+
+`vio_initial_admission` adds a development first-registration guard against
+fresh PX4 flow navigation: horizontal velocity disagreement must be at most
+0.2 m/s and the largest initial position covariance eigenvalue at most 0.01 m².
+It never aligns to truth or realigns continuously. The failed composite's
+first native horizontal velocity is about 0.9 m/s and position covariance
+0.161 m², while accepted baseline initial covariance is about 0.0025 m².
+Noisy guard flights remain separate development and cannot be counted as a
+VIO or noise qualification merely because an outlier was rejected.
+
 The separate sensor-only permanent Offboard-loss development passes, followed
 by five reserved independent MTF launches in `px4-offboard-loss-batch-01`:
 **5/5 physical terminations,0/5 successful tasks**. Upstream setpoints stop;

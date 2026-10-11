@@ -16,6 +16,9 @@ import numpy as np
 from ..autopilot.px4 import image_mission
 from ..autopilot.px4.return_faults import ImageFault,FaultCamera,assess
 from .degraded_return import PermanentBlackout
+from .vio_initial_admission import InitialContract
+from .fast_bearing import detect as fast_bearing
+from ..perception.sitl.image_target_detector import ImageTargetDetector
 
 
 class ConditionCamera:
@@ -135,6 +138,19 @@ def execute(scene,audit,mission,camera,configuration,output,*,instance=46):
                             return sensor_fault.transform(original_sensor())
                         setattr(self.sensor,name,changed_sensor)
                 result=super().__enter__()
+                self.admission_stream=None
+                if settings.get('initial_vio_admission'):
+                    self.admission_stream=(self.output/'initial_vio_admission.jsonl').open('x',buffering=1)
+                    contract=InitialContract(self.vio.contract,self.vio,self.admission_stream)
+                    self.vio.contract=contract
+                    original_observe=self.vio.observe_telemetry
+                    def observe(telemetry,now):
+                        original_observe(telemetry,now)
+                        if self.vio.history and 'local_velocity' in telemetry:
+                            time,position,q=self.vio.history[-1]
+                            contract.history.append((time,position,q,telemetry['local_velocity']))
+                            contract.history=contract.history[-500:]
+                    self.vio.observe_telemetry=observe
                 primary=ConditionCamera(self.vio.camera,self,settings,camera_settings['seed']+1_000_000,primary=True)
                 self.vio.camera=primary;cameras.append(primary)
                 down=ConditionCamera(self.return_camera.camera,self,settings,camera_settings['seed']+2_000_000,primary=False)
@@ -167,15 +183,24 @@ def execute(scene,audit,mission,camera,configuration,output,*,instance=46):
                 row['commanded_controls']=row['controls']
                 row['controls']=self.applied_controls.tolist()
                 return row
+
+            def close(self):
+                stream=getattr(self,'admission_stream',None)
+                if stream:stream.close();self.admission_stream=None
+                return super().close()
         kwargs['runtime_factory']=ConditionRuntime
         return original(*args,**kwargs)
 
+    original_bearing=ImageTargetDetector.detect
+    if settings.get('efficient_bearing'):
+        ImageTargetDetector.detect=fast_bearing
     image_mission.run=run_conditions;subprocess.Popen=development_popen
     try:
         image_mission.execute(scene,audit,output,configuration=mission,
             camera_configuration=effective_camera,instance=instance)
     finally:
         image_mission.run=original;subprocess.Popen=original_popen
+        ImageTargetDetector.detect=original_bearing
     summary=json.loads((output/'summary.json').read_text());records=fault.records if fault else []
     if settings.get('return_fault',{}).get('kind')=='permanent_missing':
         term=summary.get('fault_termination',{})
