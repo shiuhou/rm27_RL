@@ -9,8 +9,10 @@ complete simulation chain and correct interfaces while the vehicle design is
 provisional; precision/reliability qualification remains later research. The independent
 PX4 worktree contains the 150 g target model, HIL bridge, estimator-guided
 micro-flight, contact recovery, rendered image inputs and native OpenVINS
-evaluation and complete image-guided missions. Engineering migration closeout
-remains in progress; execution is paused at the user's request.
+evaluation and complete image-guided missions. The revised R&D migration is complete in the independent worktree;
+[closeout evidence and limits](docs/PX4_MIGRATION_CLOSEOUT.md) and
+[supported PX4 workflow](docs/PX4_SIMULATION.md) describe the daily entry.
+Vision/VIO hardware research continues externally in `shiuhou/rm27_slam`.
 
 RoboMaster 2027 simulation and research workspace. The current priority is one
 vehicle repeatedly completing dock → blue base armor impact → recovery → assigned
@@ -45,7 +47,7 @@ historical conversation context only and is not a current specification.
   firmware and sensor inventory, with unresolved installation/log fields left explicit.
 - `rm27/`: CAD audit, dock conversion, scene composition, preview and single-vehicle flight gate.
 - `tests/`: dock geometry, four-vehicle settling, isolated flight-interface,
-  live-view state-isolation, calibration, contact, route and policy checks (104 passing).
+  live-view state-isolation, calibration, contact, route and policy checks (459 passed, 5 skipped at closeout).
 - `artifacts/`: generated models, renders and local evidence (ignored).
 
 The dock is placed on the red H platform by default. Four separate physical
@@ -63,7 +65,11 @@ in front of the base and returns to the dock using truth-assisted SITL guidance.
 It does not include armor impact or visual navigation.
 
 ```bash
-python -m pip install -r requirements-integration.txt
+python -m pip install -r requirements-integration.txt -r requirements-px4.txt
+# Daily complete PX4 prototype mission, in rm27_drones_px4:
+python -m rm27 px4-sim doctor
+MUJOCO_GL=egl python -m rm27 px4-sim run --output artifacts/px4-mission-new --instance 60
+# Historical/basic component entries:
 python -m rm27 build-dock --output artifacts/my-dock-scene
 python -m rm27 view artifacts/my-dock-scene/scene.xml
 python -m rm27.integration.check_scene artifacts/my-dock-scene/scene.xml

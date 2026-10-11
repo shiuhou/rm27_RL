@@ -1,8 +1,10 @@
 # PX4 v1.17.0 migration status
 
-Updated 2026-10-11. Worktree: `/home/shiuhou/Projects/rm27_drones_px4`;
+Updated 2026-10-12. Worktree: `/home/shiuhou/Projects/rm27_drones_px4`;
 branch: `codex/px4-v1.17-migration`. The PX4 backend and representative complete
-simulation chain are available; engineering migration closeout is **in progress**.
+simulation chain are available; the revised R&D migration is **complete**.
+[Closeout report](PX4_MIGRATION_CLOSEOUT.md), [daily workflow](PX4_SIMULATION.md)
+and [research coverage](PX4_RESEARCH_COVERAGE.md) provide the current handoff.
 The user clarified the current R&D scope on 2026-10-11:
 [current migration criteria](PX4_MIGRATION_SCOPE.md). Provisional vehicle
 precision, large reliability batches and hardware readiness are not completion
@@ -14,18 +16,24 @@ retains its existing simulation chain and PX4-facing contracts. That research
 does not block migration closeout; pull/integration waits until the user reports
 the upstream work ready. See the ownership section in the current criteria.
 
-Execution is **paused at the user's request after the current development
-node**. The low-altitude command-loss flight and independent scoring are
-complete. Batch scheduling is suspended; the queued complete-return camera
-fault batch was cancelled before launch. Current counts, failures, process
-checkpoints and remaining gates are in [the pause report](PX4_PROGRESS_2026-10-11.md).
-Partial batches do not establish their original research acceptance. They will
-not resume automatically, and those gates no longer block R&D migration closeout.
+The user subsequently authorized resumed closeout. The supported `px4-sim`
+workflow rebuilt the scene and completed the whole nominal headless mission,
+with real EKF2 EV fusion, normal LAND/disarm and independent physical scoring.
+Its exact recorded motor-input replay passes 40,730 frames with zero error.
+Root checks pass **459 tests, 5 skipped**. Both workflow attempts are retained:
+the first completed its actor but failed summary serialization; the corrected
+second passes its actual summary. This is integration evidence, not reliability.
+
+The previous high-count batches remain suspended under the revised scope.
+Their counts and failed gates are preserved in [the historical pause report](PX4_PROGRESS_2026-10-11.md).
+They do not resume automatically and have not been relabeled passed.
 
 The retained V3 complete task passes20/20 under its frozen original runner.
-That runner still lets physical monitors abort the actor; strict actor-input
-isolation is being qualified in a separate causal copy, with new nominal,
-condition and return-fault sets. Development causal task, actual final-alignment
+That runner still lets physical monitors abort the actor; actor-input
+isolation was implemented in a separate causal version. Ten completed nominal
+and six completed condition flights qualified before the earlier pause; their
+original large gates remain incomplete. The supported prototype workflow now
+uses that input policy directly with independent scoring. Development causal task, actual final-alignment
 retry, permanent image-loss termination and upstream command-loss termination
 have passed independent fusion/surface/recovery audits. The completed original
 full-return fault gate fails:9 tasks,3 terminations,3 unhandled out of15.
@@ -174,22 +182,20 @@ slowly to satisfy the land detector before the 10 s no-aiding failsafe. Developm
 profiles `mtf` and `vio` now use `MPC_Z_VEL_I_ACC=4` (previous default 2).
 This is simulation tuning; remaining gates and timeout are unchanged.
 
-## Remaining migration closeout
+## Completed R&D closeout
 
-- Consolidate the already verified current-image/VIO/PX4 development chain into
-  documented, reproducible PX4 build/run/view/replay entry points, retaining
-  existing perception as a fixed dependency rather than developing it locally.
-- Finish the per-research migration coverage review; distinguish PX4 interfaces
-  from independent direct-physics studies and retain explicit AP reproduction.
-- Address concrete frame, unit, motor, clock, mode and invalid-estimate defects
-  with checks proportional to the affected interface. Existing complete flights
-  already demonstrate the overall chain; precision tuning and large repeat
-  batches are deferred while the aircraft design remains provisional.
-- Document replaceable model/sensor assumptions and practical hardware adapter
-  gaps. Immediate M3C/VIO hardware deployment qualification is not required.
-- Deliver the final report against the revised R&D scope. Default backend and
-  main-workspace integration remain closeout decisions, not implied by a changed
-  research criterion. Execution remains paused.
+- `python -m rm27 px4-sim` supports dependency readiness, fresh scene composition,
+  full-task run/live viewing, exact replay and read-only ULog analysis.
+- Explicit mission policy and injected runner/admission/player interfaces replace
+  the successful development path's global flight/Popen/detector substitutions.
+  Existing perception stays a fixed dependency; external research is deferred.
+- Twelve coverage entries identify PX4 adaptations, reused direct-physics
+  studies, frozen AP history, local-only inputs and separate strategy failures.
+- Model/sensor assumptions and hardware replacement notes are documented.
+  Default daily full-task entry is PX4-only `px4-sim`; old basic/research CLI
+  defaults retain their historical AP behavior with explicit backend selection.
+- The code is committed in the migration worktree. It has not been merged into
+  the user's dirty original workspace, pushed or deployed to hardware.
 
 ## Retained research qualification record
 
@@ -248,8 +254,10 @@ migration checklist. Historical failures are not rewritten as passes.
   Full saved-SITL-log wire replay and loss rejection now pass; end-to-end
   live device capture and device runtime qualification remain pending.
   UART 115200 and ~50 Hz HIGHRES_IMU do not qualify 200 Hz raw IMU or real VIO.
-- Default backend remains explicit during migration. Complete mission and
-  hardware qualification are separate decisions; no hardware is modified.
+- Daily prototype tasks now use the supported PX4-only `px4-sim` entry.
+  Original backend defaults remain available for historical reproduction.
+  R&D migration completion, strict mission qualification and hardware readiness
+  are separate; no hardware is modified.
 
 ## Supported commands
 

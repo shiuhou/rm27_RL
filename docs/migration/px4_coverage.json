@@ -1,0 +1,259 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-11",
+  "scope": "R&D interface migration; precision/reliability/hardware qualification are separate",
+  "source_manifest": "docs/migration/source_manifest.json",
+  "vision_research_owner": "https://github.com/shiuhou/rm27_slam",
+  "items": [
+    {
+      "research": "micro-flight",
+      "status": "migrated",
+      "source_files": [
+        "rm27/autopilot/px4/flight.py",
+        "rm27/autopilot/px4/bridge.py"
+      ],
+      "configuration_inputs": [
+        "configs/dynamics_150g.json",
+        "configs/dynamics_provisional.json"
+      ],
+      "reviewed_sha256": {
+        "rm27/autopilot/px4/flight.py": "ed2e37c9b5258ede2a52bafb2ab7c6e54dfb2799188a35376110df10fd90d055",
+        "rm27/autopilot/px4/bridge.py": "a8afcc975fda1a43215ca52aedccaeefc212fa70189aa3622daab33d4a4e0dcb",
+        "configs/dynamics_150g.json": "4d429c4ad00195e532b5f35d7d144cdf3314ebe23ae730e91f4e74a97f00f4dc",
+        "configs/dynamics_provisional.json": "0e40f717b3cfa22fefab5b798ec6b209cfed164640dee2ec92907b50787f0ac5"
+      },
+      "evidence": [
+        "artifacts/px4-s0-batch-03/summary.json",
+        "artifacts/px4-micro-ekf-05/summary.json"
+      ],
+      "evidence_scope": "Read the individual summaries; presence in this index is not a passed claim"
+    },
+    {
+      "research": "corridor-and-contact",
+      "status": "migrated",
+      "source_files": [
+        "rm27/experiments/route_experiment.py",
+        "rm27/autopilot/px4/recovery.py"
+      ],
+      "configuration_inputs": [
+        "configs/px4_corridor_mission_s2.json"
+      ],
+      "reviewed_sha256": {
+        "rm27/experiments/route_experiment.py": "1e595c20005eb7956ba40eb95e7435dc2e1ef4a996cdaf8e9e2c1929f778ec9d",
+        "rm27/autopilot/px4/recovery.py": "dde989fa8adb8db41173ceacb0df317a8188b614bd896c9750066d3824998580",
+        "configs/px4_corridor_mission_s2.json": "6dc02e2a1bf849eb77d14ba434996405bb0d17d6756e9f88fd0b9cc2d1be949b"
+      },
+      "evidence": [
+        "artifacts/px4-s2-eval-batch-06/summary.json"
+      ],
+      "evidence_scope": "Read the individual summaries; presence in this index is not a passed claim"
+    },
+    {
+      "research": "contact-physics",
+      "status": "reused-and-checked",
+      "source_files": [
+        "rm27/experiments/contact_probe.py",
+        "rm27/experiments/contact_metrics.py",
+        "rm27/autopilot/px4/contact_audit.py",
+        "rm27/autopilot/px4/contact_convergence.py"
+      ],
+      "configuration_inputs": [],
+      "reviewed_sha256": {
+        "rm27/experiments/contact_probe.py": "c6da11793e86592e3d9c5852064afeb2d8775557d5aed5bdb9cb4f501735df9a",
+        "rm27/experiments/contact_metrics.py": "07e748765a748e978353cf23836718152b498a4a4f5d416bf0f2daee4034906a",
+        "rm27/autopilot/px4/contact_audit.py": "df19347c0e871d8a8c087cbc33b5d29b95f27aceed7a7a78d19c262eabed3b22",
+        "rm27/autopilot/px4/contact_convergence.py": "ebeec31c03728f7ff3604bdf2afa83edf9a1f2fa963486e9840b54731421dbe3"
+      },
+      "evidence": [
+        "artifacts/px4-contact-classification-02/summary.json",
+        "artifacts/px4-contact-convergence-03/summary.json"
+      ],
+      "evidence_scope": "Read the individual summaries; presence in this index is not a passed claim"
+    },
+    {
+      "research": "whole-maneuver-teacher-student-phase4-phase5",
+      "status": "migrated-interface-research-performance-open",
+      "source_files": [
+        "rm27/experiments/aggressive_contact/maneuver.py",
+        "rm27/experiments/aggressive_contact/teacher.py",
+        "rm27/experiments/aggressive_contact/flight_control/sitl.py",
+        "rm27/experiments/aggressive_contact/flight_control/px4_sitl.py",
+        "rm27/experiments/aggressive_contact/flight_control/quality.py",
+        "rm27/experiments/aggressive_contact/distillation/px4_reference_training.py",
+        "rm27/autopilot/px4/control.py"
+      ],
+      "configuration_inputs": [
+        "configs/px4_research_inputs.json",
+        "configs/px4_contact_policy.json"
+      ],
+      "reviewed_sha256": {
+        "rm27/experiments/aggressive_contact/maneuver.py": "7e37298c398d31a1127a774de641074ada0d8910c314ad664adc75bda49a29d3",
+        "rm27/experiments/aggressive_contact/teacher.py": "51ae1f0ce9e6a008a6d8c175e9dbe7fa6d4ecf61b2571aab738978247be9a76b",
+        "rm27/experiments/aggressive_contact/flight_control/sitl.py": "af7129819b11eb283fd2a075ffefb36de758d04310c7f9762e5f571bba49361a",
+        "rm27/experiments/aggressive_contact/flight_control/px4_sitl.py": "29e3b501dad24199b88ea92dde35aecdfc594ba285f2dceafbe13afc00e35653",
+        "rm27/experiments/aggressive_contact/flight_control/quality.py": "d19ea39109e5445a6cf8ee245e1e62e29764b669743f6a9b85fd1a9e6f6332bd",
+        "rm27/experiments/aggressive_contact/distillation/px4_reference_training.py": "920487513551bca17d0cfe38256b51dbde7b51fec6af02245b506397c0ad4e01",
+        "rm27/autopilot/px4/control.py": "61d9328c4cdc3bea9483fd19a2f063639115cb4229e8b6bc325834d8f3c5dc66",
+        "configs/px4_research_inputs.json": "0f83e99109e612e3475c145d3460a42fc1e0b6a36354bdbe73069dafe39a8f1d",
+        "configs/px4_contact_policy.json": "44e1af3fea164ecb521a9b2fefd178cb0162688bc41e9c040ad5b5f83ea6aa46"
+      },
+      "evidence": [
+        "artifacts/px4-phase4-teacher-holdout-01/summary.json",
+        "artifacts/px4-hybrid-reference-holdout-01/summary.json",
+        "artifacts/px4-ap-teacher-pair-development-01/summary.json"
+      ],
+      "evidence_scope": "Read the individual summaries; presence in this index is not a passed claim"
+    },
+    {
+      "research": "complete-prototype-mission",
+      "status": "migrated",
+      "source_files": [
+        "rm27/autopilot/px4/simulation.py",
+        "rm27/autopilot/px4/image_mission.py",
+        "rm27/autopilot/px4/image_route.py",
+        "rm27/autopilot/px4/initial_admission.py"
+      ],
+      "configuration_inputs": [
+        "configs/px4_simulation.json",
+        "configs/px4_prototype_mission.json",
+        "configs/px4_prototype_camera.json",
+        "configs/px4_prototype_conditions.json",
+        "configs/px4_prototype_corridor.json"
+      ],
+      "reviewed_sha256": {
+        "rm27/autopilot/px4/simulation.py": "532f005fbd70e36fb932450b3fd4e9a5e3aaf04c1120922cdcf839a1028cfb5c",
+        "rm27/autopilot/px4/image_mission.py": "bdab090597dfe6dbdeaa8d898abfcdf6c5f280184024ef12931ae700bfe9141b",
+        "rm27/autopilot/px4/image_route.py": "8961ad147f9cf35f6bea510759cfe9017ec7e3302141e3d5c39cf9935faeb19b",
+        "rm27/autopilot/px4/initial_admission.py": "0a5555ebbb7dbf011d6550f9bb37779922ca6926eca98220bdb30cbb5d0664c7",
+        "configs/px4_simulation.json": "92a20da3502d02713d830767b060ac308066be2723d4ee9e0feaa50f2ba5fd91",
+        "configs/px4_prototype_mission.json": "d39c4229fdf6b3d7c2d4f8cc8caae69c2b1ec44c49ed3f2198e38590d722b732",
+        "configs/px4_prototype_camera.json": "e658d4b41400549956738614000fb92ea1f287e6c1fe05fdd77cb9eec8459917",
+        "configs/px4_prototype_conditions.json": "58b5fddb82773d7ddf89f90893665c778504f6ad7a6c0c8514a7154bc161ee26",
+        "configs/px4_prototype_corridor.json": "3f73c833eaecd9f4c50d625440ec5f9381e38d593ef40ad2ae8974e93bd62fa2"
+      },
+      "evidence": [
+        "artifacts/px4-prototype-closeout-01/summary.json",
+        "artifacts/px4-prototype-closeout-02/summary.json"
+      ],
+      "evidence_scope": "Read the individual summaries; presence in this index is not a passed claim"
+    },
+    {
+      "research": "downward-dock-return",
+      "status": "existing-simulation-dependency",
+      "source_files": [
+        "rm27/perception/sitl/dock_slots.py",
+        "rm27/perception/sitl/return_camera.py",
+        "rm27/autopilot/px4/visual_return.py"
+      ],
+      "configuration_inputs": [
+        "configs/px4_sim_down_camera.json"
+      ],
+      "reviewed_sha256": {
+        "rm27/perception/sitl/dock_slots.py": "dc7d8db7191b8e2186dcbf0678d20224eea3e1e1d4841624686afe9bdfcdf240",
+        "rm27/perception/sitl/return_camera.py": "2c9dd3403f5bd88caf45c75c9709a1c755988dbd0214460ef213986e45c3e1fc",
+        "rm27/autopilot/px4/visual_return.py": "85b3531cffdae60fd01401a45d598c0cab119b6b6fd2bc56a33f37301361fd61",
+        "configs/px4_sim_down_camera.json": "faf71fd876f5d874698e3d7b32e9cd80f94631f6619ec85c9ba71aa0069ab9e5"
+      },
+      "evidence": [
+        "artifacts/px4-dock-tags-05/summary.json",
+        "artifacts/px4-live-vio-tags-04/summary.json"
+      ],
+      "evidence_scope": "Read the individual summaries; presence in this index is not a passed claim"
+    },
+    {
+      "research": "localization-vio",
+      "status": "fixed-simulation-dependency-external-research-owner",
+      "source_files": [
+        "rm27/autopilot/px4/odometry.py",
+        "rm27/perception/sitl/native_contract.py",
+        "rm27/perception/sitl/live.py"
+      ],
+      "configuration_inputs": [],
+      "reviewed_sha256": {
+        "rm27/autopilot/px4/odometry.py": "60af91d3d587bcdc3d51e1929a2752c0ab9561c69aa8c14d5315cb93657d6246",
+        "rm27/perception/sitl/native_contract.py": "a4b36103d4eb225756288a8cce7602ce34128ae6ab8f794d5899e4bd6cf6c55c",
+        "rm27/perception/sitl/live.py": "dc27c6f5efee639b9b8bb0bc26658125cc8afaa45289df33a779a16cec50845a"
+      },
+      "evidence": [
+        "artifacts/openvins-native-evidence-build-01/summary.json"
+      ],
+      "evidence_scope": "Read the individual summaries; presence in this index is not a passed claim"
+    },
+    {
+      "research": "astra",
+      "status": "independent-direct-simulation",
+      "source_files": [
+        "research/astra/README.md"
+      ],
+      "configuration_inputs": [],
+      "reviewed_sha256": {
+        "research/astra/README.md": "3989eef281b6925bc20e978ca0b2f7231632c918da1e8b3a7515466991db0286"
+      },
+      "evidence": [],
+      "evidence_scope": "Read the individual summaries; presence in this index is not a passed claim"
+    },
+    {
+      "research": "darts",
+      "status": "independent-direct-simulation",
+      "source_files": [
+        "research/Darts/README.md"
+      ],
+      "configuration_inputs": [],
+      "reviewed_sha256": {
+        "research/Darts/README.md": "e749ae50e770165ad9b396018cbb8e15246e0ecb08030d1159c17e2a6598001e"
+      },
+      "evidence": [],
+      "evidence_scope": "Read the individual summaries; presence in this index is not a passed claim"
+    },
+    {
+      "research": "se3-radio",
+      "status": "independent-direct-simulation",
+      "source_files": [
+        "research/se3_radio_starter/README.md",
+        "research/se3_radio_starter/README_zh-TW.md"
+      ],
+      "configuration_inputs": [],
+      "reviewed_sha256": {
+        "research/se3_radio_starter/README.md": "ec9c44874fdbd1ad54adc9a69a16beec285e0aa66a3bfbc6526fec6a33e73b3d",
+        "research/se3_radio_starter/README_zh-TW.md": "a76ba20ede710a6b1eaf827c9a41598ee58747b54fe8a4625fb7f5341eb90ce6"
+      },
+      "evidence": [],
+      "evidence_scope": "Read the individual summaries; presence in this index is not a passed claim"
+    },
+    {
+      "research": "logs-and-m3c",
+      "status": "migrated-offline-software",
+      "source_files": [
+        "rm27/telemetry/ulog.py",
+        "rm27/telemetry/logging_session.py",
+        "rm27/telemetry/logging_replay.py",
+        ".maixpy/README.md"
+      ],
+      "configuration_inputs": [],
+      "reviewed_sha256": {
+        "rm27/telemetry/ulog.py": "d2a4354d511c48e3823ab874bedbab66429714f113af0ae8faf907395e2c3d3f",
+        "rm27/telemetry/logging_session.py": "4aacbcca94b6f7276946ae3f134ef6ea4794967ad9341a377953555d155c4536",
+        "rm27/telemetry/logging_replay.py": "fbc77a14d556c9c64d6832f7253a65483661dbade84d2e7a0dc1901077c37970",
+        ".maixpy/README.md": "2901f6d682eeb5fd22ff7c93b7ba862dc64d549cacde9f6c10507d4b3b11ab2e"
+      },
+      "evidence": [
+        "artifacts/px4-ulog-saved-session-01/summary.json",
+        "artifacts/px4-ulog-saved-session-loss-01/summary.json"
+      ],
+      "evidence_scope": "Read the individual summaries; presence in this index is not a passed claim"
+    },
+    {
+      "research": "g1-and-legacy",
+      "status": "frozen-historical-reproduction",
+      "source_files": [
+        "rm27/experiments/legacy_sitl/README.md"
+      ],
+      "configuration_inputs": [],
+      "reviewed_sha256": {
+        "rm27/experiments/legacy_sitl/README.md": "0ca5f9e36beed30fed4c01a1d3055a7707b3b8ad4233d3626512cef35f800be1"
+      },
+      "evidence": [],
+      "evidence_scope": "Read the individual summaries; presence in this index is not a passed claim"
+    }
+  ]
+}

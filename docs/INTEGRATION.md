@@ -22,6 +22,12 @@ The provisional aircraft's precision, large reliability campaigns and immediate
 hardware readiness are later studies. The long-term mission and multi-vehicle
 gates remain separate; their historical pass/fail evidence is preserved.
 
+The current supported full-task workflow is `python -m rm27 px4-sim run`;
+see [launch and evidence commands](PX4_SIMULATION.md) and the
+[research coverage and replaceable assumptions](PX4_RESEARCH_COVERAGE.md).
+Vision/VIO hardware research is owned by the user's other machine and
+`shiuhou/rm27_slam`; local simulation retains the existing fixed dependency.
+
 User-provided references: `references/images/base.jpg`, `simtohit.mp4` (29 s), the September 9
 RM2027 preliminary rules PDF, `references/cad_raw/base2.STEP` and
 `references/cad_raw/dock.STEP`. No inference of successful physical interception is made

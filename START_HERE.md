@@ -1,13 +1,13 @@
 # RM27 快速啟動
 
-目前主線：先讓一架飛機穩定完成起飛、飛向基地、返回機庫及降落，再擴展至多機。基地高速接觸、碰撞後恢復與視覺導航尚未完成。
+目前主線：PX4單機低速完整仿真鏈路已走通，日常使用下方正式入口。機體定型、激進接觸與多機可靠性仍為後續研究。
 
 ## 每次開機
 
 ```bash
-cd /home/shiuhou/Projects/rm27_drones
+cd /home/shiuhou/Projects/rm27_drones_px4
 source /home/shiuhou/venvs/mujoco/bin/activate
-python -m rm27 --help
+python -m rm27 px4-sim --help
 ```
 
 所有指令都在 repo 根目錄執行。不需要啟動 IsaacLab，也不需要設定 `PYTHONPATH`。
@@ -27,9 +27,24 @@ python -m rm27 --help
 [`rm27_slam`](https://github.com/shiuhou/rm27_slam)推進。本地保留現有
 仿真感知與PX4接口，待使用者通知成果就緒後再pull與整合。
 
-2026-10-11 已按使用者要求完成當前測試節點後暫停；後續批次不會自動
-啟動。[本次進度與暫停點](docs/PX4_PROGRESS_2026-10-11.md) 記錄已完成
-飛行、獨立評分、未通過項及恢復方式。
+2026-10-12 已依後續「開始」指示完成研發遷移收尾。
+[收尾報告](docs/PX4_MIGRATION_CLOSEOUT.md)記錄本次完整任務、實際融合、
+精確回放、全部嘗試和剩餘研究。舊高要求批次保留暫停，不自動恢復。
+
+日常完整任務入口：
+
+```bash
+python -m rm27 px4-sim doctor
+MUJOCO_GL=egl python -m rm27 px4-sim run --output artifacts/px4-mission-new --instance 60
+# 桌面觀看同一任務：
+python -m rm27 px4-sim run --output artifacts/px4-mission-view-new --instance 61 --view
+python -m rm27 px4-sim replay artifacts/px4-mission-new/flight --output artifacts/px4-replay-new
+```
+
+[完整建置／操作／日誌說明](docs/PX4_SIMULATION.md)；
+[研究覆蓋與模型替換邊界](docs/PX4_RESEARCH_COVERAGE.md)。
+每次使用新目錄；查看實際`summary.json`，不要只看進程退出码。
+主工作區`rm27_drones`沒有自動套用變更。
 
 四個停機位綠色區域已在獨立 PX4 仿真場景中改為 80 mm AprilTag，
 機腹中心增加專用下視相機。建立場景和運行當前視覺回庫開發鏈路的命令見
@@ -41,8 +56,8 @@ python -m rm27 --help
 目前也已接通當前飛行圖像／OpenVINS → 目標接近 → 接觸與恢復 →
 下視 AprilTag 回庫降落。新版僅以 PX4 遙測和當前圖像控制的完整流程
 已有10次完成且通過獨立評分，足以支持本輪鏈路可運行的結論。
-原嚴格批次的成功／失敗保留作研究證據；遷移剩餘工作集中在接口、
-可重現入口與覆蓋清單收尾。
+原嚴格批次的成功／失敗保留作研究證據；本輪正式入口再完成一次完整
+流程，並以40,730幀零誤差電機輸入回放確認物理重現。
 [完整任務程式、證據與操作方式](docs/PX4_IMAGE_MISSION.md)。
 
 下視識別和降落有專用程式：`rm27/perception/sitl/return_camera.py` 讀取
