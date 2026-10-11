@@ -120,6 +120,30 @@ new reserved seeds are in `configs/px4_causal_command_loss_preregistered_v1.json
 `tools.px4.command_loss_batch` freezes, launches and scores them. This does
 not qualify command loss at arbitrary route positions or invalid navigation.
 
+The reserved causal command-loss set exposes a real counterexample: attempt02
+loses commands during RETURN at approximately0.601 m estimated height, despite
+fresh tag alignment within3 mm. Onboard LAND and automatic disarm occur, but
+the aircraft touches a dock divider. Final rest within25 mm does not satisfy
+the no-unintended-contact requirement; the five-case gate fails.
+
+A separate development entry, `tools.px4.low_alignment_command_loss`, restricts
+interruption to ALIGN at10–14 cm estimated height, with the same fresh assigned
+tag and0.25 s slow-navigation admission. It blocks position, mode and command
+methods immediately after interruption; onboard PX4 must finish landing.
+Seed424017 passes in `px4-low-alignment-command-loss-development-01` and
+`px4-low-alignment-command-loss-development-score-01`: physical resting XY
+1.698 mm, no unintended contact, actual prior EV fusion, normal LAND and
+automatic disarm. The overall mission remains failed by design.
+
+Read-only ULog confirmation in
+`px4-user-pause-checkpoint-01/low_alignment_offboard_loss_ulog.json` observes
+`offboard_control_signal_lost` at151.836 s after interruption at150.788 s,
+followed by LAND/failsafe at151.848 s. A simulated battery-unhealthy flag
+already exists before interruption without an active failsafe; it is retained
+as a simulation limitation. This single development result neither repairs
+nor replaces the earlier-return failed acceptance set. No new low-altitude
+acceptance batch is launched at the user's pause.
+
 ```bash
 cd /home/shiuhou/Projects/rm27_drones_px4
 MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python \

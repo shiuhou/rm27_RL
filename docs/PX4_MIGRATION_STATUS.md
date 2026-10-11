@@ -4,6 +4,13 @@ Updated 2026-10-11. Worktree: `/home/shiuhou/Projects/rm27_drones_px4`;
 branch: `codex/px4-v1.17-migration`. The full migration is **in progress**.
 Hardware operations remain outside this software task.
 
+Execution is **paused at the user's request after the current development
+node**. The low-altitude command-loss flight and independent scoring are
+complete. Batch scheduling is suspended; the queued complete-return camera
+fault batch was cancelled before launch. Current counts, failures, process
+checkpoints and remaining gates are in [the pause report](PX4_PROGRESS_2026-10-11.md).
+Partial batches do not establish acceptance and will not resume automatically.
+
 The retained V3 complete task passes20/20 under its frozen original runner.
 That runner still lets physical monitors abort the actor; strict actor-input
 isolation is being qualified in a separate causal copy, with new nominal,

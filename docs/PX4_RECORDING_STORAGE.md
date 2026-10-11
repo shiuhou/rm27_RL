@@ -66,3 +66,24 @@ Restore verifies source hashes and refuses to overwrite different existing
 files. Original hardware evidence and user attachments are outside these
 commands. Keep every output directory unique and run storage only after all
 flight/scoring workers for those inputs have stopped.
+
+The encoder provisioner is reproducible in an isolated new directory:
+
+```bash
+/home/shiuhou/venvs/mujoco/bin/python -m tools.px4.setup_video_storage \
+  --runtime artifacts/deps/NEW_VIDEO_RUNTIME \
+  --output artifacts/NEW_VIDEO_PROVISION
+```
+
+It installs `imageio-ffmpeg==0.6.0` without dependencies and verifies the
+Linux x86_64 ffmpeg binary version and SHA-256. The isolated development
+installation in `px4-lossless-video-provision-development-02` passes and
+matches the original validated runtime. Installing another copy does not
+change a frozen batch's runtime or evidence.
+
+At the user's pause, `px4-camera-storage-sweep-02` is suspended with its
+current encoder transaction preserved. Its rolling `passed` field describes
+completed camera archives only; the sweep lacks `complete: true` and remains
+unfinished. Process identities and completed-camera counts are recorded in
+`artifacts/px4-user-pause-checkpoint-01`. Resume this transaction before
+starting another archive for its camera directory.
