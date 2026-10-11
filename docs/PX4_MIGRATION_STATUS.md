@@ -113,7 +113,10 @@ accepts only the assigned ID, fresh image and PX4 attitude. Repeated cached
 images cannot extend freshness. Loss before landing commitment triggers a
 bounded reacquisition climb while navigation is valid; final LAND requires a
 fresh aligned tag, then freezes that registration for near-ground handover.
-Reacquisition failure is a failed run; physical safety fault acceptance is pending.
+Reacquisition returns to the reviewed 0.6 m observation altitude, requires
+0.5 s stable fresh identification, then resumes descent. Loss before the final
+LAND request also enters this path. Reacquisition exhaustion is a failed run;
+permanent loss and navigation-loss termination remain unqualified.
 
 Frozen independent short-route batches now pass: sensor-only MTF 20/20
 (`px4-s3-mtf-batch-02`, maximum resting XY 4.154 mm, p95 4.098 mm) and
@@ -123,6 +126,15 @@ complete normal LAND and automatic disarm without an unexpected PX4 failsafe.
 These errors come from the independent physical scorer. The latter establishes
 image-guided short return, not target approach/contact or S4/S5 acceptance.
 The recorded batch manifests freeze the exact pre-fault-study implementation.
+
+The subsequent frozen downward-camera fault matrix passes 15/15
+(`px4-return-fault-batch-01`): one-second pixel blackout, repeated old image
+with its original acquisition time, and pixel replacement of ID21 by ID22,
+five independent starts each. Each run pauses descent, reacquires on a new
+assigned image and completes normal LAND/auto-disarm without a failsafe.
+Maximum physical resting XY is 2.836 mm (p95 2.734 mm). Inputs, rendered images,
+source/receipt times and pixel hashes are retained. This qualifies three
+temporary return-camera faults only; the full S3/S4 fault matrix remains open.
 
 The earlier report of missing tags at 0.2/0.12 m was a rendering bug: named
 cameras inherited the field's 20 cm near clipping plane. The corrected renderer

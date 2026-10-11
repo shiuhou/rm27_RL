@@ -97,6 +97,26 @@ development runs `px4-live-vio-tags-03` and `-04` complete normal PX4 LAND and
 automatic disarm with the independent physical gate. This does not yet qualify
 the full visual approach/contact mission or its fault matrix.
 
+The frozen short-route VIO/AprilTag batch `px4-vio-return-batch-01` passes
+20/20 independent launches, maximum physical resting XY 3.743 mm. The newer
+temporary return-camera fault batch `px4-return-fault-batch-01` passes 15/15:
+blackout, stale acquisitions and a real pixel substitution of ID21 by ID22,
+five launches each. It requires descent interruption, a climb to the reviewed
+0.6 m observation height, fresh assigned-slot reacquisition, then normal LAND
+and auto-disarm. Its maximum physical resting XY is 2.836 mm.
+
+```bash
+MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python \
+  -m rm27.autopilot.px4.return_fault_batch artifacts/px4-dock-tags-new/scene.xml \
+  --config configs/px4_return_faults_v1.json --workers 3 --instance 37 \
+  --output artifacts/px4-return-fault-batch-new
+```
+
+This is headless current-flight native VIO and PX4 SITL. All received return
+images retain independent source and receipt times and hashes; stale frames
+are not re-stamped or overwritten. Permanent tag loss, navigation loss and
+the other S3/S4 faults still require their own verified termination paths.
+
 Assigned-slot admission checks source time, telemetry age, unique ID and
 registration bounds. Cached images never extend freshness. Image loss during
 descent/alignment requests a bounded reacquisition climb with valid navigation;

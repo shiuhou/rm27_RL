@@ -17,7 +17,8 @@
 做回庫定位；PX4 仿真實作與驗收範圍見 [PX4_MIGRATION_STATUS.md](PX4_MIGRATION_STATUS.md)。
 
 不沿用附件中的 9500KV、2.5 吋槳、預設電池、7 cm 燈、MTF 型號未定等舊值。
-現值見 REAL_HARDWARE.md：9600KV、2 吋、MTF-02P、OS04A10，電池仍未知；
+現值見 REAL_HARDWARE.md：9600KV、2 吋、MTF-02P、OS04A10，
+使用者已確認 2S 450 mAh、含電池與既有設備總重 150 g；
 GPS 模組只取羅盤。55 mm 燈規格見 RULEBOOK_BASELINE.md。
 論文時程不屬本項目。外部 GPT 對 API、廠商規格與進度的說法是查證線索，
 不能直接當作已驗收能力。

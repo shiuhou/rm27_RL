@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "gate_version": "PX4_DOWNWARD_RETURN_TEMPORARY_FAULT_V1",
+  "scope": "dedicated return camera only; three temporary image faults, five independent launches each; remaining S3/S4 faults pending",
+  "model": "150 g target engineering estimate",
+  "speedup": 2.0,
+  "expected": "pause descent, climb to reviewed observation height, reacquire assigned ID21 on fresh image, normal LAND and auto-disarm; no unexpected failsafe",
+  "cases": [
+    {
+      "name": "missing-01",
+      "kind": "missing",
+      "phase": "DESCEND",
+      "delay_s": 0.5,
+      "duration_s": 1.0
+    },
+    {
+      "name": "missing-02",
+      "kind": "missing",
+      "phase": "DESCEND",
+      "delay_s": 0.75,
+      "duration_s": 1.0
+    },
+    {
+      "name": "missing-03",
+      "kind": "missing",
+      "phase": "DESCEND",
+      "delay_s": 1.0,
+      "duration_s": 1.0
+    },
+    {
+      "name": "missing-04",
+      "kind": "missing",
+      "phase": "DESCEND",
+      "delay_s": 1.25,
+      "duration_s": 1.0
+    },
+    {
+      "name": "missing-05",
+      "kind": "missing",
+      "phase": "DESCEND",
+      "delay_s": 1.5,
+      "duration_s": 1.0
+    },
+    {
+      "name": "stale-01",
+      "kind": "stale",
+      "phase": "DESCEND",
+      "delay_s": 0.5,
+      "duration_s": 1.0
+    },
+    {
+      "name": "stale-02",
+      "kind": "stale",
+      "phase": "DESCEND",
+      "delay_s": 0.75,
+      "duration_s": 1.0
+    },
+    {
+      "name": "stale-03",
+      "kind": "stale",
+      "phase": "DESCEND",
+      "delay_s": 1.0,
+      "duration_s": 1.0
+    },
+    {
+      "name": "stale-04",
+      "kind": "stale",
+      "phase": "DESCEND",
+      "delay_s": 1.25,
+      "duration_s": 1.0
+    },
+    {
+      "name": "stale-05",
+      "kind": "stale",
+      "phase": "DESCEND",
+      "delay_s": 1.5,
+      "duration_s": 1.0
+    },
+    {
+      "name": "wrong_id-01",
+      "kind": "wrong_id",
+      "phase": "DESCEND",
+      "delay_s": 0.5,
+      "duration_s": 1.0
+    },
+    {
+      "name": "wrong_id-02",
+      "kind": "wrong_id",
+      "phase": "DESCEND",
+      "delay_s": 0.75,
+      "duration_s": 1.0
+    },
+    {
+      "name": "wrong_id-03",
+      "kind": "wrong_id",
+      "phase": "DESCEND",
+      "delay_s": 1.0,
+      "duration_s": 1.0
+    },
+    {
+      "name": "wrong_id-04",
+      "kind": "wrong_id",
+      "phase": "DESCEND",
+      "delay_s": 1.25,
+      "duration_s": 1.0
+    },
+    {
+      "name": "wrong_id-05",
+      "kind": "wrong_id",
+      "phase": "DESCEND",
+      "delay_s": 1.5,
+      "duration_s": 1.0
+    }
+  ]
+}

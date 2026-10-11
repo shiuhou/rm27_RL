@@ -67,7 +67,7 @@ class DockReturnCamera:
         self.counts['images'] += 1
         self.counts['wrong_slot'] += sum(o.safe_for_control and o.tag_id != self.assigned_id for o in observations)
         assigned = [o for o in observations if o.tag_id == self.assigned_id]
-        row = dict(source_time_s=t, phase=phase, assigned_tag_id=self.assigned_id,
+        row = dict(source_time_s=frame.timestamp_us/1e6, received_time_s=t, phase=phase, assigned_tag_id=self.assigned_id,
             observations=[asdict(o) for o in observations], valid=False, reason='assigned tag missing')
         attitude_age=t-telemetry.get('attitude_time',-100)
         if len(assigned)==1 and assigned[0].safe_for_control and 0<=attitude_age<=.2:
@@ -83,7 +83,9 @@ class DockReturnCamera:
             row['reason'] = 'duplicate/unsafe assigned tag or stale attitude'
         if not row['valid']:
             self.counts['assigned_invalid'] += 1
-        path=self.output/'images'/f'{frame.timestamp_us}.png'
+        # Retain every received frame, including repeated acquisitions in a
+        # stale-image fault. Source time remains a separate evidence field.
+        path=self.output/'images'/f'{self.counts["images"]:06d}-{frame.timestamp_us}.png'
         if not cv2.imwrite(str(path),cv2.cvtColor(frame.image_rgb, cv2.COLOR_RGB2BGR)):
             raise RuntimeError('return image recording failed')
         row.update(filename=str(path.relative_to(self.output)),image_sha256=digest(path))

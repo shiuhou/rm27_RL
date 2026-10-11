@@ -195,7 +195,7 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                     if t-tel.get('heartbeat_time',-100)>2:raise RuntimeError('Heartbeat stale')
                     allowed_mode=('OFFBOARD','LAND') if phase=='FINAL_DESCEND' and land_requested else ('OFFBOARD',)
                     if phase not in ('LAND','POST') and (not tel.get('armed') or tel.get('mode') not in allowed_mode):raise RuntimeError('Unexpected mode/disarm')
-                if visual_guard and phase in ('DESCEND','ALIGN') and not visual_guard.fresh(t):
+                if visual_guard and not landing_commitment and not land_requested and phase in ('DESCEND','ALIGN','FINAL_DESCEND') and not visual_guard.fresh(t):
                     flags=tel.get('estimator_flags',0)
                     if not flags & mavlink.ESTIMATOR_POS_HORIZ_REL or t-tel.get('estimator_time',-100)>.3:
                         raise RuntimeError('Cannot reacquire AprilTag without valid navigation')
@@ -264,10 +264,15 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                         transition('DESCEND')
                     elif t-phase_start>25:raise RuntimeError('Return alignment failed')
                 elif phase=='REACQUIRE':
-                    target([0,0,.35],z_limit=.06)
-                    if visual_guard.fresh(t) and abs(local[2]-.35)<.02 and speed<.03:
-                        transition('DESCEND')
-                    elif t-phase_start>8:raise RuntimeError('AprilTag reacquisition timed out')
+                    # Return to the reviewed 60 cm observation altitude. This
+                    # makes every subsequent descent start continuous and
+                    # gives the tag its original field of view after loss.
+                    target([0,0,.6],z_limit=.08)
+                    if visual_guard.fresh(t) and abs(local[2]-.6)<.015 and speed<.03:
+                        stable_since=t if stable_since is None else stable_since
+                        if t-stable_since>=.5:transition('DESCEND')
+                    else:stable_since=None
+                    if t-phase_start>15:raise RuntimeError('AprilTag reacquisition timed out')
                 elif phase=='DESCEND':
                     target([0,0,max(.12,.6-.04*(t-phase_start))],z_limit=.04)
                     estimated_vertical_speed=float(to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float))[2]) if telemetry_guidance else float(plant.qvel[2])
@@ -348,6 +353,10 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
         summary['failure']=f'{type(exc).__name__}: {exc}';(output/'failure.txt').write_text(traceback.format_exc())
     finally:
         if viewer:viewer.close()
+        if visual_guard:
+            summary['visual_return_admission']=dict(assigned_tag_id=visual_guard.assigned_tag_id,
+                source_time_s=visual_guard.source_time,rejected=visual_guard.rejected,
+                maximum_age_s=visual_guard.maximum_age_s,maximum_registration_m=visual_guard.maximum_correction_m)
         final_local=plant.qpos[:3]-plant.origin
         if physical_hover:
             h=np.asarray(physical_hover);xy=np.linalg.norm(h[:,1:3],axis=1);z=np.abs(h[:,3]-.6)
