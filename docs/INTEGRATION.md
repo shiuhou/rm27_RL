@@ -14,6 +14,14 @@ is released. A failed sortie stops the sequence. The green round light is a
 localization marker, not the contact target. Moving-dart interception is a later
 research objective, not this gate.
 
+For the current PX4 migration, the user's 2026-10-11 clarification takes
+precedence: [R&D scope and completion criteria](PX4_MIGRATION_SCOPE.md).
+Demonstrate the complete simulation chain and correct control/data interfaces,
+with replaceable model assumptions and practical hardware adapter notes.
+The provisional aircraft's precision, large reliability campaigns and immediate
+hardware readiness are later studies. The long-term mission and multi-vehicle
+gates remain separate; their historical pass/fail evidence is preserved.
+
 User-provided references: `references/images/base.jpg`, `simtohit.mp4` (29 s), the September 9
 RM2027 preliminary rules PDF, `references/cad_raw/base2.STEP` and
 `references/cad_raw/dock.STEP`. No inference of successful physical interception is made

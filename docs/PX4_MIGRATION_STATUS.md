@@ -1,15 +1,20 @@
 # PX4 v1.17.0 migration status
 
 Updated 2026-10-11. Worktree: `/home/shiuhou/Projects/rm27_drones_px4`;
-branch: `codex/px4-v1.17-migration`. The full migration is **in progress**.
-Hardware operations remain outside this software task.
+branch: `codex/px4-v1.17-migration`. The PX4 backend and representative complete
+simulation chain are available; engineering migration closeout is **in progress**.
+The user clarified the current R&D scope on 2026-10-11:
+[current migration criteria](PX4_MIGRATION_SCOPE.md). Provisional vehicle
+precision, large reliability batches and hardware readiness are not completion
+prerequisites. Hardware operations remain outside this software task.
 
 Execution is **paused at the user's request after the current development
 node**. The low-altitude command-loss flight and independent scoring are
 complete. Batch scheduling is suspended; the queued complete-return camera
 fault batch was cancelled before launch. Current counts, failures, process
 checkpoints and remaining gates are in [the pause report](PX4_PROGRESS_2026-10-11.md).
-Partial batches do not establish acceptance and will not resume automatically.
+Partial batches do not establish their original research acceptance. They will
+not resume automatically, and those gates no longer block R&D migration closeout.
 
 The retained V3 complete task passes20/20 under its frozen original runner.
 That runner still lets physical monitors abort the actor; strict actor-input
@@ -163,7 +168,27 @@ slowly to satisfy the land detector before the 10 s no-aiding failsafe. Developm
 profiles `mtf` and `vio` now use `MPC_Z_VEL_I_ACC=4` (previous default 2).
 This is simulation tuning; remaining gates and timeout are unchanged.
 
-## Remaining implementation and acceptance
+## Remaining migration closeout
+
+- Consolidate the already verified current-image/VIO/PX4 development chain into
+  documented, reproducible build/run/view/replay entry points.
+- Finish the per-research migration coverage review; distinguish PX4 interfaces
+  from independent direct-physics studies and retain explicit AP reproduction.
+- Address concrete frame, unit, motor, clock, mode and invalid-estimate defects
+  with checks proportional to the affected interface. Existing complete flights
+  already demonstrate the overall chain; precision tuning and large repeat
+  batches are deferred while the aircraft design remains provisional.
+- Document replaceable model/sensor assumptions and practical hardware adapter
+  gaps. Immediate M3C/VIO hardware deployment qualification is not required.
+- Deliver the final report against the revised R&D scope. Default backend and
+  main-workspace integration remain closeout decisions, not implied by a changed
+  research criterion. Execution remains paused.
+
+## Retained research qualification record
+
+The following results retain their original strict thresholds. They describe
+unresolved design, perception and strategy studies, not the current mandatory
+migration checklist. Historical failures are not rewritten as passes.
 
 - S1: complete local forbidden-region audit. Current-aircraft classification
   and converged front impact evidence are present; the remaining prerequisite
