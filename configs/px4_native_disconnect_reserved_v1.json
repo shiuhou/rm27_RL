@@ -1,0 +1,15 @@
+{
+  "gate_version": "PX4_INITIAL_NATIVE_DISCONNECT_TERMINATION_RESERVED_V1",
+  "mission_configuration": "configs/px4_image_mission_v3.json",
+  "camera_configuration": "configs/px4_sim_camera_guard_tip_dev_v8.json",
+  "conditions_configuration": "configs/px4_native_disconnect_development_v1.json",
+  "installation": "artifacts/openvins-native-evidence-build-01/installation.json",
+  "scope": "Five fresh initial dock takeoff native transport failures. Require actual range fallback fusion, normal LAND, safe physical rest, automatic disarm and stopped motors. Every mission remains failed. No route, invalid navigation, stochastic noise or hardware qualification.",
+  "cases": [
+    {"name": "disconnect-01", "camera_seed": 458101, "delay_s": 0.32},
+    {"name": "disconnect-02", "camera_seed": 458102, "delay_s": 0.36},
+    {"name": "disconnect-03", "camera_seed": 458103, "delay_s": 0.40},
+    {"name": "disconnect-04", "camera_seed": 458104, "delay_s": 0.44},
+    {"name": "disconnect-05", "camera_seed": 458105, "delay_s": 0.48}
+  ]
+}

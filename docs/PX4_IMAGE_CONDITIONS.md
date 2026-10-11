@@ -45,6 +45,10 @@ The reduced V2 composite now completes one physical mission in
 inference is 4 ms, there is no second impact, and resting XY is 2.892 mm.
 Separate fusion/surface/corridor membership checks remain additional evidence.
 
+The delayed and reduced-composite flights now pass their separate recorded
+local surface, native recovery-corridor membership and actual EKF2 EV fusion
+checks. Both remain development flights.
+
 Noise also exposes a host detector cost: the original bearing detector builds
 a full image mask for each small component. An equivalent implementation
 uses component bounding statistics and one selected region. Randomized output
@@ -62,6 +66,12 @@ first native horizontal velocity is about 0.9 m/s and position covariance
 0.161 m², while accepted baseline initial covariance is about 0.0025 m².
 Noisy guard flights remain separate development and cannot be counted as a
 VIO or noise qualification merely because an outlier was rejected.
+
+Both initial-admission noisy flights subsequently fail when native OpenVINS
+exits on negative covariance. Isolated numerical diagnosis and continued
+takeoff-footprint LAND development are recorded in
+[native numerical report](PX4_NATIVE_NUMERICS.md). The original installation
+remains frozen for reserved batches.
 
 The separate sensor-only permanent Offboard-loss development passes, followed
 by five reserved independent MTF launches in `px4-offboard-loss-batch-01`:
@@ -83,3 +93,10 @@ certified corridor. A safe termination is counted separately and must pass
 its physical termination gate. A50-case gate requires at least48 successful
 tasks and verified handling of every remaining attempt. No50-case gate has
 passed yet. Each completed recording is archived losslessly after scoring.
+
+The50-case V2 batch is running in `px4-image-conditions-batch-01`. Its fourth
+reserved attempt fails during TAKEOFF with unstable dock contact; this is
+an unhandled failure, so V2 cannot pass its all-attempt handling gate. Remaining
+cases continue with unchanged inputs. The failure is retained and is not a
+development seed or a basis for selecting replacement tuning. Complete-route
+downward faults separately run in `px4-full-return-fault-batch-01`.
