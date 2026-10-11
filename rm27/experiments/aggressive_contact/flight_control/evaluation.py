@@ -26,6 +26,8 @@ def evaluate(source,output):
     info=json.loads(info_path.read_text()) if info_path.exists() else json.loads((ROOT/'artifacts/phase3-student-bundle-02/nominal_vehicle.json').read_text())['vehicle_info']
     initial=truth_estimate(model,data);target=TargetState(np.array(c['target']['center_m']),unit(c['target']['normal']),np.zeros((3,3)),0.)
     spec=json.loads((source/'launch.json').read_text());mode=spec.get('skill_mode','balanced')
+    design_path=source/'teacher_design.json'
+    design=json.loads(design_path.read_text()) if design_path.exists() else designs()[mode]
     class Replay(ManeuverSkill):
         def command(self,s,contact):
             super().command(s,contact) # evaluator reference/events only; discarded control
@@ -34,9 +36,9 @@ def evaluate(source,output):
             # across 4 ms PX4 cycles, rather than assuming AP's 2 ms packets.
             i=min(len(x)-1,int(np.searchsorted(x[:,0],s.timestamp+1e-9,side='right')));u=x[i,18:22]
             return u,bool(np.any(u<1e-8) or np.any(u>self.max_motor-1e-8))
-    skill=Replay(c,designs()[mode],initial,target,info,initial.position)
+    skill=Replay(c,design,initial,target,info,initial.position)
     r=run_episode(c,skill.p,output=output/'flight',plant_bundle=(model,data,info,(source/'plant/scene.xml').read_text()),initial_skill=skill)
-    y=np.load(output/'flight/trajectory.npz')['trace'];r.update(metrics(r,y,target.normal,designs()[mode]))
+    y=np.load(output/'flight/trajectory.npz')['trace'];r.update(metrics(r,y,target.normal,design))
     # Evaluator samples start at zero; compare overlapping original post-step states.
     indices=np.rint(x[:,0]/.002).astype(int);valid=indices<len(y)
     error=float(np.max(abs(y[indices[valid],1:18]-x[valid,1:18])))

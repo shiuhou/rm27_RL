@@ -40,8 +40,10 @@ def run(config,output,workers=3):
     hashes=json.loads((output/'provenance.json').read_text())['source_sha256']
     from ..model import ROOT
     frozen={str(ROOT/path):value for path,value in hashes.items()}
-    if spec.get('autopilot')=='px4':
-        binary=ROOT/'artifacts/deps/PX4-Autopilot/build/px4_sitl_default/bin/px4'
+    backends={case.get('autopilot',spec.get('autopilot','ardupilot')) for case in spec['cases']}
+    for backend in backends:
+        binary=ROOT/('artifacts/deps/PX4-Autopilot/build/px4_sitl_default/bin/px4' if backend=='px4'
+                    else 'rm27/autopilot/vendor/ardupilot/build/sitl/bin/arducopter')
         frozen[str(binary)]=hashlib.sha256(binary.read_bytes()).hexdigest()
     write_json(output/'frozen_inputs.json',frozen)
     with ProcessPoolExecutor(max_workers=workers) as pool:

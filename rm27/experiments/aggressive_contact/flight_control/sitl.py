@@ -4,7 +4,7 @@ No hardware/remote endpoint option. Firmware process, parameter store and logs
 live inside a new artifact directory. Fixture initialization is explicitly
 separate from the free flight. No truth correction is added to telemetry.
 """
-import argparse,hashlib,json,math,select,socket,subprocess,time,traceback
+import argparse,copy,hashlib,json,math,select,socket,subprocess,time,traceback
 from pathlib import Path
 import numpy as np
 import mujoco
@@ -37,19 +37,31 @@ def run(output,mode='hover',observation='telemetry',instance=45,duration=8.,para
     if autopilot=='px4':
         from .px4_sitl import run as px4_run
         return px4_run(output,mode,observation,instance,duration,parameter_file,speedup,action_layer,skill_mode,study_file,policy)
-    if autopilot!='ardupilot' or policy!='student':
+    if autopilot!='ardupilot' or policy not in ('student','teacher'):
         raise ValueError('explicit supported autopilot/policy required')
+    if policy=='teacher' and observation!='telemetry':
+        raise ValueError('comparison Teacher requires telemetry observations')
     output=Path(output).resolve();output.mkdir(parents=True,exist_ok=False);cfg=load_config();snapshot(output,cfg)
-    prepared,template=prepare(cfg,output/'plant');c,bundle,slot=prepared
+    study=json.loads(Path(study_file).read_text()) if study_file else {}
+    if study.get('migration_comparison'):
+        inputs=json.loads((ROOT/'configs/px4_research_inputs.json').read_text())
+        source=(ROOT/inputs['scene']).resolve()
+        if hashlib.sha256(source.read_bytes()).hexdigest()!=inputs['scene_sha256']:
+            raise ValueError('comparison source scene hash changed')
+        asset_map={before:str((ROOT/after).resolve()) for before,after in inputs['asset_root_map'].items()}
+        prepared,template=prepare(cfg,output/'plant',source_path=source,asset_root_map=asset_map)
+        write_json(output/'research_inputs.json',inputs)
+    else:prepared,template=prepare(cfg,output/'plant')
+    c,bundle,slot=prepared
     plant=ContactPlant(bundle);bridge=Bridge(plant)
     from .diagnostics import TruthHistory,ExternalNavigationSensor
     from .synthetic import ErrorSensor
     from .quality import EstimateQuality,CommitmentGuard,select_mode
-    study=json.loads(Path(study_file).read_text()) if study_file else {}
     write_json(output/'estimator_study.json',study)
     history=TruthHistory();sensor=ErrorSensor(study.get('sensor',{}));quality=EstimateQuality.from_config(study.get('quality',{}));guard=None
     external=ExternalNavigationSensor(study['external_navigation'],plant.origin) if 'external_navigation' in study else None
     write_json(output/'plant_config.json',c)
+    write_json(output/'vehicle_info.json',plant.info)
     ap=ROOT/'rm27/autopilot/vendor/ardupilot';binary=ap/'build/sitl/bin/arducopter'
     parms=[ap/'Tools/autotest/default_params/copter.parm',ap/'Tools/autotest/default_params/copter-X.parm',ROOT/'rm27/autopilot/bridge/hover.parm',ROOT/'configs/micro_hover.parm',ROOT/'configs/contact_phase4/sitl.parm']
     if parameter_file:parms.append(Path(parameter_file).resolve())
@@ -61,7 +73,11 @@ def run(output,mode='hover',observation='telemetry',instance=45,duration=8.,para
         scope='LOCAL SITL ONLY, explicit airborne initialization fixture; no hardware/remote endpoint; synthetic SITL sensors, actual firmware EKF and PID'))
     estimate=TelemetryEstimator(plant.origin,velocity_std=.05);adapter=ArduPilotAdapter(SpinMapping(4*plant.maximum),True)
     params={};tel={};requested=False;start=None;pilot=None;next_send=0.;next_heartbeat=0.;next_arm=15.;armed_at=None
-    result=dict(passed=False,events=[],mode=mode,observation=observation);rows=[];actions=[];estimates=[];t0=time.monotonic();sock=None;process=None;conn=None
+    result=dict(passed=False,events=[],mode=mode,observation=observation,autopilot='ardupilot',policy=policy,
+        model_mass_kg=plant.info['mass_kg'],run_type='closed-loop SITL airborne contact research',
+        estimation_source='ArduPilot EKF telemetry' if observation=='telemetry' else observation,
+        gate_version='existing Phase 4/5 replay evaluator');rows=[];actions=[];estimates=[];t0=time.monotonic();sock=None;process=None;conn=None
+    action_period=.005
     def event(name,**kw):
         r=dict(time_s=float(plant.data.time),event=name,**kw);result['events'].append(r);print(json.dumps(r),flush=True)
     def cmd(code,*values):conn.mav.command_long_send(1,1,code,0,*(list(values)+[0.]*(7-len(values))))
@@ -126,12 +142,25 @@ def run(output,mode='hover',observation='telemetry',instance=45,duration=8.,para
                             target=TargetEstimate(target.position_nwu_m+study.get('target_bias_m',np.zeros(3)),target.normal_nwu,target.covariance_m2,now,1.)
                             if study.get('schedule'):
                                 skill_mode=select_mode(skill_mode,quality,target.normal_nwu,np.linalg.norm(c['contact']['offset_body_m']),np.eye(3)*.02**2,study.get('sensor',{}).get('delay_s',0.))
-                            pilot=DeploymentPolicy.from_bundle(ROOT/'artifacts/phase3-student-bundle-02',initial,target,mode=skill_mode)
+                            if policy=='teacher':
+                                from .px4_sitl import TeacherPolicy
+                                target=TargetEstimate(target.position_nwu_m,target.normal_nwu,target.covariance_m2,sensed.timestamp,1.)
+                                pilot=TeacherPolicy(c,plant.info,sensed,target,skill_mode,study.get('teacher_design_overrides'))
+                                interface=json.loads((ROOT/'configs/px4_contact_policy.json').read_text())
+                                action_period=1/interface['command_hz']
+                                pilot.causal.cfg=copy.deepcopy(pilot.causal.cfg)
+                                pilot.causal.cfg['control_dt_s']=interface['causal_observer_dt_s']
+                                write_json(output/'teacher_design.json',pilot.actor.design)
+                                launch=json.loads((output/'launch.json').read_text())
+                                launch.update(policy=policy,command_period_s=action_period)
+                                write_json(output/'launch.json',launch)
+                            else:pilot=DeploymentPolicy.from_bundle(ROOT/'artifacts/phase3-student-bundle-02',initial,target,mode=skill_mode)
                             if study.get('guard'):guard=CommitmentGuard(pilot.actor,quality)
                             if mode!='maneuver':
                                 class Hover:
                                     def sample(self,t):return initial.position,np.zeros(3),np.zeros(3),np.zeros(3)
                                 pilot.actor.reference=Hover()
+                                if policy=='teacher':pilot.actor.trajectory=Hover();pilot.actor.split=None
                             plant.release();start=now;next_send=now
                             np.savez_compressed(output/'release_state.npz',qpos=plant.data.qpos,qvel=plant.data.qvel,act=plant.data.act,time=now)
                             write_json(output/'verified_parameters.json',{k:params[k] for k in expected})
@@ -160,7 +189,7 @@ def run(output,mode='hover',observation='telemetry',instance=45,duration=8.,para
                             fields.update(type_mask=0,q=attitude_ned_frd(Rd).tolist(),body_roll_rate=float(ref[10]),body_pitch_rate=float(-ref[11]),body_yaw_rate=float(-ref[12]))
                         conn.mav.set_attitude_target_send(**fields)
                         actions.append(np.r_[elapsed,action.body_rates_flu_rad_s,action.collective_force_N,fields['thrust']])
-                        next_send+=.005
+                        next_send+=action_period
                     s=obs.estimate;estimates.append(np.r_[elapsed,s.timestamp,now-s.timestamp,s.position,s.velocity,s.rotation.ravel(),s.omega_body])
                     rows.append(np.r_[elapsed,plant.data.qpos.copy(),plant.data.qvel.copy(),plant.data.act.copy(),plant.data.ctrl.copy()])
                     frames.write(json.dumps(dict(sim_time_s=now,truth=plant.truth(),estimate=dict(timestamp=s.timestamp,position=s.position.tolist(),velocity=s.velocity.tolist(),rotation=s.rotation.tolist(),omega_body=s.omega_body.tolist()),pwm=row['pwm']))+'\n')
@@ -181,7 +210,8 @@ def run(output,mode='hover',observation='telemetry',instance=45,duration=8.,para
             try:process.wait(timeout=5)
             except subprocess.TimeoutExpired:process.kill();process.wait(timeout=5)
         np.savez_compressed(output/'flight.npz',trace=np.array(rows),actions=np.array(actions),estimates=np.array(estimates))
-        if pilot:pilot.actor.save(output/'student.npz')
+        if pilot and hasattr(pilot.actor,'save'):pilot.actor.save(output/'student.npz')
+        if pilot and policy=='teacher':pilot.save(output/'teacher_data.npz')
         write_json(output/'parameters_received.json',params)
         result.update(bridge=bridge.stats,wall_s=time.monotonic()-t0,release_time_s=start,clock_offset_s=estimate.offset)
         result.update(estimator_study=study,selected_skill_mode=skill_mode,external_navigation_packets=0 if external is None else external.count,

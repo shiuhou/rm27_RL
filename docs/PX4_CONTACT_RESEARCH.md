@@ -92,3 +92,14 @@ failed reserved v1 configuration; it is not a supported claim of task success.
 True AP/PX4 paired current flights, thrust-response selection, PX4 Student
 retraining and the complete 150 g mission remain unfinished. Hardware is not
 connected or modified.
+
+Development version 2 keeps the original geometry and gates, and records any
+Teacher design changes per run in `teacher_design.json`. Recentering the
+terminal aim passes two development cases (plain center and modified retreat),
+while the two slower candidates fail; see `px4-phase4-teacher-development-02`.
+This is a new development set, not another selection pass over reserved v1.
+An AP Teacher backend was added for the same rebuilt comparison inputs and
+causal actor; its first rate-interface development flight
+`px4-phase4-ap-teacher-development-01` fails its envelope and misses the target.
+Motor replay matches exactly. These are development findings; no matched
+holdout comparison or replacement accepted contact strategy is claimed.

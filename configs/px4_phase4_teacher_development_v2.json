@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "autopilot": "px4",
+  "split": "new development v2 only; reserved v1 not reused for selection",
+  "scope": "180 g existing physical evaluator; center contact aim and separation design candidates",
+  "cases": [
+    {
+      "name": "center",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "rate",
+      "duration": 10,
+      "study": {
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 172101
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0
+          }
+        }
+      }
+    },
+    {
+      "name": "center-slow",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "rate",
+      "duration": 10,
+      "study": {
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 172102
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0,
+            "normal_speed_m_s": 0.3
+          }
+        }
+      }
+    },
+    {
+      "name": "center-retreat",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "rate",
+      "duration": 10,
+      "study": {
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 172103
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0,
+            "retreat_m": 0.3,
+            "recovery_lift_m": 0.03
+          }
+        }
+      }
+    },
+    {
+      "name": "center-slow-retreat",
+      "mode": "conservative",
+      "policy": "teacher",
+      "action_layer": "rate",
+      "duration": 10,
+      "study": {
+        "external_navigation": {
+          "update_hz": 50,
+          "position_std": 0.001,
+          "velocity_std": 0.005,
+          "attitude_std_deg": 0.05,
+          "seed": 172104
+        },
+        "teacher_design_overrides": {
+          "terminal": {
+            "aim_tangent_offset_m": 0.0,
+            "normal_speed_m_s": 0.3,
+            "retreat_m": 0.3,
+            "recovery_lift_m": 0.03
+          }
+        }
+      }
+    }
+  ]
+}

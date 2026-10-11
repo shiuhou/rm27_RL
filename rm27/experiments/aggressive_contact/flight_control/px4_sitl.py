@@ -87,9 +87,14 @@ class ResearchRuntime(Runtime):
 
 class TeacherPolicy:
     """Existing geometric teacher with contact inferred from its observations."""
-    def __init__(self, cfg, info, initial, target, mode):
+    def __init__(self, cfg, info, initial, target, mode, design_overrides=None):
         committed=target.commit(initial.timestamp)
-        self.actor=ManeuverSkill(cfg,designs()[mode],initial,committed,info,initial.position)
+        design=copy.deepcopy(designs()[mode])
+        for name,value in (design_overrides or {}).items():
+            if name not in design:raise ValueError('Unknown Teacher design override: '+name)
+            if isinstance(design[name],dict):design[name].update(value)
+            else:design[name]=value
+        self.actor=ManeuverSkill(cfg,design,initial,committed,info,initial.position)
         self.actor.deployment={}
         self.causal=CausalState(cfg,info,committed,initial,window_s=.02)
         self.mode=['aggressive','balanced','conservative'].index(mode)
@@ -154,6 +159,8 @@ def run(output, mode='hover', observation='telemetry', instance=45, duration=8.,
     study=json.loads(Path(study_file).read_text()) if study_file else {}
     if study.get('diagnostic_correction','none')!='none' or study.get('sensor'):
         raise ValueError('PX4 Phase 5 uses external_navigation; privileged actor corrections are unsupported')
+    if study.get('teacher_design_overrides') and policy!='teacher':
+        raise ValueError('Teacher design overrides cannot silently change a pretrained Student reference')
     write_json(output/'estimator_study.json',study)
     estimator=TelemetryEstimator(plant.origin,source_name='PX4_EKF2_TELEMETRY')
     result=dict(passed=False,autopilot='px4',firmware='v1.17.0',events=[],mode=mode,
@@ -203,7 +210,7 @@ def run(output, mode='hover', observation='telemetry', instance=45, duration=8.,
                             if study.get('schedule'):
                                 skill_mode=select_mode(skill_mode,quality,target.normal_nwu,
                                     np.linalg.norm(c['contact']['offset_body_m']),np.eye(3)*.05**2,0.)
-                            pilot=TeacherPolicy(c,plant.info,initial,target,skill_mode) if policy=='teacher' else DeploymentPolicy.from_bundle(
+                            pilot=TeacherPolicy(c,plant.info,initial,target,skill_mode,study.get('teacher_design_overrides')) if policy=='teacher' else DeploymentPolicy.from_bundle(
                                 bundle_path,initial,target,mode=skill_mode,options=deployment)
                             causal=pilot.causal if policy=='teacher' else pilot.actor.causal
                             causal.cfg=copy.deepcopy(causal.cfg)
@@ -218,6 +225,7 @@ def run(output, mode='hover', observation='telemetry', instance=45, duration=8.,
                             plant.release();start=now;next_send=now
                             np.savez_compressed(output/'release_state.npz',qpos=plant.data.qpos,qvel=plant.data.qvel,act=plant.data.act,time=now)
                             write_json(output/'verified_parameters.json',{k:rt.parameters[k] for k in rt.expected})
+                            if policy=='teacher':write_json(output/'teacher_design.json',pilot.actor.design)
                             launch=json.loads((output/'launch.json').read_text())
                             launch.update(skill_mode=skill_mode,policy=policy,action_layer=action_layer,initialization='explicit airborne fixture')
                             write_json(output/'launch.json',launch)
