@@ -39,7 +39,7 @@ All directories below are under `artifacts/`; read actual `summary.json`.
 | `px4-image-mission-development-03` | Failed: secondary collision and contact inference 208 ms late |
 | `px4-image-mission-development-04` | Physical development gates pass once; first-hit detection delay 4 ms, recovery entry 0.433 s, resting XY 0.650 mm; subsequent local visual-surface audit fails |
 | `px4-image-mission-guard-tip-development-05` | Canonical V10 physical development passes; first-hit inference 18 ms, recovery entry 0.451 s, resting XY 6.314 mm; every-recorded-pose local surface audit passes 5,955 poses |
-| `px4-image-mission-guard-tip-development-06` | Canonical V11 physical development passes; first-hit inference 8 ms, recovery entry 0.431 s, resting XY 1.932 mm; ULog confirms actual EV position/velocity/height fusion |
+| `px4-image-mission-guard-tip-development-06` | Canonical V11 physical development passes; first-hit inference 8 ms, recovery entry 0.431 s, resting XY 1.932 mm; ULog confirms actual EV position/velocity/height fusion; clipped-patch surface audit passes 5,947 poses |
 
 V3's original success summary was incorrect: its scorer began at the inferred
 hit, omitting the actual first hit and subsequent collision. The original bytes
@@ -109,7 +109,9 @@ The V10 guard-tip impact converges at native 1 ms against 0.5 ms: impulse
 difference 2.118%, peak difference 1.097%; finer comparisons also pass
 (`px4-guard-tip-convergence-development-01`). This applies to one recorded
 front impact, not every variant. Root tests pass **418**, with five unavailable
-ROS/environment cases skipped (`px4-root-tests-19.log`).
+ROS/environment cases skipped (`px4-root-tests-19.log`). The additional
+patch-boundary audit regression brings the full suite to **419 passed,
+5 skipped** (`px4-root-tests-21.log`).
 
 ## Run
 
@@ -135,7 +137,11 @@ image-height registration and an independent local surface gate. V1's failed
 set remains preserved separately; V2 acceptance is not implied by development.
 New batch specifications can require `surface_configuration`, which adds an
 independent closed-recording local surface check to every attempt. The V2
-surface configuration checks every recorded 250 Hz local pose; it does not
+surface configuration checks every recorded 250 Hz local pose. The V3 method
+clips the allowed patch out of each triangle, checking all forbidden fragments;
+a nearest point inside the patch cannot hide a guard overlap beyond its edge.
+The canonical V11 flight passes this stricter check in
+`px4-guard-tip-flight-surfaces-development-06`. This does not
 certify the continuous swept recovery volume between observations.
 
 The batch freezes code, camera, reviewed corridor/assets, estimator, native VIO

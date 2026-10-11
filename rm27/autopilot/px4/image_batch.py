@@ -13,7 +13,7 @@ from .return_fault_batch import frozen_inputs, ROOT, digest
 from ...telemetry.ulog import analyze
 
 
-def assess(summary, vio, log):
+def assess(summary, vio, log, *, surfaces=None, require_surfaces=False):
     flags=log.get('fusion',{})
     fused=any(all(instance.get(k,{}).get('ever') is True for k in
         ('cs_ev_pos','cs_ev_vel','cs_ev_hgt')) for instance in flags.values())
@@ -29,11 +29,13 @@ def assess(summary, vio, log):
         native_vio=vio.get('passed') is True,
         ulog_integrity=log.get('passed') is True,actual_ekf2_ev_fusion=fused,
         no_unexpected_failsafe=not failsafes)
+    if require_surfaces:
+        checks['recorded_local_surfaces']=(surfaces or {}).get('passed') is True
     return dict(passed=all(checks.values()),checks=checks,unexpected_failsafes=failsafes)
 
 
 def trial(job):
-    command,destination,hashes=job
+    command,destination,hashes,surface_configuration=job
     changed=[p for p,h in hashes.items() if not Path(p).exists() or digest(p)!=h]
     if changed:return dict(passed=False,failure='Frozen inputs changed: '+str(changed))
     with destination.with_suffix('.log').open('x') as stream:
@@ -43,16 +45,31 @@ def trial(job):
     summary=read(destination/'summary.json');vio=read(destination/'vio/summary.json')
     logs=list((destination/'log').rglob('*.ulg'))
     log=analyze(logs[0],destination/'ulog_analysis') if len(logs)==1 else dict(passed=False,failure='Expected exactly one ULog')
-    qualification=assess(summary,vio,log)
+    surfaces=None
+    if surface_configuration:
+        # Inspect the closed recording, independently of actor inputs and of
+        # the physical colliders (many field meshes are visual-only).
+        try:
+            from ...experiments.target_region_audit import audit_recording
+            surfaces=audit_recording(destination,surface_configuration,destination/'local_surface_audit')
+        except Exception as exc:
+            surfaces=dict(passed=False,failure=f'{type(exc).__name__}: {exc}')
+            (destination/'local_surface_audit_failure.json').write_text(json.dumps(surfaces,indent=2)+'\n')
+    qualification=assess(summary,vio,log,surfaces=surfaces,require_surfaces=bool(surface_configuration))
     return dict(passed=process.returncode==0 and qualification['passed'],command=command,
         returncode=process.returncode,path=str(destination),summary=summary,
-        qualification=qualification,vio_summary=vio,ulog_summary_path=str(destination/'ulog_analysis/summary.json'))
+        qualification=qualification,vio_summary=vio,ulog_summary_path=str(destination/'ulog_analysis/summary.json'),
+        local_surface_audit_path=str(destination/'local_surface_audit/summary.json') if surfaces else None)
 
 
 def report(attempts,spec):
     errors={}
-    for name,key in [('resting_xy_m','horizontal_error_m'),('resting_height_m','height_error_m')]:
-        values=[a.get('summary',{}).get('independent_resting_score',{}).get(key) for a in attempts]
+    for name,score,key in [('resting_xy_m','independent_resting_score','horizontal_error_m'),
+        ('resting_height_m','independent_resting_score','height_error_m'),
+        ('hover_horizontal_m','independent_hover_score','horizontal_maximum_m'),
+        ('hover_vertical_m','independent_hover_score','vertical_maximum_m'),
+        ('impact_detection_delay_s','independent_recovery_score','impact_detection_delay_s')]:
+        values=[a.get('summary',{}).get(score,{}).get(key) for a in attempts]
         values=[v for v in values if v is not None]
         errors[name]=dict(maximum=max(values),p95=float(np.percentile(values,95))) if values else None
     failures=Counter(a.get('failure') or a.get('summary',{}).get('failure') or
@@ -76,6 +93,11 @@ def run(scene,audit,configuration,output,*,workers=3,instance=50):
     hashes=frozen_inputs(scene,configuration)
     for p in (audit,mission,camera,ROOT/'configs/px4'/f'{profile}.json'):
         hashes[str(p)]=digest(p)
+    surface_configuration=None
+    if spec.get('surface_configuration'):
+        surface_configuration=(ROOT/spec['surface_configuration']).resolve()
+        for p in (surface_configuration,ROOT/'rm27/experiments/target_region_audit.py'):
+            hashes[str(p)]=digest(p)
     manifest=dict(configuration=spec,input_sha256=hashes,scene=str(scene),audit=str(audit),
         git_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
         seed_policy='declared camera-noise seed; separate process, parameters, logs and native VIO session per attempt',
@@ -94,7 +116,7 @@ def run(scene,audit,configuration,output,*,workers=3,instance=50):
                 cmd=[sys.executable,'-m','rm27.autopilot.px4.image_mission',str(scene),
                     '--audit',str(audit),'--config',str(mission),'--camera-config',str(camera_path),
                     '--output',str(dest),'--instance',str(instance+i),'--speedup',str(spec['speedup'])]
-                jobs.append((cmd,dest,dict(hashes,**{str(camera_path):digest(camera_path)})))
+                jobs.append((cmd,dest,dict(hashes,**{str(camera_path):digest(camera_path)}),surface_configuration))
             for case,result in zip(group,pool.map(trial,jobs)):
                 row=dict(name=case['name'],camera_seed=case['camera_seed'],**result);attempts.append(row)
                 summary=report(attempts,spec)

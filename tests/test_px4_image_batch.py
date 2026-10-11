@@ -11,5 +11,8 @@ def test_packet_reception_cannot_substitute_for_actual_ekf2_fusion():
     assert assess(summary,vio,log)['passed'] is False
     log['fusion']={'0':{name:{'ever':True} for name in ('cs_ev_pos','cs_ev_vel','cs_ev_hgt')}}
     assert assess(summary,vio,log)['passed'] is True
+    assert not assess(summary,vio,log,require_surfaces=True)['passed']
+    assert not assess(summary,vio,log,require_surfaces=True,surfaces={'passed':False})['passed']
+    assert assess(summary,vio,log,require_surfaces=True,surfaces={'passed':True})['passed']
     summary['events']=[{'event':'STATUSTEXT','text':'Failsafe activated'}]
     assert assess(summary,vio,log)['passed'] is False

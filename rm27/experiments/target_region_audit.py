@@ -80,6 +80,44 @@ def local_meshes(model,data,low,high):
     return result
 
 
+def outside_patch_triangles(triangles,center,rotation,half_extent):
+    """Clip out the allowed patch; retain every forbidden triangle fragment.
+
+    Testing only a triangle's closest point misses a guard that covers both
+    the allowed patch and the forbidden surface just beyond its edge.
+    """
+    triangles=np.asarray(triangles,float)
+    if not len(triangles):return triangles.copy()
+    local=(triangles-center)@rotation
+    half=np.asarray(half_extent,float)
+    fully_outside=np.any((local.min(axis=1)>half)|(local.max(axis=1)<-half),axis=1)
+    fully_inside=np.all(np.abs(local)<=half,axis=(1,2))
+    fragments=list(triangles[fully_outside])
+
+    def clip(polygon,axis,bound,sign):
+        result=[]
+        for first,last in zip(polygon,polygon[1:]+polygon[:1]):
+            a=sign*(first[axis]-bound);b=sign*(last[axis]-bound)
+            if a<=0:result.append(first)
+            if (a<0<b) or (b<0<a):result.append(first+(last-first)*a/(a-b))
+        return result
+
+    for triangle in local[~(fully_outside|fully_inside)]:
+        remaining=list(triangle)
+        for axis in range(3):
+            for sign in (1.,-1.):
+                bound=sign*half[axis]
+                outside=clip(remaining,axis,bound,-sign)
+                for i in range(1,len(outside)-1):
+                    fragment=np.array([outside[0],outside[i],outside[i+1]])
+                    if np.linalg.norm(np.cross(fragment[1]-fragment[0],fragment[2]-fragment[0]))>1e-16:
+                        fragments.append(fragment@rotation.T+center)
+                remaining=clip(remaining,axis,bound,sign)
+                if len(remaining)<3:break
+            if len(remaining)<3:break
+    return np.asarray(fragments,float).reshape(-1,3,3)
+
+
 def audit_recording(recording,configuration,output):
     recording,configuration,output=map(lambda p:Path(p).resolve(),(recording,configuration,output))
     settings=json.loads(configuration.read_text());metadata=json.loads((recording/'metadata.json').read_text())
@@ -91,6 +129,13 @@ def audit_recording(recording,configuration,output):
     rotation=data.site_xmat[site].reshape(3,3).copy();width,length=settings['allowed_surface_dimensions_m']
     low,high=np.asarray(settings['local_bounds_world_m'])
     meshes=local_meshes(model,data,low-.15,high+.15)
+    guard_meshes=[]
+    for geom,triangles,tree in meshes:
+        forbidden=outside_patch_triangles(triangles,center,rotation,
+            [width/2,length/2,settings['backing_surface_tolerance_m']])
+        if len(forbidden):
+            bounds=np.column_stack((forbidden.min(axis=1),forbidden.max(axis=1)))
+            guard_meshes.append((geom,forbidden,trimesh.util.bounds_tree(bounds)))
     vehicle=np.flatnonzero(model.geom_bodyid==body)
     others=[g for g in range(model.ngeom) if model.geom_bodyid[g]!=body and
         model.geom_type[g]!=mujoco.mjtGeom.mjGEOM_MESH and
@@ -111,7 +156,8 @@ def audit_recording(recording,configuration,output):
             data.qpos[:]=row['all_qpos'];mujoco.mj_forward(model,data);frames+=1
             for geom in vehicle:
                 start,end,radius,method=capsule_probes(model,data,geom)
-                for other,triangles,tree in meshes:
+                is_guard=model.geom(geom).name.startswith('drone_1_guard_')
+                for other,triangles,tree in (guard_meshes if is_guard else meshes):
                     # Conservative AABB cull; no triangle near the full capsule
                     # axis is omitted, even when its centre is far away.
                     indices=list(tree.intersection(np.r_[np.minimum(start,end)-radius,np.maximum(start,end)+radius]))
@@ -123,7 +169,19 @@ def audit_recording(recording,configuration,output):
                             surface_geom=model.geom(other).name,point_world_m=nearest[index].tolist(),
                             overlap_m=float(radius-distance[index]),method=method,
                             physical_collision_enabled=bool(model.geom_contype[other] or model.geom_conaffinity[other]))
-                        (allowed if allowed_patch(geom,nearest[index]) else hits).append(event)
+                        hits.append(event)
+                if is_guard:
+                    # Diagnostic allowed overlaps use the original triangles;
+                    # acceptance above uses all forbidden clipped fragments.
+                    for other,triangles,tree in meshes:
+                        indices=list(tree.intersection(np.r_[np.minimum(start,end)-radius,np.maximum(start,end)+radius]))
+                        if not indices:continue
+                        distance,nearest=segment_triangle_distance(start,end,triangles[indices])
+                        for index in np.flatnonzero(distance<radius-settings['penetration_tolerance_m']):
+                            if allowed_patch(geom,nearest[index]):
+                                allowed.append(dict(time_s=time,vehicle_geom=model.geom(geom).name,
+                                    surface_geom=model.geom(other).name,point_world_m=nearest[index].tolist(),
+                                    overlap_m=float(radius-distance[index]),method=method))
                 for other in others:
                     if model.geom_type[other]!=mujoco.mjtGeom.mjGEOM_PLANE and np.linalg.norm(
                         data.geom_xpos[other]-data.geom_xpos[geom])>model.geom_rbound[other]+model.geom_rbound[geom]:continue
