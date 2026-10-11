@@ -1,0 +1,4 @@
+{
+  "primary_delay_frames": 2,
+  "scope": "Development only:100ms acquisition-to-delivery latency at20Hz, preserving actual source time. No other perturbation."
+}

@@ -1,0 +1,8 @@
+{
+  "gate_version": "PX4_S3_OFFBOARD_LOSS_RESERVED_V1",
+  "sensor_seed": 434003,
+  "phase": "HOVER",
+  "delay_s": 4.5,
+  "safe_rest_horizontal_m": 0.025,
+  "scope": "Development only:permanent upstream Offboard setpoint loss over assigned slot. Onboard configured LAND must execute without external landing command; mission is always failed."
+}

@@ -1,0 +1,26 @@
+{
+  "gate_version": "PX4_S3_OFFBOARD_LOSS_RESERVED_V1",
+  "cases": [
+    {
+      "name": "loss-01",
+      "configuration": "configs/px4_offboard_loss_reserved_01.json"
+    },
+    {
+      "name": "loss-02",
+      "configuration": "configs/px4_offboard_loss_reserved_02.json"
+    },
+    {
+      "name": "loss-03",
+      "configuration": "configs/px4_offboard_loss_reserved_03.json"
+    },
+    {
+      "name": "loss-04",
+      "configuration": "configs/px4_offboard_loss_reserved_04.json"
+    },
+    {
+      "name": "loss-05",
+      "configuration": "configs/px4_offboard_loss_reserved_05.json"
+    }
+  ],
+  "scope": "Five reserved independent sensor-only MTF launches. Permanent upstream Offboard loss at dock hover; onboard LAND termination only. No successful mission claim."
+}

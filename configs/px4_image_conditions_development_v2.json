@@ -1,0 +1,18 @@
+{
+  "primary_brightness": 0.85,
+  "downward_brightness": 0.9,
+  "constant_force_world_N": [
+    0,
+    0.003,
+    0
+  ],
+  "force_phase": "ROUTE",
+  "sensor_fault": {
+    "kind": "range_jump",
+    "phase": "HOVER",
+    "delay_s": 3.0,
+    "duration_s": 0.5,
+    "offset_m": 0.05
+  },
+  "scope": "Reduced diagnostic development:fixed exposure brightness and route-only lateral force, with range fault. Native input still uses correct acquisition clocks. Previous stochastic composite failure retained; no held-out acceptance input used."
+}
