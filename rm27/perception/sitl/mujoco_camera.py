@@ -146,6 +146,16 @@ class MujocoCamera:
         mujoco.mj_forward(self.model, data)
         if self.camera_id >= 0:
             self.renderer.update_scene(data, camera=self.camera_id)
+            # Full-field scenes scale the default near plane by scene extent.
+            # Keep close dock tags visible as the camera descends; this changes
+            # clipping only, retaining named-camera intrinsics and occlusion.
+            for camera in self.renderer.scene.camera:
+                ratio=min(.002, camera.frustum_near)/camera.frustum_near
+                camera.frustum_near*=ratio
+                camera.frustum_top*=ratio
+                camera.frustum_bottom*=ratio
+                camera.frustum_center*=ratio
+                camera.frustum_width*=ratio
         else:
             self._follow_camera(data)
         image = np.asarray(self.renderer.render(), dtype=np.uint8).copy()

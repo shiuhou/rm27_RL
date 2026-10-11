@@ -93,5 +93,24 @@ MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python \
 
 Inspect both output `summary.json` files. The static audit checks visibility
 after takeoff; rim/body occlusion on the ground is expected. The current live
-development run reads the assigned tag, but the final PX4 LAND sequence has
-not yet passed its independent physical gate.
+development runs `px4-live-vio-tags-03` and `-04` complete normal PX4 LAND and
+automatic disarm with the independent physical gate. This does not yet qualify
+the full visual approach/contact mission or its fault matrix.
+
+Assigned-slot admission checks source time, telemetry age, unique ID and
+registration bounds. Cached images never extend freshness. Image loss during
+descent/alignment requests a bounded reacquisition climb with valid navigation;
+normal LAND requires fresh image alignment, then freezes the last registration.
+All return images and their hashes are recorded. Named-camera near clipping is
+2 mm; the earlier field-scaled 20 cm plane incorrectly removed nearby tags.
+
+Freeze the complete source/configuration before an independent navigation batch:
+
+```bash
+MUJOCO_GL=egl /home/shiuhou/venvs/mujoco/bin/python \
+  -m rm27.autopilot.px4.navigation_batch artifacts/px4-dock-tags-new/scene.xml \
+  --profile vio --count 20 --instance 33 --output artifacts/px4-vio-return-batch-new
+```
+
+The manifest is saved before launch. The summary includes every attempt and
+rejects unexpected PX4 failsafes; nominal navigation return is separate from S4.

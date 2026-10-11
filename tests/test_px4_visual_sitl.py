@@ -104,3 +104,26 @@ def test_rendered_projection_matches_the_exported_intrinsics():
     fx,fy,cx,cy=intrinsics(640,480,60)
     assert u==pytest.approx(cx+.2*fx,abs=1.)
     assert v==pytest.approx(cy-.1*fy,abs=1.)
+
+
+@pytest.mark.skipif(not __import__('os').environ.get('MUJOCO_GL'),reason='explicit GL backend required')
+def test_named_down_camera_sees_close_pad_in_full_field_without_changing_projection():
+    from rm27.perception.sitl.dataset import intrinsics
+    xml='''<mujoco><statistic extent="20"/>
+    <visual><headlight ambient="1 1 1" diffuse="0 0 0"/></visual>
+    <worldbody><body name="drone_1" pos="0 0 .12">
+      <geom type="sphere" size=".001" mass=".15"/>
+      <camera name="down" fovy="70"/>
+    </body><geom pos=".01 -.015 0" type="box" size=".004 .004 .0005" rgba="0 1 0 1"/>
+    </worldbody></mujoco>'''
+    model=mujoco.MjModel.from_xml_string(xml);data=mujoco.MjData(model)
+    assert model.vis.map.znear*model.stat.extent > .12
+    with MujocoCamera(model,width=640,height=480,fovy_deg=70,camera_name='down') as camera:
+        frame=camera.capture(data,0)
+        assert camera.renderer.scene.camera[0].frustum_near <= .0021
+    colors=frame.image_rgb.astype(float)
+    pixels=np.argwhere((colors[:,:,1]-colors[:,:,0]>80)&(colors[:,:,1]-colors[:,:,2]>80))
+    assert len(pixels)>50
+    v,u=pixels.mean(axis=0);fx,fy,cx,cy=intrinsics(640,480,70)
+    assert u==pytest.approx(cx+.01*fx/.1195,abs=1.)
+    assert v==pytest.approx(cy+.015*fy/.1195,abs=1.)

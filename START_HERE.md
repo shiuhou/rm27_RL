@@ -21,8 +21,8 @@ python -m rm27 --help
 四個停機位綠色區域已在獨立 PX4 仿真場景中改為 80 mm AprilTag，
 機腹中心增加專用下視相機。建立場景和運行當前視覺回庫開發鏈路的命令見
 [視覺 SITL 操作說明](rm27/perception/sitl/README.md)。下視相機實物估重
-2-3 g；仿真質量尚未加入。當前閉環回庫可讀取指定標記，但近地 LAND
-仍未通過，不應將此入口視為完整任務驗收。
+2-3 g；仿真質量尚未加入。短程閉環已完成指定標記引導、正常 LAND
+和自動停槳；完整目標接近／接觸任務及故障矩陣仍需驗收。
 
 ```bash
 cd /home/shiuhou/Projects/rm27_drones_px4

@@ -12,6 +12,7 @@ from pymavlink.dialects.v20 import common as mavlink
 from ...simulation.micro_plant import MicroPlant
 from ..bridge.frames import to_ap
 from .runtime import Runtime
+from .visual_return import VisualReturnGuard
 
 
 class LandingMonitor:
@@ -74,7 +75,8 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
     hover=[];physical_hover=[];landing=None;land_observed=False;land_requested=False;landing_commitment=None;land_monitor=LandingMonitor();max_tilt=max_force=max_penetration=0.;start=time.monotonic();viewer=None
     yaw=math.atan2(plant.data.xmat[plant.body].reshape(3,3)[1,0],plant.data.xmat[plant.body].reshape(3,3)[0,0])
     flow_bootstrap=profile in ('mtf','vio')
-    integral=np.zeros(2);last_send=None;rt=None;tag_correction=None;tag_last_seen=None
+    integral=np.zeros(2);last_send=None;rt=None;tag_correction=None;visual_guard=None
+    reacquire_count=0
     def event(name,**fields):
         entry={'event':name,'physics_time':float(plant.data.time),**fields};summary['events'].append(entry);print(json.dumps(entry),flush=True)
     def transition(name):
@@ -106,7 +108,7 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
             if np.linalg.norm(discrepancy)>.25:raise RuntimeError('Estimated/true velocity discrepancy exceeds .25 m/s')
         else:
             desired=np.array(p,dtype=float)
-            if phase in ('RETURN','DESCEND','ALIGN','FINAL_DESCEND') and tag_correction is not None:
+            if phase in ('RETURN','REACQUIRE','DESCEND','ALIGN','FINAL_DESCEND') and tag_correction is not None:
                 desired[:2]+=tag_correction
             goal=to_ap(desired);error=desired-to_ap(measured);discrepancy=np.zeros(3)
         dt=0. if last_send is None else t-last_send
@@ -124,18 +126,19 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
             from ...simulation.live_view import FlightView
             viewer=FlightView(plant)
         with runtime_factory(plant,output,instance,profile=profile) as rt, (output/'frames.jsonl').open('w') as frames, (output/'mavlink.jsonl').open('w') as messages:
+            if getattr(rt,'return_camera',None):
+                visual_guard=VisualReturnGuard(rt.return_camera.assigned_id)
             pacing=time.monotonic()
             while time.monotonic()-start<300:
                 if hasattr(rt,'return_phase'):rt.return_phase=phase
                 row=rt.step(); t=float(plant.data.time);tel=rt.telemetry
                 tag=getattr(rt,'return_observation',None)
-                if tag and tag.get('valid') and t-tag['source_time_s']<=.2 and 'local_position' in tel:
+                if visual_guard and not landing_commitment and 'local_position' in tel:
                     measured_xy=to_ap(np.asarray(tel['local_position'],dtype=float))[:2]
-                    tag_xy=np.asarray(tag['position_relative_slot_nwu_xy_m'],dtype=float)
-                    if np.linalg.norm(measured_xy-tag_xy)<=.25:
-                        tag_correction=measured_xy-tag_xy;tag_last_seen=t
-                        summary['return_tag']=dict(tag_id=tag['assigned_tag_id'],last_seen_s=t,
-                            position_relative_slot_nwu_xy_m=tag_xy.tolist(),
+                    if visual_guard.observe(tag,t,measured_xy,telemetry_age_s=t-tel.get('local_time',-100)):
+                        tag_correction=visual_guard.correction.copy()
+                        summary['return_tag']=dict(tag_id=visual_guard.assigned_tag_id,last_seen_s=visual_guard.source_time,
+                            position_relative_slot_nwu_xy_m=visual_guard.position.tolist(),
                             correction_nwu_xy_m=tag_correction.tolist(),source='rendered downward image and PX4 attitude')
                 for msg in rt.receive():
                     kind=msg.get_type();messages.write(json.dumps({'received_sim_s':t,'message':msg.to_dict()},default=str)+'\n')
@@ -159,7 +162,7 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                     speed=float(np.linalg.norm(to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float))))
                 else:
                     local=physical_local;speed=physical_speed
-                if telemetry_guidance and tag_correction is not None and phase in ('RETURN','DESCEND','ALIGN','FINAL_DESCEND','LAND','POST'):
+                if telemetry_guidance and tag_correction is not None and phase in ('RETURN','REACQUIRE','DESCEND','ALIGN','FINAL_DESCEND','LAND','POST'):
                     local=local.copy();local[:2]-=tag_correction
                 mission_contacts=contacts=plant.contacts()
                 if telemetry_guidance:
@@ -192,6 +195,14 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                     if t-tel.get('heartbeat_time',-100)>2:raise RuntimeError('Heartbeat stale')
                     allowed_mode=('OFFBOARD','LAND') if phase=='FINAL_DESCEND' and land_requested else ('OFFBOARD',)
                     if phase not in ('LAND','POST') and (not tel.get('armed') or tel.get('mode') not in allowed_mode):raise RuntimeError('Unexpected mode/disarm')
+                if visual_guard and phase in ('DESCEND','ALIGN') and not visual_guard.fresh(t):
+                    flags=tel.get('estimator_flags',0)
+                    if not flags & mavlink.ESTIMATOR_POS_HORIZ_REL or t-tel.get('estimator_time',-100)>.3:
+                        raise RuntimeError('Cannot reacquire AprilTag without valid navigation')
+                    if reacquire_count>=2:
+                        raise RuntimeError('AprilTag reacquisition attempts exhausted')
+                    reacquire_count+=1;summary['tag_reacquire_count']=reacquire_count
+                    transition('REACQUIRE')
                 if t>(route.physics_deadline if route else 160):raise RuntimeError('Physics deadline')
                 if phase=='INITIALIZE':
                     if flow_bootstrap:bootstrap(0.)
@@ -248,10 +259,15 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                 elif phase=='RETURN':
                     target([0 if route else max(0,.12-.04*(t-phase_start)),0,.6])
                     if t-phase_start>6 and np.linalg.norm(local[:2])<.004 and abs(local[2]-.6)<.015 and speed<.01:
-                        if getattr(rt,'return_camera',None) and (tag_last_seen is None or t-tag_last_seen>.5):
+                        if visual_guard and not visual_guard.fresh(t):
                             raise RuntimeError('Assigned AprilTag not freshly observed for return alignment')
                         transition('DESCEND')
                     elif t-phase_start>25:raise RuntimeError('Return alignment failed')
+                elif phase=='REACQUIRE':
+                    target([0,0,.35],z_limit=.06)
+                    if visual_guard.fresh(t) and abs(local[2]-.35)<.02 and speed<.03:
+                        transition('DESCEND')
+                    elif t-phase_start>8:raise RuntimeError('AprilTag reacquisition timed out')
                 elif phase=='DESCEND':
                     target([0,0,max(.12,.6-.04*(t-phase_start))],z_limit=.04)
                     estimated_vertical_speed=float(to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float))[2]) if telemetry_guidance else float(plant.qvel[2])
@@ -260,7 +276,7 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                 elif phase=='ALIGN':
                     target([0,0,.12])
                     estimated_horizontal_speed=float(np.linalg.norm(to_ap(np.asarray(tel.get('local_velocity',[0.,0.,0.]),dtype=float))[:2])) if telemetry_guidance else float(np.linalg.norm(plant.qvel[:2]))
-                    if np.linalg.norm(local[:2])<.003 and estimated_horizontal_speed<.006 and abs(local[2]-.12)<.005:
+                    if np.linalg.norm(local[:2])<.003 and estimated_horizontal_speed<.006 and abs(local[2]-.12)<.005 and (visual_guard is None or visual_guard.aligned(t)):
                         stable_since=t if stable_since is None else stable_since
                         if t-stable_since>=.75:transition('FINAL_DESCEND')
                     else:stable_since=None
@@ -274,8 +290,13 @@ def run(scene, output, instance=0, *, dynamics=None, view=False, speedup=None, r
                                 flags=tel.get('estimator_flags',0)
                                 if not flags & mavlink.ESTIMATOR_POS_HORIZ_REL or t-tel.get('estimator_time',-100)>.3 or np.linalg.norm(local[:2])>.003:
                                     raise RuntimeError('No valid slot alignment at landing commitment')
+                                if visual_guard and not visual_guard.aligned(t):
+                                    raise RuntimeError('No fresh aligned AprilTag at landing commitment')
                                 landing_commitment=dict(local_position=local.tolist(),timestamp_s=t,
                                     policy='PX4 normal LAND below flow minimum; range/landed state complete the task; independent physics scores slot accuracy')
+                                if visual_guard:
+                                    landing_commitment['tag_source_time_s']=visual_guard.source_time
+                                    landing_commitment['assigned_tag_id']=visual_guard.assigned_tag_id
                                 summary['landing_commitment']=landing_commitment
                             rt.mode('LAND');land_requested=True;event('request_LAND')
                             next_action=t+1

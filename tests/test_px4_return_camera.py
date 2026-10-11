@@ -3,6 +3,7 @@ import pytest
 
 from rm27.perception.sitl.dock_tags import TagObservation
 from rm27.perception.sitl.return_camera import slot_relative_position
+from rm27.autopilot.px4.visual_return import VisualReturnGuard
 
 
 def observation(*, valid=True):
@@ -25,3 +26,19 @@ def test_return_position_rejects_unsafe_detection_and_attitude():
         slot_relative_position(observation(valid=False), [1, 0, 0, 0], [0, 0, -.025])
     with pytest.raises(ValueError, match='attitude'):
         slot_relative_position(observation(), [0, 0, 0, 0], [0, 0, -.025])
+
+
+def test_return_guard_rejects_other_slots_stale_data_and_cached_freshness_extension():
+    guard=VisualReturnGuard(21)
+    row=dict(valid=True,assigned_tag_id=21,source_time_s=1.,position_relative_slot_nwu_xy_m=[.001,.002])
+    assert guard.observe(row,1.01,[.011,.002],telemetry_age_s=.01)
+    np.testing.assert_allclose(guard.correction,[.01,0.])
+    assert guard.aligned(1.1)
+    assert not guard.observe(row,1.15,[.011,.002],telemetry_age_s=.01)
+    assert not guard.fresh(1.21)
+    assert not guard.observe(dict(row,source_time_s=1.3,assigned_tag_id=22),1.3,[0,0],telemetry_age_s=0)
+    assert not guard.observe(dict(row,source_time_s=1.3),1.3,[0,0],telemetry_age_s=.21)
+    assert not guard.observe(dict(row,source_time_s=2.),1.3,[0,0],telemetry_age_s=0)
+    assert not guard.observe(dict(row,source_time_s=1.3),1.3,[float('nan'),0],telemetry_age_s=0)
+    assert not guard.observe(dict(row,source_time_s=1.3),1.3,[.5,0],telemetry_age_s=0)
+    assert guard.source_time==1.

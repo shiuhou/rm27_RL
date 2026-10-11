@@ -25,6 +25,16 @@ def analyze(path, output):
                 summary['fusion'][str(dataset.multi_id)]={k:{'ever':bool(np.any(v)),'last':bool(v[-1]),'samples_active':int(np.count_nonzero(v))} for k,v in data.items() if k.startswith('cs_')}
             if dataset.name=='vehicle_status':
                 summary['vehicle_status']={'armed_samples':int(np.sum(data['arming_state']==2)),'last_arming_state':int(data['arming_state'][-1]),'last_nav_state':int(data['nav_state'][-1])}
+            if dataset.name=='vehicle_land_detected':
+                summary['landing']={}
+                for name in ['landed','ground_contact','maybe_landed','in_descend','has_low_throttle',
+                             'vertical_movement','horizontal_movement','rotational_movement','at_rest',
+                             'close_to_ground_or_skipped_check']:
+                    if name not in data:continue
+                    selected=times[np.asarray(data[name],dtype=bool)]
+                    summary['landing'][name]=dict(active_samples=len(selected),last=bool(data[name][-1]),
+                        first_active_s=float(selected[0]/1e6) if len(selected) else None,
+                        last_active_s=float(selected[-1]/1e6) if len(selected) else None)
         summary['passed']=not summary['file_corruption']
     except Exception as exc:
         summary['failure']=f'{type(exc).__name__}: {exc}'

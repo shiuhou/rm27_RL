@@ -48,9 +48,10 @@ manufacturer's 8 cm minimum and attitude/thrust takeoff before flow handover.
 | Native publication instrumentation | `openvins-native-evidence-build-01/summary.json` | Passed separate pinned build; original research source and binary remain read-only |
 | Native recorded VIO | `px4-current-flight-openvins-06/summary.json` | Execution passed; observed initialization, features, covariance, source/publication clocks and epochs |
 | Recorded VIO development score | `px4-current-flight-vio-score-05/summary.json` | Passed development thresholds: XY p95 0.19599 m, height p95 0.01623 m, coverage 87.18%; one initial SE3 registration, scale fixed to 1 |
-| Root tests | `px4-root-tests-11.log` | 394 passed, 2 ROS-only skips; includes AprilTag return-position and live transport contracts |
-| Four slot AprilTags | `px4-dock-tags-04/summary.json` | Airborne visual audit passes for IDs 21-24; 80 mm codes on 96 mm panels replace green slot visuals, without changing dock collisions. The assigned tag is visible at 0.6-0.3 m above its slot, absent at 0.2 and 0.12 m in the tested geometry. Image/PX4-attitude XY error is below 0.6 mm in those static fixtures; this is not flight accuracy |
-| Live downward return camera | `px4-live-vio-tags-02/summary.json` | Failed at near-ground normal LAND: PX4 estimator position drifted while the vehicle remained on the dock bottom, ending in descent timeout. The separate return-camera summary reports 355 valid assigned-slot images during return/descent. This is current-flight image guidance development, not S4 completion |
+| Root tests | `px4-root-tests-12.log` | 396 passed, 2 ROS-only skips; includes close named-camera projection and visual-return admission contracts |
+| Four slot AprilTags | `px4-dock-tags-05/summary.json` | Airborne visual audit passes for IDs 21-24; 80 mm codes on 96 mm panels replace green slot visuals, without changing dock collisions. Assigned tag visible at 0.6, 0.4, 0.3, 0.2 and 0.12 m above slot; static image/PX4-attitude XY error below 0.6 mm, not flight accuracy |
+| Live downward return camera | `px4-live-vio-tags-04/summary.json` | Passed short current-flight VIO/image return, normal LAND and automatic disarm; independent resting XY error 0.0724 mm. Fresh assigned-tag admission and landing commitment enforced. A development run does not establish S4 completion |
+| Near-ground LAND diagnosis | `px4-live-vio-tags-03-ulog/summary.json` | Read-only ULog shows EKF2 actual EV position/velocity fusion and land-detector states; original failed attempts remain in `px4-live-vio-tags-01` and `-02` |
 
 Artifact paths in this table are relative to `artifacts/`.
 The response runs selected on development input are `rate-roll-02`,
@@ -105,12 +106,23 @@ regression inputs, not a live flight or M3C runtime qualification.
 
 The dedicated downward camera is centered in body X/Y, 25 mm below the body
 origin, at a simulated 640x480/70-degree FOV and 20 Hz. It is only active for
-RETURN, DESCEND, ALIGN and FINAL_DESCEND. AprilTag 36h11 IDs 21-24 identify
+RETURN, REACQUIRE, DESCEND, ALIGN and FINAL_DESCEND. AprilTag 36h11 IDs 21-24 identify
 slots 1-4; the current assigned slot is 1. The black code is 80 mm wide and
 the white panel is 96 mm, within the former 110 mm green site. Return guidance
-accepts only the assigned ID, fresh image and PX4 attitude, and records the
-last valid image correction when the camera becomes occluded near the floor.
-The live run shows the near-ground LAND estimator problem remains unresolved.
+accepts only the assigned ID, fresh image and PX4 attitude. Repeated cached
+images cannot extend freshness. Loss before landing commitment triggers a
+bounded reacquisition climb while navigation is valid; final LAND requires a
+fresh aligned tag, then freezes that registration for near-ground handover.
+Reacquisition failure is a failed run; physical safety fault acceptance is pending.
+
+The earlier report of missing tags at 0.2/0.12 m was a rendering bug: named
+cameras inherited the field's 20 cm near clipping plane. The corrected renderer
+uses a 2 mm near plane with projection preserved. `px4-dock-tags-04` visibility
+limits are superseded, and existing failed flight records are retained.
+Near-ground loss of flow/VIO left the position controller reducing thrust too
+slowly to satisfy the land detector before the 10 s no-aiding failsafe. Development
+profiles `mtf` and `vio` now use `MPC_Z_VEL_I_ACC=4` (previous default 2).
+This is simulation tuning; remaining gates and timeout are unchanged.
 
 ## Remaining implementation and acceptance
 

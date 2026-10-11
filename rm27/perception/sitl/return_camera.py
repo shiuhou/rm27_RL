@@ -12,12 +12,13 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from .dock_tags import DockTagDetector
+from .dataset import digest
 from .mujoco_camera import MujocoCamera
 
 
 BASIS = np.diag([1., -1., -1.])
 CV_TO_BODY = np.diag([1., -1., -1.])
-RETURN_PHASES = frozenset({'RETURN', 'DESCEND', 'ALIGN', 'FINAL_DESCEND'})
+RETURN_PHASES = frozenset({'RETURN', 'REACQUIRE', 'DESCEND', 'ALIGN', 'FINAL_DESCEND'})
 
 
 def slot_relative_position(observation, attitude_wxyz, camera_offset_body):
@@ -51,6 +52,7 @@ class DockReturnCamera:
         self.last = None
         self.rows = self.output.joinpath('observations.jsonl').open('x', buffering=1)
         self.counts = dict(images=0, assigned_valid=0, assigned_invalid=0, wrong_slot=0)
+        self.output.joinpath('configuration.json').write_text(json.dumps(config,indent=2)+'\n')
 
     def sense(self, data, telemetry, phase):
         if phase not in RETURN_PHASES:
@@ -58,7 +60,7 @@ class DockReturnCamera:
             return None
         t = float(data.time)
         if t + 1e-9 < self.next_image:
-            return self.last if self.last and t-self.last['source_time_s']<=.2 else None
+            return self.last if self.last and self.last['valid'] and t-self.last['source_time_s']<=.2 else None
         self.next_image = t + 1. / self.config['camera_hz']
         frame = self.camera.capture(data, round(t*1e6))
         observations = self.detector.detect(frame, now_us=round(t*1e6))
@@ -81,10 +83,11 @@ class DockReturnCamera:
             row['reason'] = 'duplicate/unsafe assigned tag or stale attitude'
         if not row['valid']:
             self.counts['assigned_invalid'] += 1
+        path=self.output/'images'/f'{frame.timestamp_us}.png'
+        if not cv2.imwrite(str(path),cv2.cvtColor(frame.image_rgb, cv2.COLOR_RGB2BGR)):
+            raise RuntimeError('return image recording failed')
+        row.update(filename=str(path.relative_to(self.output)),image_sha256=digest(path))
         self.rows.write(json.dumps(row, allow_nan=False)+'\n')
-        if self.counts['images']<=3 or self.counts['images']%20==0:
-            cv2.imwrite(str(self.output/'images'/f'{frame.timestamp_us}.png'),
-                cv2.cvtColor(frame.image_rgb, cv2.COLOR_RGB2BGR))
         self.last = row
         return row if row['valid'] else None
 
