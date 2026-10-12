@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "experiment_config": "configs/aggressive_contact.json",
+  "vehicle_config": "configs/drone.json",
+  "dynamics_profile": "configs/dynamics_150g.json",
+  "policy_dt_s": 0.005,
+  "action": {
+    "body_rate_limit_rad_s": 20.0
+  },
+  "reward": {
+    "valid_contact": 1.0,
+    "separation": 1.0,
+    "success": 10.0,
+    "failure": -10.0
+  },
+  "status": "Contact RL I1 research settings, not real-aircraft limits. Fixed nominal scene; 150 g engineering dynamics estimate and assumed bottom bumper. Event rewards are interface fixtures, not PPO-validated reward design."
+}

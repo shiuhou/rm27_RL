@@ -51,6 +51,12 @@ class Septic:
                                for k in range(8)]) @ self.c / self.duration**d for d in range(4))
 
 
+def motor_mixer(rotor_arm_m, yaw_torque_per_thrust_m):
+    """FLU wrench from rotor forces, ordered (+,+), (+,-), (-,-), (-,+)."""
+    a, k = rotor_arm_m, yaw_torque_per_thrust_m
+    return np.array([[1, 1, 1, 1], [a, -a, -a, a], [-a, -a, a, a], [k, -k, k, -k]], dtype=float)
+
+
 class Skill:
     def __init__(self, cfg, parameters, initial, target, vehicle_info):
         self.cfg, self.p, self.target = cfg, parameters, target
@@ -67,8 +73,7 @@ class Skill:
         self.inertia = np.array(vehicle_info["inertia_kg_m2"])
         self.max_motor = vehicle_info["max_rotor_thrust_N_assumed"]
         # Existing integration vehicle motor ordering: (+,+), (+,-), (-,-), (-,+).
-        a, k = vehicle_info["rotor_arm_m"], vehicle_info["yaw_torque_per_thrust_m"]
-        self.mixer = np.array([[1, 1, 1, 1], [a, -a, -a, a], [-a, -a, a, a], [k, -k, k, -k]])
+        self.mixer = motor_mixer(vehicle_info["rotor_arm_m"], vehicle_info["yaw_torque_per_thrust_m"])
         self.inverse_mixer = np.linalg.inv(self.mixer)
         self.phase = "FREE_FLIGHT"
         self.contact_time = None

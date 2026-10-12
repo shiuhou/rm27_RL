@@ -11,6 +11,9 @@ Read only the references needed for the requested change:
 - `START_HERE.md`: launch commands and viewer operation.
 - `docs/INTEGRATION.md`: component ownership, frames and mission acceptance gates.
 - `docs/REAL_HARDWARE.md`: hardware identification and calibration unknowns.
+- For Contact RL and its authorized shared-module changes, read
+  `.agents/docs/SPEC.md` and, when interfaces or architecture are involved,
+  `.agents/docs/DESIGN.md`. They are self-contained and scoped to that research.
 - The relevant component report: evidence and limitations for that component.
 
 `docs/archive/chatgptre.md` is historical context only. Verify any reused claim against
@@ -62,7 +65,7 @@ passes. Preserve raw input files and record their hash before analysis.
   Existing parked proxies do not establish multi-vehicle capability.
 - Root `rm27/` owns integration code. `configs/` owns reviewed configuration.
   `artifacts/` contains local generated evidence and is ignored by Git.
-- The current provisional simulation aircraft is approximately 180 g, has a
+- The historical default simulation aircraft is approximately 180 g, has a
   120 × 120 mm envelope, user-reported 1103 9600KV motors and 2-inch props.
   Its inertia, thrust, motor lag and yaw torque are engineering estimates.
 - Current real hardware is documented in `docs/REAL_HARDWARE.md` and
@@ -78,6 +81,19 @@ passes. Preserve raw input files and record their hash before analysis.
   field or controller results require separate evidence.
 
 ## Verification and reporting
+
+Contact RL uses this worktree's `.venv/`, the root `pyproject.toml` and
+`requirements-contact-rl.lock`; do not modify a shared virtual environment.
+Run only the relevant checks authorized for the current task. The I0/I1 work
+uses selected legacy test nodes, the root contact environment tests and one
+bounded 150 g CTBR baseline; it does not imply a full-root regression, training
+or hardware authorization. Report engineering checks, baseline outcome and
+learning evidence separately. Setup and runtime entries are in DESIGN.
+Maintain only the user's existing `contact_rl_01` activity plan at its current
+path; do not migrate it or create a second copy. Track only `.agents/docs/`
+within `.agents/`. Keep reusable checks in root `tests/` and values in `configs/`.
+Preserve the direct-motor and privileged CTBR baselines while each has its
+distinct regression or research role.
 
 Use `/home/shiuhou/venvs/mujoco/bin/python` on this machine. The routine root
 test command is:

@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools==82.0.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rm27-contact-rl"
+version = "0.1.0"
+description = "Minimal state-based MuJoCo contact and recovery environment for RM27"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "mujoco==3.12.0",
+    "numpy==2.5.1",
+    "scipy==1.18.0",
+    "gymnasium>=1,<2",
+]
+
+[project.optional-dependencies]
+test = ["pytest==9.1.1"]
+# First PPO closure is CPU-only, CPython 3.12 on Linux amd64, matching Docker.
+# Direct official wheel prevents the ordinary PyPI Torch CUDA distribution.
+train = [
+    "stable-baselines3==2.9.0",
+    "torch @ https://download-r2.pytorch.org/whl/cpu/torch-2.14.1%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl#sha256=5a6363570c753812540a05eb82380e329469cbe668643e88111414c12627711f",
+]
+
+# Include the editable-install backend in the same hashed dependency source.
+# This checkout's root configs remain source assets; standalone wheels are not
+# the supported deployment unit in I1.
+[dependency-groups]
+build = ["setuptools==82.0.1"]
+
+[tool.setuptools]
+packages = [
+    "rm27",
+    "rm27.integration",
+    "rm27.experiments",
+    "rm27.experiments.aggressive_contact",
+    "rm27_contact_rl",
+]
+include-package-data = false
+
+[tool.setuptools.package-dir]
+rm27 = "rm27"
+rm27_contact_rl = "research/contact_rl/src/rm27_contact_rl"

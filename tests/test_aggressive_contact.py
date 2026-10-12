@@ -59,6 +59,11 @@ def test_nominal_physical_contact_recovery_and_motor_replay(tmp_path):
     assert result['first_contact']['pairs'] == [['bumper', 'armor']]
     assert result['normal_impulse_Ns'] > 0
     assert result['separated'] and result['recovery_time_s'] < 2
+    trace = np.load(tmp_path/'episode'/'trajectory.npz')['trace']
+    assert np.all(np.diff(trace[:, 0]) > 0)
+    # Full-mission consumers start their next phase at duration_s; leave this
+    # boundary available rather than recording two different commands there.
+    assert trace[-1, 0] < result['duration_s'] - 1e-12
     assert replay(tmp_path/'episode', tmp_path/'replay')['passed']
     # Refuse accidental overwrite, including previously failed episodes.
     with pytest.raises(FileExistsError):

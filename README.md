@@ -1,5 +1,29 @@
 # RM27 autonomous micro-UAV development
 
+## Contact RL research
+
+The `research/contact-rl` branch develops the independent RM27 contact-and-recovery
+RL line, published at [shiuhou/rm27_RL](https://github.com/shiuhou/rm27_RL).
+It reuses the original RM27 native-MuJoCo dynamics, CTBR control chain and shared
+contact evaluator; the inherited RM27 modules below retain their original scope.
+The current task uses the fixed 150 g engineering profile and bottom bumper:
+approach, designated contact, separation and controlled recovery, within 6 s.
+
+The adopted contract is [.agents/docs/SPEC.md](.agents/docs/SPEC.md); installation,
+Docker, baseline, training and checkpoint-evaluation commands are maintained in
+[.agents/docs/DESIGN.md](.agents/docs/DESIGN.md). Use that Contact RL environment
+rather than installing the whole flight integration stack described below.
+
+I0–I3 engineering is complete. The privileged CTBR baseline previously succeeded
+at approximately 4.003 s. One bounded CPU SB3 PPO run completed 65,536 transitions
+and verified checkpoint continuation from 4,096 to 6,144 steps. Its initial and
+final nominal evaluations both returned `TARGET_MISS` and reward −10; this is an
+engineering closure, with task learning and generalization still unverified.
+These are prior local results; publishing does not rerun or extend training.
+
+Generated evidence, checkpoints, virtual environments and Docker images remain
+outside Git. No unrelated submodule initialization is needed for Contact RL.
+
 日常啟動與查看指令：[START_HERE.md](START_HERE.md)（繁體中文速查表）。
 
 PX4 v1.17.0 migration implementation and actual simulation results:

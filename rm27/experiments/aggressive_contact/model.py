@@ -155,7 +155,7 @@ def scenario(cfg, seed=None, scale=1.0):
     return c
 
 
-def build_model(cfg, nominal_cfg):
+def build_model(cfg, nominal_cfg, *, vehicle_config=None):
     root = ET.Element("mujoco", model="rm27_aggressive_contact_research")
     ET.SubElement(root, "compiler", angle="radian")
     ET.SubElement(root, "option", timestep=str(cfg["physics_dt_s"]), integrator="implicitfast",
@@ -180,12 +180,14 @@ def build_model(cfg, nominal_cfg):
     for sign in (-1, 1):
         box(f"rim_x_{sign}", [sign*(ox+x)/2, 0, -thick], [(ox-x)/2, oy, thick], ".5 .3 .3 1")
         box(f"rim_y_{sign}", [0, sign*(oy+y)/2, -thick], [x, (oy-y)/2, thick], ".5 .3 .3 1")
-    vcfg = json.loads((ROOT / cfg["vehicle_config"]).read_text())
+    vcfg = (json.loads((ROOT / cfg["vehicle_config"]).read_text())
+            if vehicle_config is None else copy.deepcopy(vehicle_config))
     # Preserve nominal actuator/inertia reference; uncertain physics is hidden from controller.
     initial = np.array(nominal_cfg["target"]["center_m"]) + nominal_cfg["start_offset_m"]
     info = add_drone(root, "uav", initial, [1, 0, 0, 0], vcfg)
     info["rotor_arm_m"] = vcfg["rotor_center_offset_m"]
-    info["yaw_torque_per_thrust_m"] = vcfg["engineering_estimates"]["yaw_torque_per_thrust_m"]
+    info["yaw_torque_per_thrust_m"] = vcfg.get("dynamics_override", {}).get(
+        "yaw_torque_per_thrust_m", vcfg["engineering_estimates"]["yaw_torque_per_thrust_m"])
     body = world.find("body[@name='uav']")
     ET.SubElement(body, "geom", name="bumper", type="sphere", size=str(cfg["contact"]["radius_m"]),
                   pos=" ".join(map(str, cfg["contact"]["offset_body_m"])), rgba=".1 .9 .3 1")
