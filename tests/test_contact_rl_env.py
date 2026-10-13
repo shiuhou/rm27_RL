@@ -9,10 +9,11 @@ import numpy as np
 import pytest
 from scipy.spatial.transform import Rotation
 
-from rm27.experiments.aggressive_contact.evaluation import ContactEvaluator
-from rm27.experiments.aggressive_contact.model import ROOT, build_model, frame, scenario, truth_estimate, unit
-from rm27.experiments.calibration import with_profile
-from rm27.experiments.contact_metrics import armor_contacts
+from rm27_contact_physics.evaluation import ContactEvaluator
+from rm27_contact_rl.paths import ROOT
+from rm27_contact_physics.model import build_model, frame, scenario, truth_estimate, unit
+from rm27_contact_physics.calibration import with_profile
+from rm27_contact_physics.contact_metrics import armor_contacts
 from rm27_contact_rl import ContactRecoveryEnv
 from rm27_contact_rl.baselines import CTBRBaseline
 

@@ -1,27 +1,9 @@
-# Historical reference workspaces are kept outside this repository.
 **/.venv/
 **/__pycache__/
 **/.pytest_cache/
 **/*.egg-info/
+**/build/
+**/dist/
 /.agents/*
 !/.agents/docs/
-/build/
-/dist/
-/research/astra/build/
-/research/astra/results/*
-!/research/astra/results/.gitkeep
-# Raw CAD is kept locally and indexed by hash in the relevant report.
-/references/cad_raw/*.stp
-/references/cad_raw/*.step
-/references/cad_raw/*.SLDASM
-/.vscode/
 /artifacts/
-/flight_logs/data/
-/RoboMaster*.pdf
-/UTF-8__RoboMaster*.pdf
-/references/rules/*.pdf
-/references/images/*
-/docs/archive/chatgptre.md
-/references/cad_raw/*.STEP
-/references/cad_raw/*.STP
-/references/cad_raw/retired/

@@ -1,8 +1,0 @@
-{
-  "type": "circles_grid",
-  "pattern_cols": 7,
-  "pattern_rows": 7,
-  "center_distance_m": 0.03,
-  "grid_type": "symmetric",
-  "physical_target_id": "RM27-DOT-7X7-30MM-01"
-}
