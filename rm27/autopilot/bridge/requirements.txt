@@ -1,2 +1,0 @@
--r ../requirements.txt
-pymavlink==2.4.49

@@ -1,7 +1,0 @@
-{
-  "primary_delay_frames": 2,
-  "primary_brightness": 1.05,
-  "initial_vio_admission": true,
-  "efficient_bearing": true,
-  "scope": "Independent delayed-camera first-registration development; 3D velocity and stable observation window. Frozen reserved inputs are unchanged."
-}

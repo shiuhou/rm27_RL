@@ -4,9 +4,9 @@
 
 ## 1. 来源与组织
 
-来源为 PX4 工作区提交 `ec9db0480a86b4262077929ce324fd44e5585256`，分支 `research/contact-rl` 的独立同仓库 worktree。不自动带入其他 worktree 的未提交 Astra／SLAM 成果，不修复或清理其注册信息。
+独立仓库从 `578b09794407edd74e72327d5a89c5811c40e2a7` 保留历史建立，审阅分支 `refactor/repository-separation`。此前I0—I3源于ec9db048的接触研究；旧工作区及证据不迁移或清理。
 
-研究代码放 `research/contact_rl/src/rm27_contact_rl/`；原物理、控制和评分的唯一实现继续由根 `rm27/` 拥有。原生 MuJoCo 为参考后端，不预建 GPU、多后端工厂或仿真服务。PerchRL 提供研究启发，不复制其质量、时钟、成功率或附着终止条件。
+研究代码位于 `src/rm27_contact_rl/`；活动物理、控制和评分实现位于 `packages/physics/src/rm27_contact_physics/`。原RM27消费者接入留待S3；旧分支实现是保留的历史/过渡来源。原生 MuJoCo 为参考后端，不预建 GPU、多后端工厂或仿真服务。PerchRL 提供研究启发，不复制其质量、时钟、成功率或附着终止条件。
 
 ```text
 基线或策略 CTBR
@@ -20,11 +20,11 @@
 
 ## 2. 模型与参数来源
 
-复用 `rm27/integration/drone.py`、`rm27/experiments/aggressive_contact/model.py` 和 `configs/aggressive_contact.json` 的局部 armor／rim／bumper 场景。底部球形 bumper 的偏移及半径继续由原配置负责，其他机体禁碰几何保留。
+复用 `rm27_contact_physics/drone.py`、`rm27_contact_physics/model.py` 和 `configs/aggressive_contact.json` 的局部 armor／rim／bumper 场景。底部球形 bumper 的偏移及半径继续由原配置负责，其他机体禁碰几何保留。
 
-`configs/contact_rl/minimal.json` 引用原场景、`configs/drone.json` 的机体几何和 `configs/dynamics_150g.json`，只增加 RL 特有值，不复制一套评分阈值。通过 `calibration.with_profile()` 应用质量、惯量、推力、lag、yaw override，并用 `verify_compiled()` 核对。`build_model()` 接受可选已解析机体配置；未传入的历史调用行为保留。其输出 yaw 系数与实际 override 一致。
+`configs/contact_rl/minimal.json` 引用原场景、`configs/drone.json` 的机体几何和 `configs/dynamics_150g.json`，只增加 RL 特有值，不复制一套评分阈值。通过 `calibration.with_profile()` 应用质量、惯量、推力、lag、yaw override，并用 `verify_compiled()` 核对。`build_model(cfg, nominal_cfg, *, vehicle_config)` 必须显式接收机体配置；`load_config(path)`、`marker_center(target, marker_config)`和`Skill(..., marker_config=...)`不再寻找父仓库文件。Profile证据路径仍相对profile文件解析。其输出 yaw 系数与实际 override 一致。
 
-150 g 质量有用户来源，其余为工程估计，未完成2S真机标定。四个旋翼总上限为 4.4145 N，不用旧推重比重新推导覆盖 profile。原180 g direct-motor 对照保留；guard-tip 不属于首版允许接触集合。
+150 g 质量有用户来源，其余为工程估计，未完成2S真机标定。四个旋翼总上限为 4.4145 N，不用旧推重比重新推导覆盖 profile。原180 g direct-motor 对照在原RM27保留；guard-tip 不属于首版允许接触集合。
 
 ## 3. 控制、基线与观测
 
@@ -38,7 +38,7 @@
 
 ### 基线
 
-原 `Skill` direct-motor runner 承担回归与历史对照。新 CTBR 基线为 `Skill.command()` → `project()` → 同一个 `env.step()`，施加后将实际电机命令回写其电机观察器。它读取真实接触锁存，明确为 **privileged model-based baseline**；相同执行链不证明观测公平。基线自身投影／限幅诊断与环境实际命令饱和统计分别命名。
+原RM27中的 `Skill` direct-motor runner 保留回归与历史对照。新 CTBR 基线为 `Skill.command()` → `project()` → 同一个 `env.step()`，施加后将实际电机命令回写其电机观察器。它读取真实接触锁存，明确为 **privileged model-based baseline**；相同执行链不证明观测公平。基线自身投影／限幅诊断与环境实际命令饱和统计分别命名。
 
 ### 观测与reset
 
@@ -50,7 +50,7 @@ reset沿原名义场景位置、单位姿态与零速度。`data.act` 和 `data.
 
 ## 4. 唯一逐物理区间采样协议
 
-共享 `aggressive_contact/evaluation.py` 拥有接触／恢复评价，旧 runner 和环境共用。轨迹误差、phase、控制器诊断及记录归 runner。保留公开 `run_episode()` 参数、prefix与输出字段；提取后删除旧runner内重复评分。
+共享 `rm27_contact_physics/evaluation.py` 拥有本仓库唯一接触／恢复评价。旧runner不迁入本仓库；其消费者适配为S3，当前不改原仓库调用或评分。
 
 现有模型为 `implicitfast`。每个 `[t_k,t_{k+1}]` 唯一执行顺序：
 
@@ -72,25 +72,24 @@ reset沿原名义场景位置、单位姿态与零速度。`data.act` 和 `data.
 
 ## 5. 包与运行环境
 
-根 `pyproject.toml` 是唯一 Contact RL 打包／依赖声明；显式包含 `rm27`、`rm27.integration`、`rm27.experiments`、`rm27.experiments.aggressive_contact` 和 `rm27_contact_rl`，不发现第三方树。配置从已安装一方模块的源码根定位，不取当前目录或个人绝对路径。I1支持完整checkout的editable安装，不将独立wheel视为部署产品。
-
-`requirements-contact-rl.lock` 由同一声明生成，包含train／test extra和build group。本worktree独有 `.venv/`；不改变既有共享venv，不安装全套integration依赖。环境运行依赖为MuJoCo、NumPy、SciPy和Gymnasium；测试额外pytest，构建backend额外setuptools。Torch／PPO不属于I1原最低集合，由获准I3的train extra新增；CAD、GUI及pymavlink仍不引入。普通环境／baseline入口按需导入训练模块，不强制加载Torch。所有transitive依赖由同一锁记录。
-
-train extra固定Stable-Baselines3 2.9.0及官方CPU PyTorch 2.14.1+cpu。Torch使用官方索引发布的CPython 3.12／Linux amd64 wheel URL及SHA-256，避免普通PyPI发行版引入CUDA依赖；不承诺该extra可在其他Python／平台安装。I3保留I1已有锁版本，不另建Docker或训练专用版本清单。
-
-锁定入口（使用已有uv 0.12.7；更新锁需明确任务理由）：
-
-```bash
-uv pip compile pyproject.toml --extra train --extra test --group build --constraint requirements-contact-rl.lock --generate-hashes --python-version 3.12 --python-platform x86_64-unknown-linux-gnu --no-python-downloads --output-file requirements-contact-rl.lock
-```
-
-安装入口（在worktree根）：
+根 `pyproject.toml` 声明RL；`packages/physics/pyproject.toml` 声明独立Physics。
+第三方版本仅由原 `requirements-contact-rl.lock` 固定，27个依赖版本不变。
+Physics wheel可单独安装；RL当前支持完整checkout的editable安装，配置由
+`rm27_contact_rl.paths.ROOT` 从安装源码定位，不依赖cwd或父工作区。
+普通环境入口不加载Torch；train extra为SB3 2.9.0与官方CPU Torch 2.14.1+cpu，
+限定Linux amd64/CPython3.12。Physics只需要MuJoCo/NumPy/SciPy及其传递依赖。
 
 ```bash
 python3.12 -m venv .venv
 uv pip sync --python .venv/bin/python --require-hashes requirements-contact-rl.lock
-uv pip install --python .venv/bin/python --no-deps --no-build-isolation -e .
+uv pip install --python .venv/bin/python --no-deps --no-build-isolation -e ./packages/physics -e .
+# 仅构建独立Physics；输出按需生成并忽略。
+.venv/bin/python -m pip wheel --no-deps --no-build-isolation packages/physics --wheel-dir artifacts/wheels
 ```
+
+更新锁需独立理由；同时解析两个打包声明，并将单独安装的第一方Physics包排除在第三方哈希锁外。本次保留原锁字节及所有依赖版本。
+同checkout安装本地Physics；未来原RM27用完整Git SHA和`subdirectory=packages/physics`
+或固定wheel URL/SHA-256消费。S3未实施，版本0.1.0不代替内容标识。
 
 生成锁只证明解析，安装只证明安装；行为证据另外报告。宿主登录环境可能设置ROS的PYTHONPATH；运行时使用 `env -u PYTHONPATH` 排除宿主附加包路径，测试另设 `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`。测试依原计划选定节点及根 `tests/test_contact_rl_env.py`，不自动执行全仓测试。
 
@@ -104,24 +103,24 @@ env -u PYTHONPATH .venv/bin/python -m rm27_contact_rl baseline --output artifact
 
 ## 6. Docker（I2 ADOPTED）与后续
 
-单一 CPU headless 镜像定义于 `research/contact_rl/docker/Dockerfile`；根 `.dockerignore` 白名单纳入实际工作树的必要源码、打包声明、锁及所需配置（包括 `configs/base_target.json`），不按 Git 跟踪清单裁剪。排除 `.git`、宿主环境、缓存、测试、CAD、子模块及历史结果。使用官方 `ubuntu:24.04@sha256:33ceb71981b602c1a7443a53469e4dba065f7503eab3078a2d7a57a2ab987517` 的 amd64 基础镜像，容器内仅安装 Python 3.12 venv 和 CA，随后按唯一完整哈希锁安装，不另维护容器依赖清单。I2已保存镜像使用原test/build集合、不包含Torch；I3在同一Dockerfile／锁加入获准CPU训练依赖，使用新镜像标识，不覆盖I2成果。CUDA及渲染栈仍不引入。`MUJOCO_GL=disable`，不创建 renderer。
+单一 CPU headless 镜像定义于 `docker/Dockerfile`；根 `.dockerignore` 白名单纳入实际工作树的必要源码、打包声明、锁及所需配置（包括 `configs/base_target.json`），不按 Git 跟踪清单裁剪。排除 `.git`、宿主环境、缓存、测试、CAD、子模块及历史结果。使用官方 `ubuntu:24.04@sha256:33ceb71981b602c1a7443a53469e4dba065f7503eab3078a2d7a57a2ab987517` 的 amd64 基础镜像，容器内仅安装 Python 3.12 venv 和 CA，随后按唯一完整哈希锁安装，不另维护容器依赖清单。I2已保存镜像使用原test/build集合、不包含Torch；I3在同一Dockerfile／锁加入获准CPU训练依赖，使用新镜像标识，不覆盖I2成果。CUDA及渲染栈仍不引入。`MUJOCO_GL=disable`，不创建 renderer。
 
 editable 安装位于 `/opt/venv`，镜像自带的源码及配置在 `/workspace`，默认从 `/tmp` 运行。开发时可选择同路径只读源码挂载，不遮蔽依赖；改变依赖声明或锁时须重新构建。基础 digest 和 Python 锁固定输入；Ubuntu 软件包下载仍依赖构建时的软件源，最终构建镜像 ID 固定实际运行环境，不宣称仅凭基础 digest 可逐位复建全部系统包。
 
-唯一启动入口 `research/contact_rl/docker/run.sh`：
+唯一启动入口 `docker/run.sh`：
 
 ```bash
-# 在 worktree 根构建当前 I3；包含尚未提交文件，不覆盖保存的 I2 镜像。
-bash research/contact_rl/docker/run.sh build rm27-contact-rl:i3-cpu
+# 在 checkout 根构建当前 I3；包含尚未提交文件，不覆盖保存的 I2 镜像。
+bash docker/run.sh build rm27-contact-rl:separated-cpu
 
 # dedicated-results 替换为宿主专用结果目录；run-id 必须尚未存在。
-bash research/contact_rl/docker/run.sh run rm27-contact-rl:i2-cpu dedicated-results run-id --check
+bash docker/run.sh run rm27-contact-rl:separated-cpu dedicated-results run-id --check
 
 # 可选开发源码挂载；仍使用同一镜像和锁，输出使用另一个新标识。
-bash research/contact_rl/docker/run.sh run rm27-contact-rl:i2-cpu dedicated-results new-run-id --source
+bash docker/run.sh run rm27-contact-rl:separated-cpu dedicated-results new-run-id --source
 ```
 
-入口从宿主采集 Git HEAD／dirty／status。构建时在 `/opt/contact-rl/build-source.json` 保存纳入上下文每个文件 SHA-256、聚合标识和锁标识；该记录位于源码挂载之外。CLI 复用原来源记录，运行时仍计算实际使用的代码及配置哈希，另记录基础镜像、构建快照、实际运行镜像 ID 和 IMAGE／BIND_MOUNT 来源。无 `.git` 的镜像不调用 Git；开发挂载从宿主传入当前 Git 身份，避免 worktree 指针失效。原生 venv 运行继续使用 Git。镜像自带源码是未提交实现的必要载体，HEAD 不足以还原它；镜像不自动推送。
+入口从宿主采集 Git HEAD／dirty／status。构建时在 `/opt/contact-rl/build-source.json` 保存纳入上下文每个文件 SHA-256、聚合标识和锁标识；该记录位于源码挂载之外。CLI 复用原来源记录，运行时仍计算实际使用的代码及配置哈希，另记录基础镜像、构建快照、实际运行镜像 ID 和 IMAGE／BIND_MOUNT 来源。无 `.git` 的镜像不调用 Git；开发挂载从宿主传入当前 Git 身份，避免 checkout 指针失效。原生 venv 运行继续使用 Git。镜像自带源码是未提交实现的必要载体，HEAD 不足以还原它；镜像不自动推送。
 
 结果仅写独立 `/data/<run-id>`，通过宿主专用目录 bind mount 持久化，原 `nominal_150g_ctbr` 不覆盖。入口解析镜像 tag 为 ID 后运行，使用调用者 UID:GID、只读根文件系统、限额 `/tmp`、无网络、无 capabilities，不使用 privileged。`--check` 在同一会话先检查导入／配置／reset／单次 step，再 exec 原 CLI 一次基线；失败状态继续用原 0／2／1 语义，不复制评分或基线。
 
@@ -148,17 +147,31 @@ checkpoint先在同一结果目录暂存完整文件组，再替换目的目录�
 评价直接调用同一新建的Monitor／NormalizedCTBR／ContactRecoveryEnv实例，使用加载的`normalize_obs`向策略提供输入，保存环境实际返回的原始终止观测；不逆变换经过clip的terminal observation来重建轨迹。初始轨迹行标记`action_applied=false`，不表示零动作曾执行。初始评价在学习计时前、最终评价在学习计时后；学习过程中的保存／加载／切换均计入同一计时器。训练工程通过退出0，预算内工程项未完成退出2，工程异常记录原因／traceback并退出1；独立evaluate沿用任务成功0／任务失败2语义。
 
 ```bash
-# 本批唯一有界训练：内部包括前后各一次名义评价及续训验证。
-bash research/contact_rl/docker/run.sh train rm27-contact-rl:i3-cpu artifacts/contact_rl/docker ppo_20261013_i3
+# 既有训练入口示例；S1/S2不运行训练。
+bash docker/run.sh train rm27-contact-rl:separated-cpu artifacts/contact_rl/docker ppo_20261013_i3
 
 # 独立评价入口示例；属于调用方式说明，不要求本批额外再跑一回合。
-bash research/contact_rl/docker/run.sh evaluate rm27-contact-rl:i3-cpu artifacts/contact_rl/docker new-eval-id ppo_20261013_i3/checkpoints/final
+bash docker/run.sh evaluate rm27-contact-rl:separated-cpu artifacts/contact_rl/docker new-eval-id /path/to/old/checkpoints/final
 ```
 
-原生入口为`env -u PYTHONPATH .venv/bin/python -m rm27_contact_rl train --output <new-run-dir>`（可选`--config`）；评价为`evaluate --checkpoint <checkpoint-dir> --output <new-eval-dir>`。Docker的train／evaluate复用同一入口与`/opt/venv`，结果及checkpoint在独立`/data`挂载；evaluate只接受结果根以内的现存checkpoint目录，避免宿主个人绝对路径。运行标识必须新建；训练不附带额外baseline或全量pytest。
+原生入口为`env -u PYTHONPATH .venv/bin/python -m rm27_contact_rl train --output <new-run-dir>`（可选`--config`）；评价为`evaluate --checkpoint <checkpoint-dir> --output <new-eval-dir>`。Docker的train／evaluate复用同一入口与`/opt/venv`，结果及checkpoint在独立`/data`挂载；evaluate接受现存checkpoint目录，在独立只读`/checkpoint`挂载；不得与可写结果目录重叠。运行标识必须新建；训练不附带额外baseline或全量pytest。
 
 ## 8. 证据和完成边界
 
 工程检查、150 g特权CTBR基线及策略学习证据分开。基线失败保存必要摘要／轨迹，不放宽阈值或反复搜初态；新增环境具体错误只局部处理，不能扩成控制优化。Docker定义、构建及运行状态分别记录于活动计划。I3分开报告环境接入、PPO更新／续训、完整流程前后行为和原评分器的名义任务成功；参数改变、reward上升或单次成功各自不证明可靠性、能力提升或有效学习。稳定学习与泛化本轮未验证；GPU、服务器和硬件仍为NOT_RUN。预算耗尽或策略失败不自动追加训练／seed／调参，完成后停止。
 
 实际命令、代码状态、依赖版本、PASS／FAIL／NOT_RUN／BLOCKED与必要负结果只更新用户现有活动计划。不另建状态、handoff或清理报告。保留正式数据和唯一失败证据，清理本任务无用临时产物；不按年龄清空其他研究成果。
+
+## 9. 分离后的来源与兼容
+
+Docker白名单包含两个包、六份配置和同一锁；不访问父仓库、不初始化submodule。
+从发布分支的干净独立clone构建。构建记录包含每个输入文件哈希、Git SHA/dirty；
+运行provenance分别记录RL与实际导入Physics模块内容、Physics发行元数据、锁、
+配置和镜像ID。没有Git时身份为UNKNOWN而不是虚构干净提交。
+
+加载旧checkpoint按逻辑配置项比对内容哈希，不依赖旧绝对路径；继续校验模型、
+优化器、归一化、计数与确定性探针。旧checkpoint不重写。评价统计冻结且输出
+使用新标识。配置JSON保持原文，profile中的历史来源说明不是所需外部资产。
+
+S1/S2保留全部旧工作区、历史分支、镜像及checkpoint。回退使用这些已有入口；
+新分支修正通过普通提交或revert。原RM27适配、默认分支切换另行批准。

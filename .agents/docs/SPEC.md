@@ -6,7 +6,7 @@
 
 本文只约束 Contact RL 及其获准触及的共享代码。工程约定来源为用户提供、由原名称改名后的 `engineering.md`；来源稿可以保留在 RMRL，项目已采用规则完整维护在本文 §2，日常使用无需访问仓库外目录。根 `AGENTS.md` 是阅读入口；[DESIGN.md](DESIGN.md) 维护实现设计。RMRL SPEC／DESIGN 保留输入身份，正式落地后不再持续同步两套权威文件。
 
-现有 `docs/INTEGRATION.md` 继续负责整个 RM27 的集成、坐标与使命接口，`docs/REAL_HARDWARE.md` 和 `configs/real_hardware.json` 继续负责硬件事实。本文的频率、动作边界、机体估计及局部验收不成为整个 RM27 的要求。
+原 RM27 仓库的集成和硬件文档继续承担原职责，不迁入独立 RL 仓库。本文的频率、动作边界、机体估计及局部验收不成为整个 RM27 的要求。
 
 | 来源／状态 | 本研究采用的内容 | 证据边界 |
 |---|---|---|
@@ -24,7 +24,7 @@
 
 首版是低维仿真真实状态输入。它不证明视觉、机载闭环、真机安全、机械存活或裁判有效触发。未知执行器状态及 baseline 内部状态也使 actor 输入仍可能部分可观测。
 
-保留原 direct-motor baseline 的回归职责，以及特权 CTBR baseline 的研究对照职责，不为引入 RL 删除二者。I1 首版不新增 PPO、历史网络、随机化实验矩阵、MuJoCo Warp、SITL、视觉／VIO 实现或硬件操作。I3 的有限 PPO 授权见 §7，不改变 I1 的环境契约。
+原 direct-motor runner 在原 RM27 分支保留回归职责；本仓库保留特权 CTBR baseline，不复制旧 runner。I1 首版不新增 PPO、历史网络、随机化实验矩阵、MuJoCo Warp、SITL、视觉／VIO 实现或硬件操作。I3 的有限 PPO 授权见 §7，不改变 I1 的环境契约。
 
 ## 2. 工程规范：来自 engineering.md
 
@@ -108,7 +108,7 @@
 
 ### 任务评分、reward 与终止
 
-旧 runner 与环境共用一份 evaluator，保持首次同时碰撞分类、短触锁存、脱离、危险二次接触、hold 中断清零及原失败类别。hold 按实际时间戳连续成立；`recovery_time_s` 保留稳定段起点相对首次接触的含义，不改为 hold 完成时间。
+I1原runner与环境曾共用评分实现；分离后本仓库使用Physics中的唯一evaluator，原消费者接入待S3。保持首次同时碰撞分类、短触锁存、脱离、危险二次接触、hold 中断清零及原失败类别。hold 按实际时间戳连续成立；`recovery_time_s` 保留稳定段起点相对首次接触的含义，不改为 hold 完成时间。
 
 保持原任务阈值和 2 s 内进入稳定再连续保持 1 s 的含义。6 s 为有限时域任务期限；成功、不可逆违规和任务超期使用 terminated，首版正常返回 truncated=False。中途快照不做最终 TARGET_MISS 结算。
 
@@ -161,3 +161,27 @@ I2 已获批准：复用同一依赖来源，容器环境在 `/opt/venv`，镜�
 | 稳定学习、可靠性与泛化 | 本轮未验证；参数变化、reward上升或单次成功各自不能证明这些结论 |
 
 预算耗尽、不收敛或任务失败时保留必要结果并停止，不追加seed、搜索初态、改变成功条件或自动调参。工程接口／数值错误只做本批最小充分修正，并重查受影响行为；出现非有限loss／参数／梯度、来源不一致或不能持久化时停止并记录。I3完成后停止，不自动进入GPU、课程、服务器或后续研究。
+
+## 8. Repository Separation（S1＋S2 ADOPTED；S3 PENDING）
+
+来源 `578b09794407edd74e72327d5a89c5811c40e2a7`；独立 rm27_RL checkout
+维护唯一活动 Physics package 与 RL 源码，保留祖先历史。移除的全系统目录仍在
+旧分支和原工作区保存。工程 E1—E8 及研究接口保持不变。
+
+Physics 发行名 rm27-contact-physics，导入名 rm27_contact_physics，版本0.1.0；
+只依赖MuJoCo、NumPy、SciPy。模型、标记几何和profile通过显式配置输入。
+同checkout安装本地Physics；未来原RM27通过完整Git SHA＋子目录或wheel
+SHA-256固定来源，发行版本号不能替代内容固定。第三方只维护原一份哈希锁。
+RL依赖Physics；Physics不依赖RL、Gymnasium、PPO、Torch或父工作区路径。
+
+S2验收：实际Physics wheel在无RL/训练栈环境中安装及最小接口；独立checkout
+安装、八个环境检查和三个PPO接入检查；已提交来源独立Docker构建；容器一次
+原CTBR基线和一次旧I3 final冻结统计评价。六份配置原文不变；状态、事件、终止
+及物理区间计数一致；连续数值rtol=1e-9/atol=1e-10、事件时间atol=1e-9 s。
+旧checkpoint文件、模型/优化器/统计/计数和确定性探针保持一致，不追加训练。
+任务失败可构成兼容检查通过，不改阈值或容差迁就迁移。
+
+正常提交并发布非默认refactor/repository-separation；保留research/contact-rl。
+不自动改变默认分支。S3需另行核对原仓库集成目标、消费者及缺失前置成果，
+不能将来源研究提交当作原main可直接合入补丁。在S3完成前原系统仍使用旧实现，
+不宣称两边已统一消费。历史结果只读，实际迁移结果更新原活动计划。

@@ -1,1 +1,0 @@
-"""ArduPilot/SITL integration boundary."""
