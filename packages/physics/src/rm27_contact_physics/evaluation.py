@@ -8,11 +8,10 @@ from __future__ import annotations
 
 import copy
 
-import mujoco
 import numpy as np
 
 from rm27_contact_physics.contact_metrics import armor_contacts, point_approach_speed
-from .model import target_frame, truth_estimate, unit
+from .model import advance_physics_interval, target_frame, truth_estimate, unit
 
 
 class ContactEvaluator:
@@ -191,10 +190,9 @@ class ContactEvaluator:
                 or not np.isclose(before.timestamp, self.snapshot_time, rtol=0, atol=1e-12)
                 or not np.isclose(before.timestamp, self.interval_end_time, rtol=0, atol=1e-12)):
             raise ValueError("Pre-contact state must be the current interval start")
-        mujoco.mj_step(model, data)
-        self.integrate_interval(model, data, before.timestamp, saturated)
-        mujoco.mj_forward(model, data)
-        state = truth_estimate(model, data)
+        state = advance_physics_interval(model, data, before,
+                                         consume_interval=self.integrate_interval,
+                                         saturated=saturated)
         self.snapshot(model, data, state, before)
         return state
 

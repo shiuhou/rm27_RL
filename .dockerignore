@@ -9,6 +9,10 @@ configs/*
 configs/contact_rl/*
 !configs/contact_rl/minimal.json
 !configs/contact_rl/ppo_minimal.json
+!configs/agile_flight/
+configs/agile_flight/*
+!configs/agile_flight/terminal_arrival.json
+!configs/agile_flight/ppo_terminal_arrival.json
 !configs/drone.json
 !configs/dynamics_150g.json
 !docker/
@@ -25,6 +29,7 @@ packages/physics/src/*
 !packages/physics/src/rm27_contact_physics/
 packages/physics/src/rm27_contact_physics/*
 !packages/physics/src/rm27_contact_physics/__init__.py
+!packages/physics/src/rm27_contact_physics/arrival.py
 !packages/physics/src/rm27_contact_physics/calibration.py
 !packages/physics/src/rm27_contact_physics/contact_metrics.py
 !packages/physics/src/rm27_contact_physics/control.py
@@ -40,6 +45,7 @@ src/*
 src/rm27_contact_rl/*
 !src/rm27_contact_rl/__init__.py
 !src/rm27_contact_rl/__main__.py
+!src/rm27_contact_rl/arrival_env.py
 !src/rm27_contact_rl/baselines.py
 !src/rm27_contact_rl/env.py
 !src/rm27_contact_rl/paths.py

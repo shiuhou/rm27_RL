@@ -143,3 +143,113 @@ def test_normalization_restore_and_evaluation_are_frozen(tmp_path):
             restored.close()
         elif evaluation is not None:
             evaluation.close()
+
+
+def test_task_configuration_preserves_i3_and_bounds_i4(tmp_path):
+    old = load_train_config()
+    arrival_path = ROOT / "configs/agile_flight/ppo_terminal_arrival.json"
+    config = load_train_config(arrival_path)
+    assert old["budget"] == {"transitions": 65536, "learning_wall_s": 1800}
+    assert config["budget"] == {"transitions": 524288, "learning_wall_s": 900}
+    assert config["ppo"] == old["ppo"]
+    invalid = [
+        {"observation_schema": "contact_world_v1"},
+        {"protocol": "i3_engineering"},
+        {"n_envs": 5},
+        {"seed": -1},
+        {"ppo": dict(config["ppo"], batch_size=255)},
+        {"budget": {"transitions": 526336, "learning_wall_s": 900}},
+        {"budget": {"transitions": 524288, "learning_wall_s": 901}},
+        {"budget": {"transitions": 524287, "learning_wall_s": 900}},
+    ]
+    path = tmp_path / "training.json"
+    for difference in invalid:
+        path.write_text(json.dumps(dict(config, **difference)))
+        with pytest.raises(ValueError):
+            load_train_config(path)
+
+
+def test_arrival_vector_autoreset_keeps_task_result_and_frozen_evaluation(tmp_path):
+    task = json.loads((ROOT / "configs/agile_flight/terminal_arrival.json").read_text())
+    task["horizon_s"] = .003
+    env_path = tmp_path / "arrival.json"
+    env_path.write_text(json.dumps(task))
+    config = deepcopy(load_train_config(ROOT / "configs/agile_flight/ppo_terminal_arrival.json"))
+    config["env_config"] = str(env_path)
+    vec = make_vec_env(config, training=False)
+    try:
+        before = rms_state(vec)
+        observations = vec.reset()
+        assert observations.shape == (4, 26)
+        _, rewards, dones, infos = vec.step(np.tile([-1 / 3, 0, 0, 0], (4, 1)))
+        assert dones.all() and np.isfinite(rewards).all()
+        for info in infos:
+            assert info["task_id"] == "agile_terminal_arrival_v1"
+            assert info["observation_schema"] == "arrival_world_v1"
+            assert info["result"]["failure_modes"] == ["ARRIVAL_TIMEOUT"]
+            assert info["result"]["episode_elapsed_s"] == pytest.approx(.003)
+            assert info["physics_substeps"] == 3 and not info["TimeLimit.truncated"]
+            assert sum(info["result"]["reward_component_totals"].values()) == pytest.approx(info["episode"]["r"], abs=1e-6)
+            assert "terminal_observation" in info
+            assert info["result"]["task_id"] == "agile_terminal_arrival_v1"
+        for actual, expected in zip(rms_state(vec), before):
+            np.testing.assert_array_equal(actual, expected)
+    finally:
+        vec.close()
+
+
+def test_checkpoint_task_schema_and_legacy_contact_guard_without_optimization(tmp_path):
+    import torch
+    from stable_baselines3 import PPO
+    from rm27_contact_rl.ppo import _load_checkpoint, _model_state, _save_checkpoint
+    from rm27_contact_rl.provenance import provenance
+
+    config = load_train_config(ROOT / "configs/agile_flight/ppo_terminal_arrival.json")
+    torch.set_num_threads(1)
+    vec = make_vec_env(config, n_envs=1)
+    restored = None
+    try:
+        model = PPO("MlpPolicy", vec, seed=0, device="cpu", **config["ppo"])
+        vec.reset()
+        source = provenance(vec.venv.envs[0].unwrapped, algorithm="PPO_CPU", seed=0)
+        checkpoint = tmp_path / "arrival_checkpoint"
+        meta = _save_checkpoint(checkpoint, model, vec, config, source, 0)
+        recovered, restored, recovered_meta = _load_checkpoint(
+            checkpoint, training=False, n_envs=1, expected_task="agile_terminal_arrival_v1")
+        assert recovered_meta["task"] == {
+            "task_id": "agile_terminal_arrival_v1", "observation_schema": "arrival_world_v1"}
+        assert _model_state(recovered, restored) == meta["state"]
+        assert not restored.training and not restored.norm_reward
+        with pytest.raises(ValueError, match="different task"):
+            _load_checkpoint(checkpoint, training=False, expected_task="contact_recovery_v1")
+        meta["task"]["observation_schema"] = "contact_world_v1"
+        (checkpoint / "checkpoint.json").write_text(json.dumps(meta))
+        with pytest.raises(ValueError, match="task/schema"):
+            _load_checkpoint(checkpoint, training=False)
+        del meta["task"]
+        (checkpoint / "checkpoint.json").write_text(json.dumps(meta))
+        with pytest.raises(ValueError, match="Contact-only"):
+            _load_checkpoint(checkpoint, training=False)
+    finally:
+        vec.close()
+        if restored is not None:
+            restored.close()
+
+    # An actual checkpoint with omitted legacy metadata still loads as Contact.
+    config = load_train_config()
+    vec = make_vec_env(config, n_envs=1)
+    restored = None
+    try:
+        model = PPO("MlpPolicy", vec, seed=0, device="cpu", **config["ppo"])
+        vec.reset()
+        source = provenance(vec.venv.envs[0].unwrapped, algorithm="PPO_CPU", seed=0)
+        checkpoint = tmp_path / "legacy_contact"
+        meta = _save_checkpoint(checkpoint, model, vec, config, source, 0)
+        del meta["task"]
+        (checkpoint / "checkpoint.json").write_text(json.dumps(meta))
+        recovered, restored, _ = _load_checkpoint(checkpoint, training=False, n_envs=1)
+        assert _model_state(recovered, restored) == meta["state"]
+    finally:
+        vec.close()
+        if restored is not None:
+            restored.close()

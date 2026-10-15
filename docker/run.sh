@@ -9,12 +9,15 @@ usage() {
 Usage:
   run.sh build [IMAGE]                         # default: rm27-contact-rl:separated-cpu
   run.sh run IMAGE RESULTS_ROOT RUN_ID [--source] [--check]
-  run.sh train IMAGE RESULTS_ROOT RUN_ID [--source]
+  run.sh train IMAGE RESULTS_ROOT RUN_ID [--source] [--config CONFIG]
+  run.sh arrival-baseline IMAGE RESULTS_ROOT RUN_ID [--source] [--config CONFIG]
   run.sh evaluate IMAGE RESULTS_ROOT RUN_ID CHECKPOINT_DIRECTORY [--source]
 --source: read-only mount of this checkout at /workspace; uses image dependencies.
 --check: import/config/reset/step smoke check, then the same single CLI baseline.
 RESULTS_ROOT is a dedicated host results directory; RUN_ID must be new.
-train uses the packaged PPO configuration and its fixed training budget.
+train defaults to the packaged Contact PPO configuration; --config selects another
+packaged configuration using its /workspace-relative path or absolute container path.
+arrival-baseline defaults to the packaged Agile Terminal Arrival configuration.
 evaluate mounts CHECKPOINT_DIRECTORY separately and read-only at /checkpoint.
 USAGE
     exit 1
@@ -50,7 +53,7 @@ case "$operation" in
             --build-arg "SOURCE_GIT_JSON=$source_identity" \
             --file "$script_dir/Dockerfile" --tag "$image" "$repo_root"
         ;;
-    run|train|evaluate)
+    run|train|evaluate|arrival-baseline)
         [[ $# -ge 3 ]] || usage
         image=$1
         results_root=$2
@@ -66,10 +69,20 @@ case "$operation" in
         fi
         source_mount=false
         check=false
-        for option in "$@"; do
-            case "$option" in
-                --source) source_mount=true ;;
-                --check) [[ "$operation" == run ]] || usage; check=true ;;
+        config_container=''
+        while [[ $# -gt 0 ]]; do
+            case "$1" in
+                --source) source_mount=true; shift ;;
+                --check) [[ "$operation" == run ]] || usage; check=true; shift ;;
+                --config)
+                    [[ "$operation" == train || "$operation" == arrival-baseline ]] || usage
+                    [[ $# -ge 2 && -z "$config_container" && -n "$2" ]] || usage
+                    case "$2" in
+                        /*) config_container=$2 ;;
+                        *) config_container="/workspace/$2" ;;
+                    esac
+                    shift 2
+                    ;;
                 *) usage ;;
             esac
         done
@@ -115,8 +128,12 @@ case "$operation" in
         case "$operation" in
             run) command=(baseline --output "/data/$run_id") ;;
             train) command=(train --output "/data/$run_id") ;;
+            arrival-baseline) command=(arrival-baseline --output "/data/$run_id") ;;
             evaluate) command=(evaluate --checkpoint "$checkpoint_container" --output "/data/$run_id") ;;
         esac
+        if [[ -n "$config_container" ]]; then
+            command+=(--config "$config_container")
+        fi
         if "$check"; then
             check_command=$(cat <<'CHECK'
 set -eu

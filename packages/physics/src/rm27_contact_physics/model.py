@@ -209,3 +209,16 @@ def truth_estimate(model, data):
     return VehicleEstimate(data.qpos[:3].copy(), data.qvel[:3].copy(),
                            data.xmat[model.body("uav").id].reshape(3, 3).copy(),
                            data.qvel[3:6].copy(), float(data.time))
+
+
+def advance_physics_interval(model, data, before, *, consume_interval, saturated=False):
+    """Advance once, consume the interval solve, then refresh the endpoint.
+
+    ``implicitfast`` leaves the completed interval's contact solve in ``data``.
+    The task-owned consumer must read it before ``mj_forward`` replaces it with
+    an endpoint snapshot. This function has no task, controller or reward logic.
+    """
+    mujoco.mj_step(model, data)
+    consume_interval(model, data, before.timestamp, saturated)
+    mujoco.mj_forward(model, data)
+    return truth_estimate(model, data)

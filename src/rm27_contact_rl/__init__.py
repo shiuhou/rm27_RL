@@ -1,6 +1,7 @@
-"""Minimal native-MuJoCo contact-and-recovery research interface."""
+"""Native-MuJoCo contact recovery and state-based agile flight interfaces."""
 
 from .env import ContactRecoveryEnv
 from .baselines import CTBRBaseline
+from .arrival_env import AgileTerminalArrivalEnv
 
-__all__ = ["ContactRecoveryEnv", "CTBRBaseline"]
+__all__ = ["ContactRecoveryEnv", "CTBRBaseline", "AgileTerminalArrivalEnv"]

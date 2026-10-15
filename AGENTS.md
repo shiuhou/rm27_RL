@@ -1,25 +1,58 @@
-# RM27 Contact RL repository instructions
+# RM27 Agile Flight RL repository instructions
 
-Read `.agents/docs/SPEC.md` for adopted engineering conventions and research
-contracts, and `.agents/docs/DESIGN.md` for implementation and supported commands.
-These documents are self-contained; external RMRL drafts are source material only.
+Read `.agents/docs/SPEC.md` for adopted engineering conventions, current research
+scope and acceptance; read `.agents/docs/DESIGN.md` for implementation and proposals.
+The repository documents are self-contained. `engineering.md` is the user-named
+source convention, not an additional independently maintained specification.
 
-- This repository owns Contact RL and `packages/physics`, the canonical Physics
-  package. Physics must not import RL, Gymnasium, Torch or the parent RM27 tree.
-- Keep reviewed values in `configs/`, reusable checks in `tests/`, and generated
-  results/checkpoints in ignored `artifacts/`. Do not create empty scaffolding.
-- Use a checkout-specific `.venv` and the single third-party hash lock. Never
-  modify shared environments or other workspaces.
-- Preserve dynamics, contact scoring, timing, action and checkpoint semantics
-  unless their change is explicitly in scope. Engineering estimates are not
-  hardware calibration. Report engineering checks and task success separately.
-- Read current Git state and relevant callers before changing code. Complete
-  authorized implementation and proportionate checks; do not expand to training,
-  hardware or servers without the corresponding task authorization.
-- Preserve existing evidence. New runs need new identifiers; do not infer PASS
-  from a directory name. Report actual PASS/FAIL/NOT_RUN/BLOCKED and limitations.
-- Maintain only the user's existing contact_rl_01 activity plan at its existing
-  external path. Do not copy it into this repository or create parallel reports.
-- S1/S2 separation is authorized; S3 original-RM27 consumer adaptation, default
-  branch changes, merge, force-push and new PPO training are not part of it.
-- Explicit user instructions take precedence over local workflow preferences.
+`AGENTS.md` remains the root work entry. `.agents/docs/SPEC.md` and
+`.agents/docs/DESIGN.md` are the only maintained specification and design;
+do not create parallel root-level copies. `I4_ASTRA_PLAN_PROMPT.md` is historical
+reference input, not an additional authority or an instruction to replace
+adopted decisions. Preserve user changes when merging inputs.
+
+Preserve later explicit user decisions over earlier draft suggestions.
+Distinguish user-confirmed goals, proposed parameters, adopted implementations
+and observed results; a plan's restatement alone is not evidence of confirmation.
+
+- This repository owns Agile Flight RL and the canonical `packages/physics` package.
+  Physics must not import RL, Gymnasium, Torch or the parent RM27 working tree.
+- The research goal is autonomous policy discovery for fixed-target agile flight,
+  then contact, separation and recovery. Teacher/Student imitation is not a
+  required architecture, reward, warm start or prerequisite.
+- I0—I3 and separation S1/S2 are existing baselines. I4 now targets no-contact
+  agile terminal arrival, not a rewrite of historical contact-recovery success.
+  Preserve old task defaults, scoring, configurations and checkpoint compatibility.
+- Do not rebuild the project under rm27_drones, rename packages just to match the
+  research title, or recreate repositories, environments and audit frameworks.
+- Keep configuration in `configs/`, reusable checks in `tests/`, and actual
+  generated results/checkpoints in ignored `artifacts/`. No empty scaffolding.
+- Use this checkout's isolated environment and one third-party hash lock.
+  Do not modify shared venvs, unrelated workspaces or the original RM27 consumers.
+- Confirm actual code, callers, state and source before changes. I4 implementation
+  may make minimal necessary decoupling only when separately authorized; never
+  loosen historical scoring or disable safety geometry to obtain a PASS.
+- Keep USER-CONFIRMED research direction, PROPOSED design, ADOPTED implementation
+  and OBSERVED results distinct. Engineering estimates are not hardware calibration.
+- Maintain one current activity plan per task. I4 uses
+  `.agents/plans/plan_agile_terminal_arrival_01.md`; update that file across
+  iterations and debugging, without creating 02/03 plans or parallel reports.
+  The former external contact_rl_01 plan is historical and no longer active.
+  The plan is ignored by Git and is not distributed with the repository.
+  Formal requirements and designs remain self-contained in the tracked docs;
+  reading the local plan is not required to understand them.
+- The user has authorized I4 implementation using the current local plan:
+  terminal-arrival integration, focused checks, one bounded CPU PPO run and its
+  fixed evaluation set. That batch is completed; preserve its results, Contact
+  defaults and existing checkpoints. Do not repeat or extend its training budget
+  without a new user instruction. No Git publication, S3, server or hardware
+  operations are authorized by this batch.
+- Authorization remains valid for the explicitly approved scope. Approval of
+  I0—I3 or S1/S2 does not authorize I4 implementation, S3 or default-branch changes.
+  I4 authorization comes from the user's explicit implementation request, not
+  from prior document reviews or the plan file itself.
+- Preserve evidence and use new run identifiers. Report PASS/FAIL/NOT_RUN/BLOCKED,
+  task success and research uncertainty separately. Proportionate checks, not
+  repeated full regression, are the default for approved implementation batches.
+- Explicit user instructions and applicable higher-priority instructions govern
+  scope; neither a draft nor a completed plan grants implementation authority.
