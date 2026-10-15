@@ -1,10 +1,15 @@
-# RM27 Contact RL
+# RM27 Agile Flight RL
 
 Independent native MuJoCo contact-and-recovery research: a 150 g engineering
 profile, CTBR control, shared contact evaluator and a Gymnasium environment.
 The CPU PPO workflow supports checkpoint save/reload and independent evaluation.
 A privileged CTBR baseline previously recovered successfully; the I3 65,536-step
 policy returned TARGET_MISS. This is not evidence of reliable learned recovery.
+
+I4 adds a separate state-based, no-contact terminal-arrival task. Its actor
+autonomously commands the same CTBR chain; arrival is scored independently of
+contact recovery. Original Contact defaults and historical checkpoints remain
+available. New task/schema metadata prevents loading a Contact policy as Arrival.
 
 ## Install (Linux amd64, Python 3.12)
 
@@ -22,7 +27,7 @@ third-party dependencies; the two first-party packages come from this checkout.
 Physics can also be built and installed as a wheel without RL, Gymnasium or Torch.
 Pin a full checkout SHA or wheel SHA-256 when consuming it elsewhere; version
 0.1.0 alone does not identify source. RL uses editable installation with these
-six configuration files; a standalone RL wheel is not the supported distribution.
+configuration files; a standalone RL wheel is not the supported distribution.
 
 ## Docker and results
 
@@ -32,6 +37,9 @@ bash docker/run.sh run rm27-contact-rl:separated-cpu /path/to/results new-baseli
 bash docker/run.sh evaluate rm27-contact-rl:separated-cpu /path/to/results new-evaluation /path/to/checkpoints/final
 # Existing bounded CPU training entry (not part of separation verification):
 bash docker/run.sh train rm27-contact-rl:separated-cpu /path/to/results new-training
+# I4: one bounded CPU run, initial/final policy and traditional comparison,
+# nine fixed initial states each; 524,288 transitions or 15 learning minutes.
+bash docker/run.sh train rm27-contact-rl:separated-cpu /path/to/results new-arrival-training --config configs/agile_flight/ppo_terminal_arrival.json
 ```
 
 One headless CPU image contains both packages and configurations. Dependencies
@@ -46,6 +54,11 @@ implementation; `configs`, `tests` and `docker` contain their respective inputs.
 [SPEC](.agents/docs/SPEC.md) is the adopted engineering and research contract;
 [DESIGN](.agents/docs/DESIGN.md) describes interfaces, setup and evidence limits.
 Generated environments, wheels and results are ignored.
+
+The local I4 activity plan is `.agents/plans/plan_agile_terminal_arrival_01.md`.
+It is ignored and not distributed through Git; SPEC and DESIGN fully describe
+the task contract without requiring this local file. A newer source checkout
+must be built into the image before using its new task configuration.
 
 History and `research/contact-rl` remain intact. Original RM27 consumer adaptation
 (S3) is pending; the old system still uses its existing implementation. The review

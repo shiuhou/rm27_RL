@@ -31,6 +31,8 @@ def provenance(env, *, algorithm, seed=0, extra_sources=None):
     source_hashes = {name: source_hash(path) for name, path in sources.items()}
     modules = [f"rm27_contact_physics.{name}" for name in
                ("drone", "calibration", "contact_metrics", "model", "control", "teacher_interface", "evaluation")]
+    if getattr(env, "task_id", None) == "agile_terminal_arrival_v1":
+        modules.append("rm27_contact_physics.arrival")
     modules += ["rm27_contact_physics"]
     physics_hashes = [dict(module=name, **source_hash(importlib.import_module(name).__file__))
                       for name in modules]
@@ -38,6 +40,8 @@ def provenance(env, *, algorithm, seed=0, extra_sources=None):
     code_hashes = [source_hash(rl_root / f"{name}.py") for name in
                    ("__init__", "env", "rm27_adapter", "baselines", "__main__", "provenance", "ppo", "paths")]
     code_hashes += physics_hashes
+    if getattr(env, "task_id", None) == "agile_terminal_arrival_v1":
+        code_hashes.append(source_hash(rl_root / "arrival_env.py"))
     physics_dist = metadata.distribution("rm27-contact-physics")
     direct_url = physics_dist.read_text("direct_url.json")
     def git(*args):
@@ -71,6 +75,9 @@ def provenance(env, *, algorithm, seed=0, extra_sources=None):
                 algorithm=algorithm)
     result["physics_package"] = dict(version=physics_dist.version,
         direct_url=json.loads(direct_url) if direct_url else None, code_hashes=physics_hashes)
+    if getattr(env, "task_id", None) == "agile_terminal_arrival_v1":
+        result.update(task_id=env.task_id, observation_schema=env.observation_schema,
+                      randomization="DECLARED_INITIAL_POSITION_ONLY_FIXED_DYNAMICS_AND_TARGET")
     if algorithm == "PPO_CPU":
         versions.update({name: metadata.version(name) for name in ("torch", "stable-baselines3")})
     if build_source is not None:

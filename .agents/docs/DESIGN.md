@@ -1,6 +1,8 @@
-# RM27 Contact RL — DESIGN
+# RM27 Agile Flight RL — DESIGN
 
-日期：2026-10-13。状态：**I0／I1／I2／I3 ADOPTED**，依据用户对各批次的明确实施请求；I3为有界CPU PPO工程闭环，不代表学习成功。后续扩展研究／部署仍待批准。目标、工程规则与验收仅维护于 [SPEC.md](SPEC.md)，具体运行结果维护于唯一活动计划。
+日期：2026-10-13。状态：**I0／I1／I2／I3 ADOPTED**，依据用户对各批次的明确实施请求；I3为有界CPU PPO工程闭环，不代表学习成功。后续扩展研究／部署仍待批准。目标、工程规则与验收仅维护于 [SPEC.md](SPEC.md)，具体运行结果维护于对应任务的唯一活动计划。
+
+现有 §1—§9 保留 I0—I3 与 S1/S2 的实现及兼容契约。I4为新增独立任务；用户2026-10-13明确批准以新活动计划实施，§10作为首轮 **ADOPTED** 设计。接口采用、工程通过和学习效果分别判断；附件中的阅读声明和性能目标不自动成为运行事实。
 
 ## 1. 来源与组织
 
@@ -160,7 +162,7 @@ bash docker/run.sh evaluate rm27-contact-rl:separated-cpu artifacts/contact_rl/d
 
 工程检查、150 g特权CTBR基线及策略学习证据分开。基线失败保存必要摘要／轨迹，不放宽阈值或反复搜初态；新增环境具体错误只局部处理，不能扩成控制优化。Docker定义、构建及运行状态分别记录于活动计划。I3分开报告环境接入、PPO更新／续训、完整流程前后行为和原评分器的名义任务成功；参数改变、reward上升或单次成功各自不证明可靠性、能力提升或有效学习。稳定学习与泛化本轮未验证；GPU、服务器和硬件仍为NOT_RUN。预算耗尽或策略失败不自动追加训练／seed／调参，完成后停止。
 
-实际命令、代码状态、依赖版本、PASS／FAIL／NOT_RUN／BLOCKED与必要负结果只更新用户现有活动计划。不另建状态、handoff或清理报告。保留正式数据和唯一失败证据，清理本任务无用临时产物；不按年龄清空其他研究成果。
+实际命令、代码状态、依赖版本、PASS／FAIL／NOT_RUN／BLOCKED与必要负结果只更新对应任务的当前活动计划。不另建状态、handoff或清理报告。保留正式数据和唯一失败证据，清理本任务无用临时产物；不按年龄清空其他研究成果。
 
 ## 9. 分离后的来源与兼容
 
@@ -175,3 +177,146 @@ Docker白名单包含两个包、六份配置和同一锁；不访问父仓库�
 
 S1/S2保留全部旧工作区、历史分支、镜像及checkpoint。回退使用这些已有入口；
 新分支修正通过普通提交或revert。原RM27适配、默认分支切换另行批准。
+
+## 10. I4：State-Based Agile Terminal Arrival（I4 ADOPTED）
+
+I4当前活动入口为仓库内 `.agents/plans/plan_agile_terminal_arrival_01.md`。
+该计划是被Git忽略、不随Git分发的本地文件，不是理解正式规范或设计的必需文件。
+它承接旧contact_rl_01 §12的任务范围和状态；任务参数、公式与设计仍以本文及SPEC为权威。
+旧计划只保留历史；转接本身未授予实施权限，后续用户的明确实施请求授权本批范围。
+
+本节保留此前收敛的I4设计及附件核对后的几何与步进决策。研究方向与3 m/s名义目标已由用户确认；其余数值与实验为本批批准的冻结首轮研究设定，不代表实机能力或学习有效性。Python包名、现有Physics、PPO和单一Docker保留；不重新初始化项目，也不将旧接触奖励对照作为本轮任务。
+
+### 10.1 终端几何与速度语义
+
+令 `c=target.center_m`，`n=unit(target.normal)`。当前 `model.py::build_model` 将 target body 原点置于 c，并将厚度 h 的 armor geom 中心置于局部 z=-h/2。因此 **c 是前表面中心**：geom 中心为 `c-(h/2)n`，后表面中心为 `c-hn`；当前 h=0.006 m，armor 占局部 z∈[-0.006,0]。
+
+令 p、v 为质心世界位置和速度，R 为 body→world，ω 为 body 角速度，`r_b=[0,0,-0.042] m`，bumper 半径 `ρ=0.009 m`。位置单位 m，速度 m/s，角速度 rad/s：
+
+```text
+bumper 中心：                b = p + R r_b
+bumper 中心速度：            v_b = v + (Rω) × (R r_b)
+朝板几何表面点：             q = b - ρ n
+到装甲前表面的法向间隙：     gap = nᵀ(q-c)
+该位置瞬时材料速度：         v_material_at_q = v + (Rω) × (R r_b - ρ n)
+```
+
+q 是每个时刻选出的朝板几何点，不是固定在机体上的同一材料点。当前固定 n 下，几何轨迹导数 `dq/dt=v_b`，它不等于 `v_material_at_q`。无碰撞时 q 不命名为已发生的接触点；I4 公式不替换旧 ContactEvaluator 的真实碰撞点运动学。
+
+候选 `gap=0.20 m`，因此 `b*=c+(0.20+ρ)n`、`p*=b*−R*r_b`，不再次增加 h/2。沿用 `R*=frame(n)` 的完整姿态目标，当前目标面内转角为默认 0；不降为仅推力轴对齐。名义 `c=[0,0,1.0758] m`、`n≈[0.4617148,0,0.8870284]`，对应 `p*≈[0.1158904,0,1.2984441] m`、`v*=−3n≈[−1.3851444,0,−2.6610853] m/s`、`ω*=0`。
+
+记录字段区分 `bumper_center`、`facing_surface_point`、`bumper_center_velocity` 和 `material_velocity_at_facing_point`。gap 只描述 bumper 对前表面的几何关系，不替代完整机体对 armor/rim/ground 的碰撞检查，不证明后续碰撞可恢复。
+
+### 10.2 初态、终端集合与安全
+
+首轮只随机化初始位置。令 t₁、t₂ 为目标坐标系切向轴，`p₀=p*+Ln+η₁t₁+η₂t₂`，`L∼U[1.15,1.25] m`，`η₁,η₂∼U[−0.025,0.025] m`。名义 L=1.20、η=0，对应 `p₀≈[0.6699482,0,2.3628783] m`。初始 `v=ω=0`、`R=I`；四个 `data.act` 和 `data.ctrl` 均为 `mg/4=0.367875 N`，上一物理 CTBR 为 `[1.4715,0,0,0]`，是悬停合成初始化。各环境随机源和动态状态独立，不改变动力学或目标几何。
+
+同一实际 1 ms 物理终点全部满足时记录最早 `arrival_time_s`：
+
+| 条件 | 候选范围 |
+|---|---|
+| 朝板球面点法向间隙 | `nᵀ(q-c)=0.20±0.02 m` |
+| 该点相对前表面中心的切向偏差 | `||(I−nnᵀ)(q−c)||≤0.015 m` |
+| 质心速度及该点瞬时材料速度 | 各自向板法向速度 `3±0.3 m/s`，切向速度范数≤0.3 m/s |
+| 完整姿态 | `acos(clip((trace(R*ᵀR)−1)/2,−1,1))≤10°`，包括偏航 |
+| body 角速度 | `||ω||≤1 rad/s` |
+| 安全 | 本回合无已锁存违规或有效外部机体碰撞 |
+
+不要求非零速度终端状态在固定位置保持；不跨时刻拼接位置、速度、姿态最优值。失败优先于同子步成功，成功优先于无违规的任务到期。任务期限 H=3 s，未到达使用有限时域 `terminated`；正常 `truncated=False`。外部学习墙钟停止仅记录训练未完成，不伪造物理任务成功、失败或 TimeLimit。
+
+候选全程安全边界：质心 box `[−0.6,−0.5,0.5]` 至 `[1.4,0.5,3.0] m`；任一有效外部碰撞、非有限状态、MuJoCo warning、速度>6 m/s、相对竖直倾角>80°、body rate 范数>20 rad/s、连续 proxy 饱和>0.4 s 均失败。未成功而 gap<0.12 m 为 `TERMINAL_OVERSHOOT`。实体板、rim、地面和完整机体碰撞保留，虚拟终端不新增碰撞体；这些只属于 I4，不修改原恢复体积或接触阈值。
+
+已做的解析判断仅说明终端倾角约 27.50°，竖直力平衡量 `mg/n_z≈1.659 N` 低于总推力上限；该倾斜姿态同时产生水平加速度，并非静态悬停。此前解析轨迹检查不包含 MuJoCo、rate proxy 或电机动态，不能作为完整执行链可达性通过。
+
+### 10.3 独立环境与共享物理区间推进
+
+首选新增轻量 `src/rm27_contact_rl/arrival_env.py::AgileTerminalArrivalEnv`；复用 RM27Plant、动作包装和现有配置入口。新增 `packages/physics/src/rm27_contact_physics/arrival.py::ArrivalEvaluator` 拥有独立到达评分；训练奖励仍归 RL，不复制 Contact 评分。原 ContactRecoveryEnv 的默认行为保留，不在其结果结算后补改 done 或 result。
+
+分离基线的唯一生产步进原位于`evaluation.py::ContactEvaluator.advance`。I4已在现有
+`model.py`的`truth_estimate`附近局部提取共享接口，Contact和Arrival均实际调用：
+
+```python
+advance_physics_interval(
+    model, data, before, *, consume_interval, saturated=False
+) -> VehicleEstimate
+```
+
+函数只执行：一次 `mj_step(model,data)` → 一次 `consume_interval(model,data,before.timestamp,saturated)` → `mj_forward(model,data)` → `truth_estimate(model,data)` 返回终点状态。区间消费者必须在 forward 覆盖求解数据前读取；实际 `dt=data.time−before.timestamp`。函数不计算任务成功、不发奖励、不调控制器，不建立 TaskManager、注册系统或新调度框架。
+
+`ContactEvaluator.advance` 保留原签名、终止/时间校验与返回行为，传入现有 `integrate_interval` 后仍调用现有 `snapshot(state,before)`。区间积分、快照峰值、同时首触分类、短触、不可逆失败、hold 中断清零、`recovery_time_s`、公开字段和 `completed_interval_implicitfast_v1` 均保持。
+
+`ArrivalEvaluator.advance` 调用同一函数；区间消费者只结算真实时间、饱和持续时间和必要安全数据，终点消费者计算新任务误差及到达条件。无接触要求检查求解阶段和刷新后的终点有效外部碰撞，任一违规锁存；有效接触沿用 `dist<=0 and efc_address>=0`，不能因终点已分离而清除违规。区间来源和终点来源分开标记：求解阶段只定位到本区间，不将更新后的 data.time 当作精确步内碰撞时刻。
+
+每个环境只使用所属任务的一个 evaluator，不让两个 evaluator 各自推进同一 MjData。`ContactRecoveryEnv.step` 继续调用原 ContactEvaluator.advance；新 Arrival env 调用 ArrivalEvaluator.advance。`RM27Plant.apply_ctbr`、rate proxy、混控和电机动态保持；策略边界更新一次电机命令并保持，正常五子步，任一子步终止立即锁存并停止余下推进。重复查询和刷新不累计时间、积分、奖励或事件，返回结果都对应同一停止时刻。
+
+### 10.4 Observation、Action 与奖励
+
+候选 task_id 为 `agile_terminal_arrival_v1`，观测 schema 为 `arrival_world_v1`。保留 26 维 float32 顺序，只将前三维明确为质心到固定终端质心的世界相对位置 `p*−p`，原 Contact 的前三维仍为装甲目标 `c−p`：
+
+| 字段 | 维度／坐标／单位 | 更新时间与来源 |
+|---|---|---|
+| `p*−p` | 3／world／m | reset 或实际 step 终点；状态真值与固定任务几何，未来需自身/目标定位 |
+| n | 3／world／无量纲 | 固定目标先验，未来由目标姿态估计提供 |
+| v | 3／world／m/s | 实际终点真值，未来需状态估计 |
+| R 按行展开 | 9／body→world／无量纲 | 实际终点真值，未来需姿态估计 |
+| ω | 3／body FLU／rad/s | 实际终点真值，未来需惯性/姿态估计 |
+| 上一实际 proxy 输入 | 4／CTBR／N、rad/s | 指令经边界裁剪且实际送入 proxy 后更新；reset 为合成悬停 |
+| 剩余时间 | 1／s | 由 H 与实际 episode 时间差计算 |
+
+v*、R* 与 ω* 固定为本任务已声明先验，不跨回合改变隐藏目标。Actor 不读取 evaluator phase、碰撞、精确电机激活、Teacher 或未来状态；VecNormalize 仅归一化观测。状态真值训练与未来估计能力分开报告，隐藏电机滞后状态意味着输入未必严格 Markov。
+
+物理动作仍为 collective 0—4.4145 N、body FLU rates 各±20 rad/s；归一化四维动作沿原仿射映射。归一化 0 对应 2.20725 N，悬停对应 `[-1/3,0,0,0]`。1 ms 物理、5 ms 控制和 40 ms filterexact 电机响应保持；动作不是直接设置刚体位姿/速度，proxy 不等于 PX4。
+
+保留上一版唯一候选奖励。令 `d=||b−b*||`、`Φ(d)=1/(1+(d/0.5m)²)`、`g(d)=exp(−(d/0.35m)²)`、`h(x;σ)=min((x/σ)²,1)`，`e_v=max(||v−v*||,||v_material_at_q−v*||)`、θ 为完整 SO(3) 角误差。每个真实完成物理区间结算：
+
+```text
+r_process = 2[Φ(d_next)−Φ(d_before)] − dt C(next)
+C = 0.5
+  + g(d)[0.5 h(e_v;1m/s) + 0.5 h(θ;30°)]
+  + 0.25 h(||ω||;5rad/s) + 0.25 I_proxy_saturated
+```
+
+连续代价上界为 2 reward/s，按实际 dt；进度差分不再次乘 dt，也不裁掉倒退负项。成功事件一次 +20；安全失败或期限失败一次 `−20−2 max(0,H−t)`。剩余时间代价只是 reward，不能增加虚构物理区间。正常策略步求和五个真实区间，终止短步只求和实际完成区间；Contact 原事件奖励保持原位。
+
+距离尺度提供接近信号，近端门控避免全程强迫终端大倾角；时间代价、有限进度收益和失败剩余时间项减少停留刷分与提前失败逃避代价的激励。权重是冻结的初次工程提案，并未验证有效；折扣可能改变循环/拖延收益，不宣称保持最优策略不变。奖励读取当前/前一状态真值用于训练，不因此扩大 Actor 输入。
+
+### 10.5 PPO、评价与完成边界
+
+复用唯一 SB3 训练器。将 task/schema、seed、环境数量、预算与协议合法性配置化；保留旧 I3 配置和默认续训验收，I4 正式训练不每次重演 4096→6144 工程检查。旧 checkpoint 缺少任务元数据时只走旧 Contact 兼容路径，不能仅凭26维加载新任务；新增 checkpoint 校验 task/schema、配置和实际来源。
+
+首轮 seed=0，4个独立 DummyVecEnv，CPU Torch单线程，MLP两层各64；n_steps=512、batch=256、5 epochs、lr=3e-4、γ=0.999、GAE λ=0.95，VecNormalize仅观测，其余沿锁定版本默认值导出。每完整 rollout 为2048条 transition，采样段每环境2.56 s；γ在5 ms下折扣时间尺度约5 s，GAE组合尺度约0.097 s，均为继承的候选设置，不是论文参数。
+
+总上限 **524,288 environment transitions（256个完整rollout/update）或15分钟学习墙钟，先到停止**。墙钟包括 checkpoint 与阶段处理，不保证学习收敛；中途被墙钟截断的采样单独计数，不冒充完成更新。初始、最近有效和最终 checkpoint 成套持久化。保留锁、基础镜像和一个 Docker，获批实施时仅将实际新增文件纳入现有白名单，不生成第二套容器或依赖。
+
+独立评价固定9个不同初态：名义中心以及 L/η₁/η₂ 区间的8个角点。初始策略、最终重新加载策略、传统同任务对照各9回合，最多27回合；每回合沿3 s任务期限。评价确定性动作，环境独立、归一化冻结；前后各用对应统计只能比较完整训练流程。该集合用于局部邻域比较，不属于动力变化或分布外鲁棒性证明，不用于反复调参。
+
+传统对照复用现有 Septic、Skill.track 与电机→CTBR project，固定1.2 s名义边界参考：起点悬停，终点 p*、v*、`a*=g/n_z·n−g·e_z`、jerk=0；到参考时域后保持连续终端外推，不切回悬停。使用同一 Arrival env、CTBR链和成功定义，不调用接触任务 FSM，不作为 PPO 标签；不搜索时域或增益。适配后是否到达是未知结果，旧4.003 s接触恢复不作为到达时间比较基准。
+
+记录成功/失败及全部分母、到达时间、同刻位置/速度/姿态/rate误差、轨迹长度、plane gap、动作裁剪、proxy/电机命令饱和及失败分类。plane gap 不命名为完整机体最小净空；最小净空字段须声明覆盖的具体几何，不用质心距离代替。按 rollout 汇总训练回合事件与分项奖励，不保存全部训练轨迹或建立新日志框架。
+
+分别验收工程链路、行为变化、终端到达、敏捷性与鲁棒性。候选敏捷性观察目标为9/9评价到达且各≤1.5 s，属于固定条件下研究目标，不是可靠性证明；物理/动力变化、真实状态估计及真机均未验证。预算内失败时保留必要结果并停止，不自动增加预算、seed、初态搜索、奖励权重或放宽门槛。
+
+### 10.6 实现位置与最少检查
+
+新增任务配置为`configs/agile_flight/{terminal_arrival,ppo_terminal_arrival}.json`，引用原150 g输入，不改六份旧配置。环境与评分落点见10.3；`rm27_adapter.py`只增加任务校验与显式初态输入，无参数reset的旧行为保持。`ppo.py`、`__main__.py`、`__init__.py`接入任务选择和同一训练/评价；`baselines.py`接入固定同任务参考，`provenance.py`记录新模块、配置和schema；`.dockerignore`、`docker/run.sh`扩展原入口，Dockerfile和哈希锁不变。
+
+现有CLI实际使用：`train --config configs/agile_flight/ppo_terminal_arrival.json --output <新运行目录>`；
+运行内按顺序完成初始9回合、预算内训练、最终9回合和传统9回合。
+`evaluate --checkpoint <目录> --output <新评价目录> --task agile_terminal_arrival_v1`
+只评价该任务的既定9个初态；`arrival-baseline --config <任务配置> --output <新目录>`
+用于独立传统评价，首轮训练流程已经执行该组时不重复运行。
+容器复用`docker/run.sh train ... --config configs/agile_flight/ppo_terminal_arrival.json`，
+依赖仍位于`/opt/venv`，代码在`/workspace`、结果独立挂载。
+
+I4资源可配置并有上限校验：CPU单线程、最多4环境、每环境rollout最多512、
+完整rollout整除batch，seed为合法整数；旧I3协议仍按原固定seed/规模和续训验收。
+本批实际配置仍为§10.5冻结值，不因此授权另跑seed或调参。
+原始PPO归一化动作裁剪、环境物理输入裁剪、proxy饱和和电机命令饱和分别命名。
+
+新任务行为放根 `tests/test_agile_terminal_arrival.py`，PPO接入扩展原测试，不按轮次造脚本。覆盖：前/中/后表面关系，bumper几何点与瞬时材料速度，所有终端条件同刻满足，安全优先、短步终止、一次区间/奖励及刷新幂等，reset隔离，Actor权限、CTBR执行、配置实际消费、task/schema拒绝及评价统计冻结。共享提取的旧行为复用现有 `test_interval_force_uses_completed_time_and_refresh_is_idempotent` 与 `test_hold_resets_and_recovery_time_marks_stable_start`，必要断言走真实 advance 路径，不复制评分算法。不默认全仓回归、迁移重验、PPO多seed、GPU benchmark或服务器操作。
+
+I4接口、共享步进及上述检查已落地；本批完成一次CPU容器构建和有界训练/固定集合评价。
+实际工程、任务失败、分项诊断和几何核对证据维护于本任务活动计划，不在此复制运行日志。
+实现通过检查并不代表学会终端到达；3 m/s联合状态集合的完整执行链可达性和学习机制
+仍须研究证据。静态终端容差净空不代替完整进场或接触恢复安全。
+本批已停止，不自动追加训练、换seed、放宽阈值、调控制器或操作服务器。

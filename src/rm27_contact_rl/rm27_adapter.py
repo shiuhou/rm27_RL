@@ -7,6 +7,7 @@ from pathlib import Path
 
 import mujoco
 import numpy as np
+from scipy.spatial.transform import Rotation
 
 from rm27_contact_physics.calibration import load_profile, verify_compiled, with_profile
 from rm27_contact_physics.control import motor_mixer
@@ -17,12 +18,14 @@ from rm27_contact_physics.teacher_interface import RateThrust, apply_proxy
 DEFAULT_CONFIG = ROOT / "configs/contact_rl/minimal.json"
 
 
-def load_rl_config(path=DEFAULT_CONFIG):
+def load_rl_config(path=DEFAULT_CONFIG, *, task_id="contact_recovery_v1"):
     """Resolve references against installed root assets, never the caller's cwd."""
     path = Path(path).resolve()
     cfg = json.loads(path.read_text())
     if cfg.get("schema_version") != 1:
         raise ValueError("Contact RL config requires schema_version 1")
+    if cfg.get("task_id", "contact_recovery_v1") != task_id:
+        raise ValueError("Environment configuration belongs to a different task")
     sources = {name: (ROOT / cfg[name]).resolve()
                for name in ("experiment_config", "vehicle_config", "dynamics_profile")}
     sources["rl_config"] = path
@@ -34,7 +37,7 @@ def load_rl_config(path=DEFAULT_CONFIG):
             or not np.isclose(period, base["control_dt_s"], rtol=0, atol=1e-12)):
         raise ValueError("I1 policy period must equal the configured positive control period")
     rewards = cfg["reward"]
-    if set(rewards) != {"valid_contact", "separation", "success", "failure"}:
+    if task_id == "contact_recovery_v1" and set(rewards) != {"valid_contact", "separation", "success", "failure"}:
         raise ValueError("Expected the four declared event reward weights")
     if not np.isfinite(list(rewards.values())).all():
         raise ValueError("Reward weights must be finite")
@@ -70,10 +73,30 @@ class RM27Plant:
     def state(self):
         return truth_estimate(self.model, self.data)
 
-    def reset(self):
+    def reset(self, *, position=None, velocity=None, rotation=None, omega_body=None):
+        """Optional explicit initial state; no-argument Contact reset is unchanged."""
+        values = {"position": position, "velocity": velocity, "rotation": rotation,
+                  "omega_body": omega_body}
+        for name, value in values.items():
+            if value is not None:
+                expected = (3, 3) if name == "rotation" else (3,)
+                if np.asarray(value).shape != expected or not np.isfinite(value).all():
+                    raise ValueError(f"Invalid initial {name}")
+        if rotation is not None and (not np.allclose(np.asarray(rotation).T @ rotation, np.eye(3), atol=1e-9)
+                                     or not np.isclose(np.linalg.det(rotation), 1., atol=1e-9)):
+            raise ValueError("Initial rotation must belong to SO(3)")
         mujoco.mj_resetData(self.model, self.data)
         self.data.qpos[:] = self.initial_qpos
         self.data.qvel[:] = self.initial_qvel
+        if position is not None:
+            self.data.qpos[:3] = position
+        if rotation is not None:
+            q = Rotation.from_matrix(rotation).as_quat()
+            self.data.qpos[3:7] = q[[3, 0, 1, 2]]
+        if velocity is not None:
+            self.data.qvel[:3] = velocity
+        if omega_body is not None:
+            self.data.qvel[3:6] = omega_body
         self.data.act[:] = self.hover_force / 4
         self.data.ctrl[:] = self.hover_force / 4
         mujoco.mj_forward(self.model, self.data)

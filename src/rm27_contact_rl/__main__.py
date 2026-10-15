@@ -10,6 +10,7 @@ import numpy as np
 from .baselines import CTBRBaseline
 from .env import ContactRecoveryEnv
 from .rm27_adapter import DEFAULT_CONFIG
+from .paths import ROOT
 from .provenance import provenance
 
 
@@ -70,20 +71,30 @@ def main():
     run = commands.add_parser("baseline", help="one fixed nominal 150 g privileged CTBR round")
     run.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     run.add_argument("--output", type=Path, required=True, help="new persistent evidence directory")
-    train_parser = commands.add_parser("train", help="bounded CPU PPO engineering run with resume verification")
+    arrival_baseline = commands.add_parser("arrival-baseline", help="nine fixed terminal-arrival traditional comparisons")
+    arrival_baseline.add_argument("--config", type=Path,
+                                  default=ROOT / "configs/agile_flight/terminal_arrival.json")
+    arrival_baseline.add_argument("--output", type=Path, required=True)
+    train_parser = commands.add_parser("train", help="bounded CPU PPO with task-specific evaluation")
     train_parser.add_argument("--config", type=Path, default=None)
     train_parser.add_argument("--output", type=Path, required=True)
-    evaluate_parser = commands.add_parser("evaluate", help="one deterministic nominal episode, frozen normalization")
+    evaluate_parser = commands.add_parser("evaluate", help="task-specific deterministic evaluation, frozen normalization")
     evaluate_parser.add_argument("--checkpoint", type=Path, required=True)
     evaluate_parser.add_argument("--output", type=Path, required=True)
+    evaluate_parser.add_argument("--task", choices=("contact_recovery_v1", "agile_terminal_arrival_v1"),
+                                 help="reject checkpoints belonging to a different task")
     args = parser.parse_args()
     if args.command == "baseline":
         return baseline(args.config, args.output)
     # Baseline/environment imports do not require training libraries.
-    from .ppo import DEFAULT_TRAIN_CONFIG, evaluate, train
+    from .ppo import DEFAULT_TRAIN_CONFIG, evaluate, evaluate_arrival_baseline, train
+    if args.command == "arrival-baseline":
+        result = evaluate_arrival_baseline(args.config, args.output)
+        print(json.dumps({key: result[key] for key in ("success_count", "episode_count", "failure_counts")}))
+        return 0 if result["passed"] else 2
     if args.command == "train":
         return train(args.config or DEFAULT_TRAIN_CONFIG, args.output)
-    result = evaluate(args.checkpoint, args.output)
+    result = evaluate(args.checkpoint, args.output, expected_task=args.task)
     return 0 if result["passed"] else 2
 
 
