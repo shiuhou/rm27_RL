@@ -56,3 +56,11 @@ and observed results; a plan's restatement alone is not evidence of confirmation
   repeated full regression, are the default for approved implementation batches.
 - Explicit user instructions and applicable higher-priority instructions govern
   scope; neither a draft nor a completed plan grants implementation authority.
+
+## Common engineering standard
+
+Apply `.agents/docs/engineering.md` for the shared engineering process. This
+file remains the RL-specific adapter: it defines package ownership, research
+scope, evidence boundaries and authorization. Keep the common file synchronized
+with the RM27 integration repository when the shared standard changes; do not
+copy RL-specific requirements into the common file.
