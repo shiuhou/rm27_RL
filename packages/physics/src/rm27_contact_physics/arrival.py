@@ -78,6 +78,7 @@ class ArrivalEvaluator:
         self.min_plane_gap = np.inf
         self.max_speed = self.max_tilt = self.max_body_rate = 0.
         self.last_metrics = None
+        self.best_violation_ratio = np.inf
         self._last_position = None
         self._final_result = None
 
@@ -123,6 +124,24 @@ class ArrivalEvaluator:
                     angular_velocity_error_rad_s=float(np.linalg.norm(state.omega_body)),
                     flight_speed_m_s=float(np.linalg.norm(state.velocity)),
                     tilt_deg=float(np.rad2deg(np.arccos(np.clip(state.rotation[2, 2], -1., 1.)))))
+
+    def terminal_violation_ratio(self, metrics):
+        """Largest terminal error over its tolerance; <= 1 exactly when all gates qualify.
+
+        Diagnostic and shaping input only: the arrival decision in ``snapshot``
+        keeps its own direct comparisons.
+        """
+        terminal = self.terminal
+        speed = terminal["normal_speed_m_s"]
+        return float(max(
+            metrics["plane_gap_error_m"] / terminal["gap_tolerance_m"],
+            metrics["tangent_position_error_m"] / terminal["tangent_position_tolerance_m"],
+            abs(metrics["com_normal_speed_m_s"] - speed) / terminal["normal_speed_tolerance_m_s"],
+            abs(metrics["material_normal_speed_m_s"] - speed) / terminal["normal_speed_tolerance_m_s"],
+            metrics["com_tangent_speed_m_s"] / terminal["tangent_speed_tolerance_m_s"],
+            metrics["material_tangent_speed_m_s"] / terminal["tangent_speed_tolerance_m_s"],
+            metrics["attitude_error_deg"] / terminal["attitude_tolerance_deg"],
+            metrics["angular_velocity_error_rad_s"] / terminal["body_rate_tolerance_rad_s"]))
 
     def _fail(self, reason):
         self.reasons.add(reason)
@@ -207,6 +226,9 @@ class ArrivalEvaluator:
             and metrics["material_tangent_speed_m_s"] <= terminal["tangent_speed_tolerance_m_s"]
             and metrics["attitude_error_deg"] <= terminal["attitude_tolerance_deg"]
             and metrics["angular_velocity_error_rad_s"] <= terminal["body_rate_tolerance_rad_s"])
+        if not self.reasons and not self.arrived:
+            # Closest joint approach while success was still possible.
+            self.best_violation_ratio = min(self.best_violation_ratio, self.terminal_violation_ratio(metrics))
         # Safety wins at a shared timestamp. A valid arrival wins over expiry.
         if not self.reasons and qualifies and not self.arrived:
             self.arrival_time = timestamp - self.episode_start
@@ -273,6 +295,8 @@ class ArrivalEvaluator:
                     max_body_rate_rad_s=self.max_body_rate,
                     saturation_fraction=self.saturated_time / self.elapsed_time if self.elapsed_time else 0.,
                     max_saturation_run_s=self.max_sat_run,
+                    best_terminal_violation_ratio=(float(self.best_violation_ratio)
+                                                   if np.isfinite(self.best_violation_ratio) else None),
                     task_id=self.task["task_id"], observation_schema=self.task["observation_schema"],
                     contact_recovery_success=False)
 

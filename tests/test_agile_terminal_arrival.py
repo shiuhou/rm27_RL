@@ -1,5 +1,6 @@
 """Bounded arrival checks using the shared native-MuJoCo execution path."""
 from copy import deepcopy
+import json
 
 import mujoco
 import numpy as np
@@ -226,3 +227,134 @@ def test_solver_contact_cannot_be_erased_by_clear_endpoint(env):
     contacts = [event for event in info["result"]["events"] if event["event"] == "SAFETY_CONTACT"]
     assert any(event["sampling_source"] == "COMPLETED_INTERVAL_SOLVER" for event in contacts)
     assert env.evaluator.reasons  # later clear snapshots cannot erase this history
+
+
+def test_flatness_reference_reaches_terminal_set_through_real_step(env):
+    from rm27_contact_rl.baselines import FlatnessReference
+
+    env.step(env.previous_action_ctbr.copy())
+    with pytest.raises(RuntimeError, match="immediately after"):
+        FlatnessReference(env, 1.)
+    env.reset(options={"initial_coordinates": [1.2, 0, 0]})
+    reference = FlatnessReference(env, 1.)
+    terminated = False
+    while not terminated:
+        _, _, terminated, _, info = env.step(reference.action(env))
+    result = info["result"]
+    assert result["passed"] and result["termination_reason"] == "ARRIVAL_SUCCESS"
+    assert result["arrival_time_s"] < 1. and result["saturation_fraction"] == 0
+    assert result["informed_prefix_s"] == 0
+
+
+def test_scored_segment_excludes_prefix_reward_but_keeps_physical_history(env):
+    for _ in range(4):
+        env.step(env.previous_action_ctbr.copy())
+    intervals = env.evaluator.completed_intervals
+    env.start_scored_segment()
+    assert env.informed_prefix_s == pytest.approx(.02)
+    assert env.reward_component_totals == dict(progress=0., cost=0., event=0.)
+    _, reward, _, _, info = env.step(env.previous_action_ctbr.copy())
+    assert env.evaluator.completed_intervals == intervals + 5
+    assert sum(env.reward_component_totals.values()) == pytest.approx(reward)
+    assert info["episode_elapsed_s"] == pytest.approx(.025)
+
+
+def test_violation_ratio_is_one_exactly_at_declared_tolerances(env):
+    terminal = env.rl_config["terminal"]
+    speed = terminal["normal_speed_m_s"]
+    at_limits = dict(plane_gap_error_m=terminal["gap_tolerance_m"],
+                     tangent_position_error_m=terminal["tangent_position_tolerance_m"],
+                     com_normal_speed_m_s=speed + terminal["normal_speed_tolerance_m_s"],
+                     material_normal_speed_m_s=speed - terminal["normal_speed_tolerance_m_s"],
+                     com_tangent_speed_m_s=terminal["tangent_speed_tolerance_m_s"],
+                     material_tangent_speed_m_s=terminal["tangent_speed_tolerance_m_s"],
+                     attitude_error_deg=terminal["attitude_tolerance_deg"],
+                     angular_velocity_error_rad_s=terminal["body_rate_tolerance_rad_s"])
+    assert env.evaluator.terminal_violation_ratio(at_limits) <= 1.
+    for name in at_limits:
+        if name != "material_normal_speed_m_s":
+            beyond = dict(at_limits, **{name: np.nextafter(at_limits[name] * 1.001, np.inf)})
+            assert env.evaluator.terminal_violation_ratio(beyond) > 1., name
+
+
+def test_best_violation_ratio_agrees_with_real_arrival_decisions(env):
+    rng = np.random.default_rng(4)
+    geometry = env.evaluator.geometry
+    axes = geometry["target_rotation"]
+    outcomes = []
+    for _ in range(60):
+        env.reset(options={"initial_coordinates": [1.2, 0, 0]})
+        tilt = Rotation.from_rotvec(np.deg2rad(rng.uniform(-13, 13, 3))).as_matrix()
+        place(env, geometry["position_target"] + .0225 * geometry["normal"] + axes[:, :2] @ rng.uniform(-.02, .02, 2),
+              axes @ tilt, geometry["velocity_target"] + rng.uniform(-.4, .4, 3), rng.uniform(-1.3, 1.3, 3))
+        fresh_evaluator(env)
+        terminated = False
+        while not terminated:
+            _, _, terminated, _, info = env.step(env.previous_action_ctbr.copy())
+        result = info["result"]
+        outcomes.append(result["passed"])
+        # Tracked only while success was still possible, so any qualifying sample arrives.
+        if result["passed"]:
+            assert result["best_terminal_violation_ratio"] <= 1.
+        else:
+            assert result["best_terminal_violation_ratio"] is None or result["best_terminal_violation_ratio"] > 1.
+    assert 0 < sum(outcomes) < len(outcomes)
+
+
+def test_precision_bonus_is_off_by_default_and_only_changes_the_terminal_event(env, tmp_path):
+    from rm27_contact_rl.arrival_env import DEFAULT_ARRIVAL_CONFIG
+    shaped = AgileTerminalArrivalEnv(DEFAULT_ARRIVAL_CONFIG.with_name("terminal_arrival_precision.json"))
+    try:
+        assert shaped.rl_config["reward"]["terminal_precision_bonus"] == 15
+        for instance in (env, shaped):
+            instance.reset(options={"initial_coordinates": [1.2, 0, 0]})
+        action = np.array([2.4, 0., 0., 0.])
+        while True:
+            a, b = env.step(action), shaped.step(action)
+            np.testing.assert_array_equal(a[0], b[0])
+            if a[2]:
+                break
+            assert a[1] == b[1]
+        plain, bonus = a[4]["result"], b[4]["result"]
+        ratio = plain["best_terminal_violation_ratio"]
+        assert not plain["passed"] and ratio == bonus["best_terminal_violation_ratio"] > 1
+        assert plain["terminal_precision_bonus"] == 0
+        assert plain["reward_status"] == "FROZEN_I4_FIRST_EXPERIMENT_NOT_VALIDATED_LEARNING"
+        assert bonus["terminal_precision_bonus"] == pytest.approx(15 / ratio)
+        assert b[1] - a[1] == pytest.approx(15 / ratio)
+        shaped.reset(options={"initial_coordinates": [1.2, 0, 0]})
+        near_arrival(shaped)
+        _, reward, terminated, _, info = shaped.step(shaped.previous_action_ctbr.copy())
+        assert terminated and info["result"]["passed"] and info["reward_components"]["event"] == 35
+    finally:
+        shaped.close()
+    bad = json.loads(DEFAULT_ARRIVAL_CONFIG.read_text())
+    bad["reward"]["terminal_precision_bonus"] = -1
+    (tmp_path / "bad.json").write_text(json.dumps(bad))
+    with pytest.raises(ValueError):
+        AgileTerminalArrivalEnv(tmp_path / "bad.json")
+
+
+def test_moderate_terminal_set_is_config_only_and_reachable_by_the_reference():
+    from rm27_contact_rl.arrival_env import DEFAULT_ARRIVAL_CONFIG
+    from rm27_contact_rl.baselines import FlatnessReference
+
+    strict = json.loads(DEFAULT_ARRIVAL_CONFIG.with_name("terminal_arrival_precision.json").read_text())
+    moderate = json.loads(DEFAULT_ARRIVAL_CONFIG.with_name("terminal_arrival_moderate_precision.json").read_text())
+    assert {k: v for k, v in moderate.items() if k not in ("terminal", "status")} == \
+        {k: v for k, v in strict.items() if k not in ("terminal", "status")}
+    terminal = moderate["terminal"]
+    speed, tolerance = terminal["normal_speed_m_s"], terminal["normal_speed_tolerance_m_s"]
+    assert (speed - tolerance, speed + tolerance) == (1.5, 3.0) and terminal["gap_m"] == strict["terminal"]["gap_m"]
+    env = AgileTerminalArrivalEnv(DEFAULT_ARRIVAL_CONFIG.with_name("terminal_arrival_moderate_precision.json"))
+    try:
+        env.reset(options={"initial_coordinates": [1.25, .025, -.025]})
+        np.testing.assert_allclose(env.geometry["velocity_target"], -2.25 * env.geometry["normal"])
+        reference = FlatnessReference(env, 1.)
+        terminated = False
+        while not terminated:
+            _, _, terminated, _, info = env.step(reference.action(env))
+        assert info["result"]["passed"]
+    finally:
+        env.close()
+

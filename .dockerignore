@@ -12,7 +12,17 @@ configs/contact_rl/*
 !configs/agile_flight/
 configs/agile_flight/*
 !configs/agile_flight/terminal_arrival.json
+!configs/agile_flight/terminal_arrival_precision.json
+!configs/agile_flight/terminal_arrival_moderate_precision.json
 !configs/agile_flight/ppo_terminal_arrival.json
+!configs/agile_flight/ppo_terminal_arrival_hover_centered.json
+!configs/agile_flight/ppo_terminal_arrival_informed_reset.json
+!configs/agile_flight/ppo_terminal_arrival_informed_reset_k8.json
+!configs/agile_flight/ppo_terminal_arrival_informed_reset_k8_p08.json
+!configs/agile_flight/ppo_terminal_arrival_informed_reset_k8_p08_band.json
+!configs/agile_flight/ppo_terminal_arrival_informed_band_precision.json
+!configs/agile_flight/ppo_terminal_arrival_moderate_precision.json
+!configs/agile_flight/ppo_terminal_arrival_moderate_precision_long.json
 !configs/drone.json
 !configs/dynamics_150g.json
 !docker/

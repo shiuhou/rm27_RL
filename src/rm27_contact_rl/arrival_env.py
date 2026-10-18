@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import gymnasium as gym
+import mujoco
 import numpy as np
 from gymnasium import spaces
 
@@ -11,6 +12,10 @@ from .paths import ROOT
 from .rm27_adapter import RM27Plant, load_rl_config
 
 DEFAULT_ARRIVAL_CONFIG = ROOT / "configs/agile_flight/terminal_arrival.json"
+# Every per-episode attribute that step/reset mutate besides the MuJoCo data.
+_EPISODE_FIELDS = ("initial_coordinates", "episode_start", "previous_action_ctbr", "_terminal_result",
+                   "reward_component_totals", "informed_prefix_s", "action_clipped_time_s",
+                   "motor_command_saturation_time_s", "evaluator", "_active")
 
 
 class AgileTerminalArrivalEnv(gym.Env):
@@ -45,7 +50,9 @@ class AgileTerminalArrivalEnv(gym.Env):
                     "velocity_cost_per_s", "attitude_cost_per_s", "rate_cost_per_s",
                     "saturation_cost_per_s", "velocity_scale_m_s", "attitude_scale_deg",
                     "rate_scale_rad_s", "event_success", "event_failure", "remaining_failure_cost_per_s"}
-        if set(rewards) != required or not np.isfinite(list(rewards.values())).all():
+        # Optional terminal-precision shaping; absent means the original I4 reward.
+        if (not required <= set(rewards) <= required | {"terminal_precision_bonus"}
+                or not np.isfinite(list(rewards.values())).all()):
             raise ValueError("Expected declared finite arrival reward terms")
         if any(rewards[k] <= 0 for k in ("distance_scale_m", "near_scale_m", "velocity_scale_m_s",
                                         "attitude_scale_deg", "rate_scale_rad_s")):
@@ -95,6 +102,7 @@ class AgileTerminalArrivalEnv(gym.Env):
         self.previous_action_ctbr = np.r_[self.plant.hover_force, np.zeros(3)]
         self._terminal_result = None
         self.reward_component_totals = dict(progress=0., cost=0., event=0.)
+        self.informed_prefix_s = 0.
         self.action_clipped_time_s = 0.
         self.motor_command_saturation_time_s = 0.
         self.evaluator = ArrivalEvaluator(self.rl_config, self.plant.physical, self.episode_start)
@@ -102,6 +110,33 @@ class AgileTerminalArrivalEnv(gym.Env):
         self._active = True
         return self._observation(), self._info(0, self.episode_start, False, False,
                                               dict(progress=0., cost=0., event=0.))
+
+    def episode_snapshot(self):
+        """Complete mutable episode state: a full MjData copy plus env/evaluator accounting."""
+        if self._closed or self.evaluator is None:
+            raise RuntimeError("Snapshot requires a reset, open Arrival environment")
+        data = mujoco.MjData(self.plant.model)
+        mujoco.mj_copyData(data, self.plant.model, self.plant.data)
+        return dict(data=data, fields=copy.deepcopy({name: getattr(self, name) for name in _EPISODE_FIELDS}))
+
+    def restore_episode(self, snapshot):
+        """Return this instance to a snapshot of itself; the RNG stream is not part of it."""
+        if self._closed:
+            raise RuntimeError("Cannot restore a closed Arrival environment")
+        mujoco.mj_copyData(self.plant.data, self.plant.model, snapshot["data"])
+        for name, value in copy.deepcopy(snapshot["fields"]).items():
+            setattr(self, name, value)
+
+    def start_scored_segment(self):
+        """Training-only informed reset: later reward totals exclude the prefix.
+
+        The prefix was flown through this same ``step``; time, evaluator history,
+        safety latches and the remaining-time terms continue unchanged.
+        """
+        if not self._active:
+            raise RuntimeError("Scored segment requires an active episode")
+        self.informed_prefix_s = float(self.plant.data.time - self.episode_start)
+        self.reward_component_totals = dict(progress=0., cost=0., event=0.)
 
     def _process_reward(self, before_metrics, after_metrics, dt, saturated):
         r = self.rl_config["reward"]
@@ -165,6 +200,10 @@ class AgileTerminalArrivalEnv(gym.Env):
                 terms["event"] = (float(r["event_success"]) if self.evaluator.arrived else
                                   float(r["event_failure"] - r["remaining_failure_cost_per_s"] *
                                         max(0., self.horizon_s - (state.timestamp - self.episode_start))))
+                ratio = self.evaluator.best_violation_ratio
+                precision = (0. if not np.isfinite(ratio) else
+                             float(r.get("terminal_precision_bonus", 0.)) * (1. if ratio <= 1. else 1. / ratio))
+                terms["event"] += precision
                 self._terminal_result = copy.deepcopy(self.evaluator.finalize(self.plant.model, self.plant.data))
                 self._active = False
             for key, value in terms.items():
@@ -175,10 +214,14 @@ class AgileTerminalArrivalEnv(gym.Env):
                     task_id=self.task_id, observation_schema=self.observation_schema,
                     reward_component_totals=self.reward_component_totals.copy(),
                     total_reward=sum(self.reward_component_totals.values()),
+                    informed_prefix_s=self.informed_prefix_s,
                     action_clipped_time_s=self.action_clipped_time_s,
                     motor_command_saturation_time_s=self.motor_command_saturation_time_s,
+                    terminal_precision_bonus=precision,
                     profile_status=self.plant.profile["status"],
-                    reward_status="FROZEN_I4_FIRST_EXPERIMENT_NOT_VALIDATED_LEARNING")
+                    reward_status=("I4_TERMINAL_PRECISION_SHAPING_V1_NOT_VALIDATED_LEARNING"
+                                   if "terminal_precision_bonus" in self.rl_config["reward"]
+                                   else "FROZEN_I4_FIRST_EXPERIMENT_NOT_VALIDATED_LEARNING"))
                 break
         return self._observation(), sum(components.values()), not self._active, False, self._info(
             substeps, step_start, saturated, clipped, components)

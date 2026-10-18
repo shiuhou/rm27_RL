@@ -33,6 +33,23 @@ CONTACT_TASK = "contact_recovery_v1"
 CONTACT_SCHEMA = "contact_world_v1"
 ARRIVAL_TASK = "agile_terminal_arrival_v1"
 ARRIVAL_SCHEMA = "arrival_world_v1"
+# Normalized-action maps: the original affine map onto [low, high], and an
+# Arrival-only map whose zero is synthetic hover (collective m*g, zero rates).
+BOUNDS_AFFINE = "bounds_affine_v1"
+HOVER_CENTERED = "hover_centered_v1"
+# Largest approved single Arrival run on the local CPU (user 2026-10-19): one seed,
+# at most 1024 complete rollout/updates of 2048 transitions or one hour of learning.
+ARRIVAL_MAX_TRANSITIONS = 2_097_152
+ARRIVAL_MAX_LEARNING_WALL_S = 3600
+FLATNESS_REFERENCE = "flatness_feedforward_v1"
+# Reference-flight snapshot spacing in policy steps. Performance only: a restore
+# continues with the same flight loop, so the reset state is identical for any spacing.
+SNAPSHOT_INTERVAL_STEPS = 10
+# Curriculum advance statistics: every informed episode in [min_lead, frontier]
+# (third run and batch A/B), or only those whose lead lies in the newest band
+# [frontier - lead_step, frontier].
+ALL_INFORMED = "all_informed_v1"
+FRONTIER_BAND = "frontier_band_v1"
 
 
 def _task_contract(config):
@@ -67,8 +84,8 @@ def load_train_config(path=DEFAULT_TRAIN_CONFIG):
         raise ValueError("Batch size must divide the complete rollout")
     budget = config["budget"]
     lower = rollout if arrival else 6144
-    upper = 524288 if arrival else 65536
-    wall = 900 if arrival else 1800
+    upper = ARRIVAL_MAX_TRANSITIONS if arrival else 65536
+    wall = ARRIVAL_MAX_LEARNING_WALL_S if arrival else 1800
     if ((not arrival and (config["seed"] != 0 or config["n_envs"] != 4 or rollout != 2048
                           or config["ppo"]["n_steps"] != 512))
             or not isinstance(budget["transitions"], int) or isinstance(budget["transitions"], bool)
@@ -82,32 +99,191 @@ def load_train_config(path=DEFAULT_TRAIN_CONFIG):
             raise ValueError(f"Invalid PPO {name}")
     if config["ppo"]["gamma"] > 1 or config["ppo"]["gae_lambda"] > 1:
         raise ValueError("PPO discount factors must not exceed one")
+    parameterization = config.get("action_parameterization", BOUNDS_AFFINE)
+    if parameterization not in (BOUNDS_AFFINE, HOVER_CENTERED) or (
+            parameterization == HOVER_CENTERED and not arrival):
+        raise ValueError("Unknown action parameterization, or one not declared for this task")
+    log_std_init = config["ppo"].get("policy_kwargs", {}).get("log_std_init", 0.)
+    if (isinstance(log_std_init, bool) or not isinstance(log_std_init, (int, float))
+            or not -3. <= log_std_init <= 0. or (not arrival and log_std_init != 0.)):
+        raise ValueError("Initial policy log standard deviation outside the declared envelope")
+    informed = config.get("informed_reset")
+    if informed is not None:
+        keys = {"reference", "reference_duration_s", "probability", "initial_lead_s", "min_lead_s",
+                "lead_step_s", "advance_success_rate", "advance_window_episodes"}
+        numbers = [informed.get(key) for key in sorted(keys - {"reference", "advance_window_episodes"})]
+        window = informed.get("advance_window_episodes")
+        reuse = informed.get("reference_reuse_episodes", 1)
+        if (not arrival or not keys <= set(informed) <= keys | {"reference_reuse_episodes", "advance_statistic"}
+                or informed.get("advance_statistic", ALL_INFORMED) not in (ALL_INFORMED, FRONTIER_BAND)
+                or isinstance(reuse, bool) or not isinstance(reuse, int) or not 1 <= reuse <= 64
+                or informed["reference"] != FLATNESS_REFERENCE
+                or any(isinstance(v, bool) or not isinstance(v, (int, float)) or not np.isfinite(v) for v in numbers)
+                or isinstance(window, bool) or not isinstance(window, int) or window < 1
+                or not 0 < informed["probability"] <= 1 or not 0 < informed["advance_success_rate"] <= 1
+                or not 0 < informed["min_lead_s"] <= informed["initial_lead_s"] <= informed["reference_duration_s"]
+                or informed["lead_step_s"] <= 0):
+            raise ValueError("Informed reset must be a declared Arrival training curriculum")
     if not (ROOT / config["env_config"]).is_file():
         raise ValueError("PPO env_config must locate existing checkout assets")
     return config
 
 
 class NormalizedCTBR(gym.ActionWrapper):
-    """Affine [-1,1] action to the existing physical CTBR input boundary."""
+    """Affine [-1,1] action to physical CTBR, then the existing env input clip.
 
-    def __init__(self, env):
+    ``bounds_affine_v1`` maps [-1,1] onto [low, high]. ``hover_centered_v1``
+    maps 0 to synthetic hover with per-axis half-range max(high-hover,
+    hover-low); a request below the physical collective lower bound is left
+    to the environment's reported input clip, not hidden here.
+    """
+
+    def __init__(self, env, parameterization=BOUNDS_AFFINE):
         super().__init__(env)
         # Use the environment's double-precision physical limits, not rounded
-        # Box metadata; preserve the original linear map and proxy chain.
+        # Box metadata; preserve the proxy chain.
         self.low = env.unwrapped._action_low.copy()
         self.high = env.unwrapped._action_high.copy()
+        self.parameterization = parameterization
         self.action_space = gym.spaces.Box(-1., 1., shape=(4,), dtype=np.float32)
         hover = np.r_[env.unwrapped.plant.hover_force, np.zeros(3)]
-        self.hover_action = 2 * (hover - self.low) / (self.high - self.low) - 1
+        if parameterization == BOUNDS_AFFINE:
+            self.center = (self.high + self.low) / 2
+            self.half_range = (self.high - self.low) / 2
+            self.hover_action = 2 * (hover - self.low) / (self.high - self.low) - 1
+        elif parameterization == HOVER_CENTERED:
+            self.center = hover
+            self.half_range = np.maximum(self.high - hover, hover - self.low)
+            self.hover_action = np.zeros(4)
+        else:
+            raise ValueError("Unknown action parameterization")
 
     def action(self, action):
         requested = np.asarray(action, dtype=float)
         if requested.shape != (4,) or not np.isfinite(requested).all():
             raise ValueError("Normalized CTBR requires four finite values")
-        return self.low + (np.clip(requested, -1., 1.) + 1) * (self.high - self.low) / 2
+        clipped = np.clip(requested, -1., 1.)
+        if self.parameterization == BOUNDS_AFFINE:
+            # Keep the original expression so earlier runs replay bit-for-bit.
+            return self.low + (clipped + 1) * (self.high - self.low) / 2
+        return self.center + clipped * self.half_range
 
 
-def _make_dummy_vec(config, n_envs=None):
+class InformedResetCurriculum:
+    """Reverse-curriculum frontier shared by one training vector's environments.
+
+    Informed episodes start at reference time ``duration - lead`` with lead drawn
+    from [min_lead, frontier]. The frontier grows by one step after a full window
+    of counted informed episodes reaches the declared success rate; it is checked
+    once per complete rollout so the schedule follows completed optimization
+    updates. ``frontier_band_v1`` counts only episodes whose lead lies in the
+    newest band, so short, already mastered leads cannot carry the frontier.
+    """
+
+    def __init__(self, spec):
+        self.spec = dict(spec)
+        self.lead_s = float(spec["initial_lead_s"])
+        self.window = []
+        self.prefix_failures = 0
+        self.reference_flights = 0
+
+    def record(self, success, lead_s):
+        if (self.spec.get("advance_statistic", ALL_INFORMED) == FRONTIER_BAND
+                and lead_s < self.lead_s - self.spec["lead_step_s"] - 1e-12):
+            return
+        self.window = (self.window + [bool(success)])[-self.spec["advance_window_episodes"]:]
+
+    def update(self):
+        full = len(self.window) == self.spec["advance_window_episodes"]
+        rate = float(np.mean(self.window)) if self.window else None
+        advanced = (full and rate >= self.spec["advance_success_rate"]
+                    and self.lead_s < self.spec["reference_duration_s"])
+        if advanced:
+            self.lead_s = min(self.lead_s + self.spec["lead_step_s"], self.spec["reference_duration_s"])
+            self.window = []
+        return dict(lead_s=self.lead_s, window_episodes=len(self.window) if not advanced else 0,
+                    window_success_rate=rate, advanced=advanced, prefix_failures=self.prefix_failures,
+                    reference_flights=self.reference_flights)
+
+
+class InformedReset(gym.Wrapper):
+    """Training-only Arrival reset from a dynamically consistent reference prefix.
+
+    The prefix is flown through the real ``step`` (motor states, previous action,
+    evaluator history and clock stay consistent) but its transitions are not
+    returned to the learner. Explicit-option resets, as used by evaluation, are
+    untouched. The reference never supplies actions, observations or rewards.
+
+    With ``reference_reuse_episodes`` K > 1, one reference flight (to the longest
+    prefix) serves K informed episodes of this environment: the latest episode
+    snapshot before the requested start is restored and the same flight loop
+    finishes the prefix, giving the state a fresh prefix from those coordinates
+    reaches. Coordinates are drawn as before but repeat within the K episodes.
+    """
+
+    def __init__(self, env, curriculum):
+        super().__init__(env)
+        self.curriculum = curriculum
+        self.informed = False
+        self._flight = None
+
+    def reset(self, *, seed=None, options=None):
+        observation, info = self.env.reset(seed=seed, options=options)
+        base = self.env.unwrapped
+        spec = self.curriculum.spec
+        self.informed = False
+        if options is not None or base.np_random.random() >= spec["probability"]:
+            return observation, info
+        lead = base.np_random.uniform(spec["min_lead_s"], self.curriculum.lead_s)
+        self._lead_s = lead
+        prefix = spec["reference_duration_s"] - lead
+        if prefix < base.policy_dt_s:
+            return observation, info
+        from .baselines import FlatnessReference
+        reuse = spec.get("reference_reuse_episodes", 1)
+        if reuse == 1:
+            reference = FlatnessReference(base, spec["reference_duration_s"])
+            self.curriculum.reference_flights += 1
+        else:
+            if self._flight is None or self._flight["uses"] >= reuse:
+                self._flight = self._fly_reference(base, spec)
+            self._flight["uses"] += 1
+            reference = self._flight["reference"]
+            start = [snap for elapsed, snap in self._flight["snapshots"] if elapsed < prefix - 1e-9][-1]
+            base.restore_episode(start)
+        while base.plant.data.time - base.episode_start < prefix - 1e-9:
+            observation, _, terminated, _, info = base.step(reference.action(base))
+            if terminated:
+                self.curriculum.prefix_failures += 1
+                return self.env.reset(options={"initial_coordinates": base.initial_coordinates})
+        observation = base._observation()
+        base.start_scored_segment()
+        self.informed = True
+        return observation, dict(info, informed_prefix_s=base.informed_prefix_s)
+
+    def _fly_reference(self, base, spec):
+        """Fly one reference to the longest prefix, keeping spaced episode snapshots."""
+        from .baselines import FlatnessReference
+        reference = FlatnessReference(base, spec["reference_duration_s"])
+        self.curriculum.reference_flights += 1
+        longest = spec["reference_duration_s"] - spec["min_lead_s"]
+        snapshots, steps = [], 0
+        while base.plant.data.time - base.episode_start < longest - 1e-9:
+            if steps % SNAPSHOT_INTERVAL_STEPS == 0:
+                snapshots.append((base.plant.data.time - base.episode_start, base.episode_snapshot()))
+            if base.step(reference.action(base))[2]:
+                break
+            steps += 1
+        return dict(reference=reference, snapshots=snapshots, uses=0)
+
+    def step(self, action):
+        transition = self.env.step(action)
+        if transition[2] and self.informed:
+            self.curriculum.record(transition[-1]["result"]["passed"], self._lead_s)
+        return transition
+
+
+def _make_dummy_vec(config, n_envs=None, curriculum=None):
     path = ROOT / config["env_config"]
     count = config["n_envs"] if n_envs is None else n_envs
     # Every factory creates its own model/data/evaluator/proxy/action memory.
@@ -116,15 +292,25 @@ def _make_dummy_vec(config, n_envs=None):
         env_class = AgileTerminalArrivalEnv
     else:
         env_class = ContactRecoveryEnv
-    vec = DummyVecEnv([lambda: Monitor(NormalizedCTBR(env_class(path)))
-                       for _ in range(count)])
+    parameterization = config.get("action_parameterization", BOUNDS_AFFINE)
+    def build():
+        env = env_class(path)
+        if curriculum is not None:
+            env = InformedReset(env, curriculum)
+        return Monitor(NormalizedCTBR(env, parameterization))
+    vec = DummyVecEnv([build for _ in range(count)])
     vec.seed(config["seed"])
     return vec
 
 
 def make_vec_env(config, n_envs=None, training=True):
-    return VecNormalize(_make_dummy_vec(config, n_envs), training=training,
-                        norm_obs=True, norm_reward=False)
+    """Training vectors carry the declared informed-reset curriculum; evaluation never does."""
+    curriculum = (InformedResetCurriculum(config["informed_reset"])
+                  if training and config.get("informed_reset") else None)
+    vec = VecNormalize(_make_dummy_vec(config, n_envs, curriculum), training=training,
+                       norm_obs=True, norm_reward=False)
+    vec.informed_curriculum = curriculum
+    return vec
 
 
 def _write_json(path, value):
@@ -470,13 +656,17 @@ class _BudgetCallback(BaseCallback):
         self.action_clipped_steps = 0
         self.proxy_saturated_steps = 0
         self.normalized_action_clipped_steps = 0
+        self.normalized_action_clipped_steps_per_axis = np.zeros(4, dtype=int)
+        self.policy_mean = None
+        self.curriculum = None
 
     def _on_step(self):
         _assert_finite(self.locals["new_obs"])
         _assert_finite(self.locals["rewards"])
         _assert_finite(self.locals["actions"])
-        self.normalized_action_clipped_steps += int(np.count_nonzero(
-            np.any(np.abs(self.locals["actions"]) > 1., axis=-1)))
+        outside = np.abs(self.locals["actions"]) > 1.
+        self.normalized_action_clipped_steps += int(np.count_nonzero(np.any(outside, axis=-1)))
+        self.normalized_action_clipped_steps_per_axis += outside.sum(axis=0)
         for info in self.locals["infos"]:
             self.action_clipped_steps += int(info.get("action_clipped", False))
             self.proxy_saturated_steps += int(info.get("proxy_saturated", False))
@@ -486,10 +676,24 @@ class _BudgetCallback(BaseCallback):
                 result = info.get("result", {})
                 self.episodes.append(dict(passed=bool(result.get("passed", False)),
                     failure_modes=result.get("failure_modes", []),
+                    informed=result.get("informed_prefix_s", 0.) > 0,
                     episode_elapsed_s=result.get("episode_elapsed_s"),
                     reward=float(info["episode"]["r"]), steps=int(info["episode"]["l"])))
         self.expired = time.monotonic() >= self.deadline
         return not self.expired
+
+    def _on_rollout_end(self):
+        # Behavior-policy Gaussian mean on the stored (normalized) rollout
+        # observations, before this rollout's optimization changes it.
+        observations = self.model.rollout_buffer.observations.reshape(-1, self.model.observation_space.shape[0])
+        with torch.no_grad():
+            mean = self.model.policy.get_distribution(
+                torch.as_tensor(observations, device=self.model.device)).distribution.mean.cpu().numpy()
+        _assert_finite(mean)
+        self.policy_mean = dict(mean=mean.mean(axis=0).tolist(),
+                                outside_bounds_fraction=(np.abs(mean) > 1.).mean(axis=0).tolist())
+        curriculum = getattr(self.training_env, "informed_curriculum", None)
+        self.curriculum = None if curriculum is None else curriculum.update()
 
 
 def _learn_rollout(model, vec, deadline):
@@ -543,6 +747,14 @@ def _learn_rollout(model, vec, deadline):
                 action_clipped_steps=callback.action_clipped_steps,
                 proxy_saturated_steps=callback.proxy_saturated_steps,
                 normalized_action_clipped_steps=callback.normalized_action_clipped_steps,
+                normalized_action_clipped_steps_per_axis=callback.normalized_action_clipped_steps_per_axis.tolist(),
+                policy_mean_on_rollout=callback.policy_mean,
+                informed_reset=None if callback.curriculum is None else dict(
+                    callback.curriculum,
+                    informed_completed=sum(e["informed"] for e in callback.episodes),
+                    informed_successful=sum(e["informed"] and e["passed"] for e in callback.episodes),
+                    full_start_completed=sum(not e["informed"] for e in callback.episodes),
+                    full_start_successful=sum(not e["informed"] and e["passed"] for e in callback.episodes)),
                 metrics={key: value if np.isfinite(value) else None for key, value in metrics.items()})
 
 
@@ -564,7 +776,9 @@ def train(config_path, output):
     action_mapping = dict(low_physical_ctbr=wrapper.low.tolist(), high_physical_ctbr=wrapper.high.tolist(),
                           hover_physical_ctbr=[env.plant.hover_force, 0., 0., 0.],
                           hover_normalized=wrapper.hover_action.tolist(),
-                          zero_normalized_physical_ctbr=wrapper.action(np.zeros(4)).tolist())
+                          zero_normalized_physical_ctbr=wrapper.action(np.zeros(4)).tolist(),
+                          parameterization=wrapper.parameterization,
+                          half_range_physical_ctbr=wrapper.half_range.tolist())
     defaults = {name: parameter.default for name, parameter in inspect.signature(PPO.__init__).parameters.items()
                 if parameter.default is not inspect.Parameter.empty
                 and name not in ("_init_setup_model", "policy_kwargs")}
@@ -605,6 +819,11 @@ def train(config_path, output):
             with (output / "updates.jsonl").open("a") as stream:
                 stream.write(json.dumps(evidence, allow_nan=False) + "\n")
             _save_checkpoint(checkpoints / "latest", model, vec, config, source, completed)
+            curriculum_state = evidence.get("informed_reset")
+            if curriculum_state and curriculum_state["advanced"]:
+                # Policy that has just passed the advance gate, for later offline evaluation.
+                _save_checkpoint(checkpoints / f"frontier_{curriculum_state['lead_s']:.2f}s",
+                                 model, vec, config, source, completed)
             if not arrival and completed == 2:
                 saved = _save_checkpoint(checkpoints / "pre_resume", model, vec, config, source, completed)
                 if saved["state"]["num_timesteps"] != 4096:

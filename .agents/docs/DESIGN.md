@@ -222,6 +222,12 @@ q 是每个时刻选出的朝板几何点，不是固定在机体上的同一材
 | body 角速度 | `||ω||≤1 rad/s` |
 | 安全 | 本回合无已锁存违规或有效外部机体碰撞 |
 
+用户2026-10-19改用中等放宽集合（`configs/agile_flight/terminal_arrival_moderate_precision.json`）：法向速度以中心
+2.25±0.75 m/s 表示 1.5—3.0 m/s，gap ±0.04 m，切向位置 ≤0.04 m，切向速度 ≤0.5 m/s，姿态 ≤15°，‖ω‖ ≤3 rad/s；评价器判定代码不变，
+只换配置。v*、奖励速度误差与参考轨迹终端速度随中心取 2.25 m/s。上表为原 3 m/s 集合（`terminal_arrival.json`），保留为历史配置。
+对新集合的保守全机净空（22 个 UAV geom 包围球、gap 最小 0.16 m、切向 0.04 m、姿态 15° 旋转界）：到装甲无限前表面 ≥0.1166 m，
+到地面 ≥1.1254 m（同方法复算原集合为 0.1421／1.1601 m，与此前记录一致）。T=1.0 s 平坦参考开环在 9 初态全部到达。
+
 不要求非零速度终端状态在固定位置保持；不跨时刻拼接位置、速度、姿态最优值。失败优先于同子步成功，成功优先于无违规的任务到期。任务期限 H=3 s，未到达使用有限时域 `terminated`；正常 `truncated=False`。外部学习墙钟停止仅记录训练未完成，不伪造物理任务成功、失败或 TimeLimit。
 
 候选全程安全边界：质心 box `[−0.6,−0.5,0.5]` 至 `[1.4,0.5,3.0] m`；任一有效外部碰撞、非有限状态、MuJoCo warning、速度>6 m/s、相对竖直倾角>80°、body rate 范数>20 rad/s、连续 proxy 饱和>0.4 s 均失败。未成功而 gap<0.12 m 为 `TERMINAL_OVERSHOOT`。实体板、rim、地面和完整机体碰撞保留，虚拟终端不新增碰撞体；这些只属于 I4，不修改原恢复体积或接触阈值。
@@ -265,7 +271,7 @@ advance_physics_interval(
 
 v*、R* 与 ω* 固定为本任务已声明先验，不跨回合改变隐藏目标。Actor 不读取 evaluator phase、碰撞、精确电机激活、Teacher 或未来状态；VecNormalize 仅归一化观测。状态真值训练与未来估计能力分开报告，隐藏电机滞后状态意味着输入未必严格 Markov。
 
-物理动作仍为 collective 0—4.4145 N、body FLU rates 各±20 rad/s；归一化四维动作沿原仿射映射。归一化 0 对应 2.20725 N，悬停对应 `[-1/3,0,0,0]`。1 ms 物理、5 ms 控制和 40 ms filterexact 电机响应保持；动作不是直接设置刚体位姿/速度，proxy 不等于 PX4。
+物理动作仍为 collective 0—4.4145 N、body FLU rates 各±20 rad/s；归一化四维动作沿原仿射映射。归一化 0 对应 2.20725 N，悬停对应 `[-1/3,0,0,0]`。第二轮可由训练配置选择 `hover_centered_v1`，见§10.7；未声明时保持 `bounds_affine_v1` 原映射。1 ms 物理、5 ms 控制和 40 ms filterexact 电机响应保持；动作不是直接设置刚体位姿/速度，proxy 不等于 PX4。
 
 保留上一版唯一候选奖励。令 `d=||b−b*||`、`Φ(d)=1/(1+(d/0.5m)²)`、`g(d)=exp(−(d/0.35m)²)`、`h(x;σ)=min((x/σ)²,1)`，`e_v=max(||v−v*||,||v_material_at_q−v*||)`、θ 为完整 SO(3) 角误差。每个真实完成物理区间结算：
 
@@ -320,3 +326,64 @@ I4接口、共享步进及上述检查已落地；本批完成一次CPU容器构
 实现通过检查并不代表学会终端到达；3 m/s联合状态集合的完整执行链可达性和学习机制
 仍须研究证据。静态终端容差净空不代替完整进场或接触恢复安全。
 本批已停止，不自动追加训练、换seed、放宽阈值、调控制器或操作服务器。
+
+### 10.7 第二轮：动作层初始分布（ADOPTED 配置项；效果按结果）
+
+用户2026-10-17批准一次单因素有界运行。训练配置 `action_parameterization` 默认
+`bounds_affine_v1`（原表达式，I3 与首轮配置、checkpoint 不变）；`hover_centered_v1` 仅限 Arrival：
+归一化 0 为合成悬停 `[mg,0,0,0]`，逐维半幅 `max(high−hover, hover−low)`，即 `[2.943 N,20,20,20]`；
+低于 0 N 的推力请求交给环境原输入裁剪并计数，不在 wrapper 内隐藏。`policy_kwargs.log_std_init`
+校验于 [−3,0]，Contact 仅允许默认 0。配置与 checkpoint 一同保存，评价按 checkpoint 配置重建同一映射。
+
+每 rollout 另记录逐维归一化裁剪计数，以及 rollout 观测上行为策略高斯均值和 `|μ|>1` 比例；
+这些只用于归因，不进入奖励或观测。配置为
+`configs/agile_flight/ppo_terminal_arrival_hover_centered.json`，与首轮配置只差上述映射和
+`log_std_init=−1`；奖励、初态、终端集合、安全、评分、其他 PPO 超参、seed 与预算不变。
+
+离线微分平坦见证（不属于训练或评分实现）表明名义初态在当前执行链约束下可进入终端集合，
+开环前馈回放于 0.782 s 到达；它只证明名义可达，不提供 PPO 标签。实际运行结果与预先登记的预期
+维护于活动计划；该配置项的采用不代表到达学习成功。
+
+### 10.8 第三轮：Informed Reset／Reverse Curriculum（ADOPTED 配置项；效果按结果）
+
+只读诊断（活动计划 §11）显示：奖励使成功比任何失败高约 43（折扣后约 30），但在训练噪声下即使均值完美，
+离到达 ≥0.2 s 起步的成功率已≈0，从起点为 0；平坦开环前馈 T=1.0 在 9 初态均成功。故第三轮只改变训练起始状态分布。
+
+- 参考：`baselines.py::FlatnessReference`。从当前 reset 状态到声明终端状态的 9 次平坦多项式（终端推力与传统参考
+  相同、终端 jerk/snap 为 0），经 profile 电机滞后与名义 rate 增益求逆得到 CTBR。只用于生成起始状态。
+- `ppo.py::InformedReset`／`InformedResetCurriculum`：只挂在训练向量（`make_vec_env(training=True)` 且配置声明
+  `informed_reset`）。无选项的 reset 以概率 p 抽 lead∈[min_lead, frontier]，在真实 `step` 中按参考飞行
+  `duration−lead` 秒（电机状态、上一动作、评价器历史与时钟自洽），然后 `start_scored_segment()` 清零奖励累计；
+  前缀转移不返回学习器。前缀内若终止则改为完整起点并计数。带显式初态的 reset（评价）不受影响。
+- 前沿：每个完整 rollout 末检查一次；最近 W 个 informed 回合成功率 ≥ 阈值时 frontier 增加一步，直到参考时长
+  （此时等同完整起点）。每 rollout 记录 frontier、窗口成功率、informed／完整起点各自的完成与成功数。
+- 配置 `configs/agile_flight/ppo_terminal_arrival_informed_reset.json`：在第二轮配置上只增加
+  `informed_reset`（参考时长 1.0 s、p=0.5、初始 lead 0.1 s、最小 0.05 s、步长 0.1 s、阈值 0.5、窗口 32）。
+- 评价、奖励、终端集合、安全、评分、动作参数化、PPO 超参、seed 与预算不变；结果维护于活动计划。
+- 前缀复用（工程项，可选 `reference_reuse_episodes`=K，缺省 1 即第三轮行为）：K>1 时一次参考飞行到最长前缀，
+  每 10 个策略步保存 `AgileTerminalArrivalEnv.episode_snapshot()`（完整 `MjData` 拷贝＋环境／评价器累计量），供本环境
+  后续 K 个 informed 回合使用；恢复最后一个早于所需起点的快照，再用与新鲜前缀相同的飞行循环补足。所得状态与从相同
+  初态新鲜飞行逐位一致（测试覆盖 MjData 主要字段、观测、累计量、评价器摘要及后续步）。代价是初态坐标在 K 回合内重复，
+  边际分布不变；随机数消耗顺序与 K=1 相同。
+- 前沿推进统计（可选 `advance_statistic`）：缺省 `all_informed_v1` 统计 [min_lead, frontier] 内全部 informed 回合
+  （第三轮及批次 A/B）；`frontier_band_v1` 只统计 lead 位于最新一档 [frontier−step, frontier] 的回合，避免已掌握的短 lead
+  撑过门槛。采样分布不变。
+
+### 10.9 末端精度奖励塑形（ADOPTED 可选项；效果按结果）
+
+用户2026-10-18批准一次单因素运行。`ArrivalEvaluator.terminal_violation_ratio` 给出 8 个终端条件误差／容差的最大值
+（≤1 恰为同刻全部满足）；评价器在尚无安全违规且未到达的每个 1 ms 终点快照更新最小值，摘要字段
+`best_terminal_violation_ratio`。到达判定 `qualifies` 与终止逻辑不变。
+
+奖励可选 `terminal_precision_bonus`=B（缺省 0，原奖励逐位不变）：回合结束时 event 项一次性加 `B·min(1, 1/ρ_best)`，结果单列
+`terminal_precision_bonus`，`reward_status` 标为塑形版本。B=15 由已有审计轨迹解析得出（使折扣后传统近失排在原地拖到超时之上的
+最小整数档，需 B>12.3），成功仍比任何失败高 ≥40。配置为 `configs/agile_flight/terminal_arrival_precision.json`（原
+`terminal_arrival.json` 不改）与 `ppo_terminal_arrival_informed_band_precision.json`（与运行 C 只差 `env_config`）。
+
+### 10.10 长预算运行（2026-10-19）
+
+用户要求在运行 E 后继续改进。Arrival 训练预算上限由 524,288 transitions／900 s 提为 `ARRIVAL_MAX_TRANSITIONS=2,097,152`／
+`ARRIVAL_MAX_LEARNING_WALL_S=3600`（单 seed、本机 CPU；I3 原上限不变）。课程前沿每次推进时另存
+`checkpoints/frontier_<lead>s/`，供离线 9 初态评价；不影响学习。运行 F 配置 `ppo_terminal_arrival_moderate_precision_long.json`
+与运行 E 只差预算。
+
