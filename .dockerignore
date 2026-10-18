@@ -28,6 +28,8 @@ configs/agile_flight/*
 !configs/agile_flight/ppo_terminal_arrival_moderate_precision_long_dr.json
 !configs/agile_flight/ppo_terminal_arrival_moderate_precision_long_dr_seed1.json
 !configs/agile_flight/ppo_terminal_arrival_moderate_precision_long_dr_seed2.json
+!configs/agile_flight/ppo_terminal_arrival_moderate_precision_long_dr_obsnoise.json
+!configs/agile_flight/ppo_terminal_arrival_moderate_precision_long_dr_obsnoise_seed2.json
 !configs/drone.json
 !configs/dynamics_150g.json
 !docker/

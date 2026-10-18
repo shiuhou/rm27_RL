@@ -115,6 +115,12 @@ def load_train_config(path=DEFAULT_TRAIN_CONFIG):
                        or any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in r)
                        or not .5 <= r[0] <= r[1] <= 1.5 for r in ranges)):
             raise ValueError("Dynamics randomization must declare Arrival mass/thrust scale ranges in [0.5, 1.5]")
+    noise = config.get("observation_noise")
+    if noise is not None:
+        if (not arrival or set(noise) != set(OBSERVATION_NOISE_LIMITS)
+                or any(isinstance(noise[k], bool) or not isinstance(noise[k], (int, float))
+                       or not 0 <= noise[k] <= limit for k, limit in OBSERVATION_NOISE_LIMITS.items())):
+            raise ValueError("Observation noise must declare Arrival position/velocity/body-rate std within limits")
     informed = config.get("informed_reset")
     if informed is not None:
         keys = {"reference", "reference_duration_s", "probability", "initial_lead_s", "min_lead_s",
@@ -300,6 +306,37 @@ class InformedReset(gym.Wrapper):
         return transition
 
 
+# Arrival observation slices (DESIGN §10.4) perturbed by training-only noise, and the
+# largest accepted standard deviations.
+OBSERVATION_NOISE_SLICES = dict(position_m=slice(0, 3), velocity_m_s=slice(6, 9), body_rate_rad_s=slice(18, 21))
+OBSERVATION_NOISE_LIMITS = dict(position_m=.1, velocity_m_s=.5, body_rate_rad_s=1.)
+
+
+class ObservationNoise(gym.ObservationWrapper):
+    """Training-only zero-mean Gaussian noise on the state-estimate fields the actor sees.
+
+    Target-relative position, velocity and body rates are perturbed independently each
+    step; the target normal, rotation, previous applied command and remaining time are
+    left exact. Evaluator, reward and dynamics use the true state.
+    """
+
+    def __init__(self, env, spec):
+        super().__init__(env)
+        self.std = {key: float(value) for key, value in spec.items()}
+        self._rng = np.random.default_rng(0)
+
+    def reset(self, *, seed=None, options=None):
+        if seed is not None:
+            self._rng = np.random.default_rng(seed)
+        return super().reset(seed=seed, options=options)
+
+    def observation(self, observation):
+        noisy = np.array(observation, dtype=np.float32, copy=True)
+        for key, part in OBSERVATION_NOISE_SLICES.items():
+            noisy[part] += (self.std[key] * self._rng.standard_normal(3)).astype(np.float32)
+        return noisy
+
+
 class DynamicsRandomization(gym.Wrapper):
     """Training-only per-episode plant mass and thrust-gain scales, drawn uniformly.
 
@@ -320,7 +357,7 @@ class DynamicsRandomization(gym.Wrapper):
         return self.env.reset(options={"initial_coordinates": base.initial_coordinates})
 
 
-def _make_dummy_vec(config, n_envs=None, curriculum=None, randomization=None):
+def _make_dummy_vec(config, n_envs=None, curriculum=None, randomization=None, noise=None):
     path = ROOT / config["env_config"]
     count = config["n_envs"] if n_envs is None else n_envs
     # Every factory creates its own model/data/evaluator/proxy/action memory.
@@ -336,6 +373,8 @@ def _make_dummy_vec(config, n_envs=None, curriculum=None, randomization=None):
             env = DynamicsRandomization(env, randomization)
         if curriculum is not None:
             env = InformedReset(env, curriculum)
+        if noise is not None:
+            env = ObservationNoise(env, noise)
         return Monitor(NormalizedCTBR(env, parameterization))
     vec = DummyVecEnv([build for _ in range(count)])
     vec.seed(config["seed"])
@@ -343,11 +382,12 @@ def _make_dummy_vec(config, n_envs=None, curriculum=None, randomization=None):
 
 
 def make_vec_env(config, n_envs=None, training=True):
-    """Training vectors carry the declared curriculum and dynamics randomization; evaluation never does."""
+    """Training vectors carry the declared curriculum, dynamics and observation randomization; evaluation never does."""
     curriculum = (InformedResetCurriculum(config["informed_reset"])
                   if training and config.get("informed_reset") else None)
     randomization = config.get("dynamics_randomization") if training else None
-    vec = VecNormalize(_make_dummy_vec(config, n_envs, curriculum, randomization), training=training,
+    noise = config.get("observation_noise") if training else None
+    vec = VecNormalize(_make_dummy_vec(config, n_envs, curriculum, randomization, noise), training=training,
                        norm_obs=True, norm_reward=False)
     vec.informed_curriculum = curriculum
     return vec
