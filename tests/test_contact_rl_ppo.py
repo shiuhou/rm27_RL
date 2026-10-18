@@ -298,6 +298,15 @@ def test_informed_reset_is_training_only_and_dynamically_consistent(tmp_path):
         band.record(success, .35)
     assert band.update()["advanced"] and band.lead_s == pytest.approx(.5)
 
+    # Accumulated 0.1 s steps land exactly on the reference duration, then stop advancing.
+    edge = InformedResetCurriculum(dict(spec, initial_lead_s=.1, min_lead_s=.05, reference_duration_s=1.))
+    advances = 0
+    for _ in range(12):
+        for _ in range(spec["advance_window_episodes"]):
+            edge.record(True, edge.lead_s)
+        advances += edge.update()["advanced"]
+    assert edge.lead_s == 1. and advances == 9
+
     training, evaluation = make_vec_env(config, n_envs=1), make_vec_env(config, n_envs=1, training=False)
     try:
         assert training.informed_curriculum is not None and evaluation.informed_curriculum is None
@@ -364,6 +373,71 @@ def test_reference_snapshot_reuse_matches_a_fresh_prefix_bit_for_bit():
         assert curriculum.reference_flights == 2
     finally:
         reused.close()
+        fresh.close()
+
+
+def test_dynamics_randomization_is_training_only_and_within_declared_ranges(tmp_path):
+    long = load_train_config(ROOT / "configs/agile_flight/ppo_terminal_arrival_moderate_precision_long.json")
+    config = load_train_config(ROOT / "configs/agile_flight/ppo_terminal_arrival_moderate_precision_long_dr.json")
+    assert dict(config, status=None, dynamics_randomization=None) == dict(long, status=None, dynamics_randomization=None)
+    spec = config["dynamics_randomization"]
+    training, evaluation = make_vec_env(config, n_envs=2), make_vec_env(config, n_envs=1, training=False)
+    try:
+        training.reset()
+        drawn = []
+        for _ in range(3):
+            for env in training.venv.envs:
+                env.reset()
+                drawn.append(env.unwrapped.dynamics_scales)
+        assert len({tuple(d.values()) for d in drawn}) == len(drawn)
+        for scales in drawn:
+            assert spec["mass_scale"][0] <= scales["mass"] <= spec["mass_scale"][1]
+            assert spec["thrust_scale"][0] <= scales["thrust"] <= spec["thrust_scale"][1]
+        evaluation.reset()
+        assert evaluation.venv.envs[0].unwrapped.dynamics_scales == dict(mass=1., thrust=1.)
+    finally:
+        training.close()
+        evaluation.close()
+    path = tmp_path / "training.json"
+    for invalid in (dict(load_train_config(), dynamics_randomization=spec),
+                    dict(config, dynamics_randomization=dict(spec, mass_scale=[1.2, 1.1])),
+                    dict(config, dynamics_randomization=dict(spec, thrust_scale=[.4, 1.])),
+                    dict(config, dynamics_randomization=dict(spec, inertia_scale=[.9, 1.1]))):
+        path.write_text(json.dumps(invalid))
+        with pytest.raises(ValueError):
+            load_train_config(path)
+
+
+def test_informed_prefix_flies_the_nominal_plant_and_scores_the_drawn_dynamics():
+    from rm27_contact_rl.arrival_env import AgileTerminalArrivalEnv
+    from rm27_contact_rl.baselines import FlatnessReference
+    from rm27_contact_rl.ppo import DynamicsRandomization, InformedReset, InformedResetCurriculum
+
+    config = load_train_config(ROOT / "configs/agile_flight/ppo_terminal_arrival_moderate_precision_long_dr.json")
+    spec = dict(config["informed_reset"], probability=1., initial_lead_s=.5, reference_reuse_episodes=3)
+    path = ROOT / config["env_config"]
+    wrapped = InformedReset(DynamicsRandomization(AgileTerminalArrivalEnv(path), config["dynamics_randomization"]),
+                            InformedResetCurriculum(spec))
+    fresh = AgileTerminalArrivalEnv(path)
+    try:
+        for episode in range(4):  # crosses one reference refresh
+            observation, info = wrapped.reset(seed=3 if episode == 0 else None)
+            base = wrapped.unwrapped
+            assert base.dynamics_scales != dict(mass=1., thrust=1.)
+            fresh.set_dynamics_scales()  # the reference prefix is flown on the nominal plant
+            fresh.reset(options={"initial_coordinates": base.initial_coordinates})
+            reference = FlatnessReference(fresh, spec["reference_duration_s"])
+            while fresh.plant.data.time < base.plant.data.time - 1e-12:
+                fresh.step(reference.action(fresh))
+            for name in ("qpos", "qvel", "act", "ctrl"):
+                np.testing.assert_array_equal(getattr(base.plant.data, name), getattr(fresh.plant.data, name))
+            fresh.set_dynamics_scales(**base.dynamics_scales)
+            fresh.start_scored_segment()
+            a, b = wrapped.step(np.array([1.6, 0., 1., 0.])), fresh.step(np.array([1.6, 0., 1., 0.]))
+            np.testing.assert_array_equal(a[0], b[0])
+            assert a[1] == b[1]
+    finally:
+        wrapped.close()
         fresh.close()
 
 

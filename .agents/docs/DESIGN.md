@@ -387,3 +387,14 @@ I4接口、共享步进及上述检查已落地；本批完成一次CPU容器构
 `checkpoints/frontier_<lead>s/`，供离线 9 初态评价；不影响学习。运行 F 配置 `ppo_terminal_arrival_moderate_precision_long.json`
 与运行 E 只差预算。
 
+### 10.11 训练用动力学随机化（2026-10-19，ADOPTED 可选项）
+
+运行 F 的只读稳健性评价显示，推重比下降（质量 +10%／+20%、推力增益 −10%）时完整起点成功率降到 5/9、1/9、5/9，失败为过冲；
+其他单项偏差（质量 −10%、推力 +10%、电机时间常数 30／60 ms、惯量 ×0.8／×1.25、小观测噪声）均 9/9。
+`AgileTerminalArrivalEnv.set_dynamics_scales(mass, thrust)` 按编译值缩放仿真机体质量与电机推力增益；rate proxy、混控、悬停命令和
+参考轨迹保持名义 profile。缩放属于回合快照（恢复时重新施加），并写入结果 `dynamics_scales`。`ppo.py::DynamicsRandomization`
+只挂在训练向量上，每回合从配置声明的均匀区间抽取；评价向量始终为名义机体。配置 `ppo_terminal_arrival_moderate_precision_long_dr.json`
+= 运行 F 配置 + `dynamics_randomization={mass_scale:[0.9,1.15], thrust_scale:[0.85,1.15]}`。
+与 informed reset 组合时，参考前缀在名义机体上飞（只用于生成参考上的起点），在交给学习器的时刻施加本回合抽到的缩放；
+开环前缀若在随机化机体上飞会偏离参考（首次实现的运行 G：informed 成功 11%、前沿只到 0.4 s）。课程前沿累加以 9 位小数取整。
+

@@ -107,6 +107,14 @@ def load_train_config(path=DEFAULT_TRAIN_CONFIG):
     if (isinstance(log_std_init, bool) or not isinstance(log_std_init, (int, float))
             or not -3. <= log_std_init <= 0. or (not arrival and log_std_init != 0.)):
         raise ValueError("Initial policy log standard deviation outside the declared envelope")
+    randomization = config.get("dynamics_randomization")
+    if randomization is not None:
+        ranges = [randomization.get(key) for key in ("mass_scale", "thrust_scale")]
+        if (not arrival or set(randomization) != {"mass_scale", "thrust_scale"}
+                or any(not isinstance(r, list) or len(r) != 2
+                       or any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in r)
+                       or not .5 <= r[0] <= r[1] <= 1.5 for r in ranges)):
+            raise ValueError("Dynamics randomization must declare Arrival mass/thrust scale ranges in [0.5, 1.5]")
     informed = config.get("informed_reset")
     if informed is not None:
         keys = {"reference", "reference_duration_s", "probability", "initial_lead_s", "min_lead_s",
@@ -199,7 +207,8 @@ class InformedResetCurriculum:
         advanced = (full and rate >= self.spec["advance_success_rate"]
                     and self.lead_s < self.spec["reference_duration_s"])
         if advanced:
-            self.lead_s = min(self.lead_s + self.spec["lead_step_s"], self.spec["reference_duration_s"])
+            # Round so repeated steps land exactly on the declared grid (0.9 + 0.1 must reach 1.0).
+            self.lead_s = min(round(self.lead_s + self.spec["lead_step_s"], 9), self.spec["reference_duration_s"])
             self.window = []
         return dict(lead_s=self.lead_s, window_episodes=len(self.window) if not advanced else 0,
                     window_success_rate=rate, advanced=advanced, prefix_failures=self.prefix_failures,
@@ -219,6 +228,11 @@ class InformedReset(gym.Wrapper):
     snapshot before the requested start is restored and the same flight loop
     finishes the prefix, giving the state a fresh prefix from those coordinates
     reaches. Coordinates are drawn as before but repeat within the K episodes.
+
+    Under dynamics randomization the prefix is flown on the nominal plant (it only
+    generates a start state on the feasible reference) and the episode's drawn
+    scales are applied from the scored start onward; an open-loop prefix flown on
+    a mismatched plant would drift away from the reference.
     """
 
     def __init__(self, env, curriculum):
@@ -240,6 +254,8 @@ class InformedReset(gym.Wrapper):
         if prefix < base.policy_dt_s:
             return observation, info
         from .baselines import FlatnessReference
+        episode_scales = dict(base.dynamics_scales)
+        base.set_dynamics_scales()
         reuse = spec.get("reference_reuse_episodes", 1)
         if reuse == 1:
             reference = FlatnessReference(base, spec["reference_duration_s"])
@@ -256,6 +272,7 @@ class InformedReset(gym.Wrapper):
             if terminated:
                 self.curriculum.prefix_failures += 1
                 return self.env.reset(options={"initial_coordinates": base.initial_coordinates})
+        base.set_dynamics_scales(**episode_scales)
         observation = base._observation()
         base.start_scored_segment()
         self.informed = True
@@ -283,7 +300,27 @@ class InformedReset(gym.Wrapper):
         return transition
 
 
-def _make_dummy_vec(config, n_envs=None, curriculum=None):
+class DynamicsRandomization(gym.Wrapper):
+    """Training-only per-episode plant mass and thrust-gain scales, drawn uniformly.
+
+    The first reset seeds the environment and draws the initial coordinates; the
+    scales come from the same RNG and the episode is then reset with them applied.
+    Evaluation vectors never carry this wrapper, so they use the nominal plant.
+    """
+
+    def __init__(self, env, spec):
+        super().__init__(env)
+        self.ranges = {key: tuple(value) for key, value in spec.items()}
+
+    def reset(self, *, seed=None, options=None):
+        self.env.reset(seed=seed, options=options)
+        base = self.env.unwrapped
+        base.set_dynamics_scales(mass=base.np_random.uniform(*self.ranges["mass_scale"]),
+                                 thrust=base.np_random.uniform(*self.ranges["thrust_scale"]))
+        return self.env.reset(options={"initial_coordinates": base.initial_coordinates})
+
+
+def _make_dummy_vec(config, n_envs=None, curriculum=None, randomization=None):
     path = ROOT / config["env_config"]
     count = config["n_envs"] if n_envs is None else n_envs
     # Every factory creates its own model/data/evaluator/proxy/action memory.
@@ -295,6 +332,8 @@ def _make_dummy_vec(config, n_envs=None, curriculum=None):
     parameterization = config.get("action_parameterization", BOUNDS_AFFINE)
     def build():
         env = env_class(path)
+        if randomization is not None:
+            env = DynamicsRandomization(env, randomization)
         if curriculum is not None:
             env = InformedReset(env, curriculum)
         return Monitor(NormalizedCTBR(env, parameterization))
@@ -304,10 +343,11 @@ def _make_dummy_vec(config, n_envs=None, curriculum=None):
 
 
 def make_vec_env(config, n_envs=None, training=True):
-    """Training vectors carry the declared informed-reset curriculum; evaluation never does."""
+    """Training vectors carry the declared curriculum and dynamics randomization; evaluation never does."""
     curriculum = (InformedResetCurriculum(config["informed_reset"])
                   if training and config.get("informed_reset") else None)
-    vec = VecNormalize(_make_dummy_vec(config, n_envs, curriculum), training=training,
+    randomization = config.get("dynamics_randomization") if training else None
+    vec = VecNormalize(_make_dummy_vec(config, n_envs, curriculum, randomization), training=training,
                        norm_obs=True, norm_reward=False)
     vec.informed_curriculum = curriculum
     return vec

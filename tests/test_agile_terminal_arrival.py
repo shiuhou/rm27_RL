@@ -358,3 +358,27 @@ def test_moderate_terminal_set_is_config_only_and_reachable_by_the_reference():
     finally:
         env.close()
 
+
+def test_dynamics_scales_change_only_the_plant_and_survive_snapshot_restore(env):
+    model = env.plant.model
+    uav, motor = model.body("uav").id, model.actuator("uav_motor_0").id
+    mass, gain = float(model.body_mass[uav]), float(model.actuator_gainprm[motor, 0])
+    env.set_dynamics_scales(mass=1.1, thrust=.9)
+    assert model.body_mass[uav] == pytest.approx(1.1 * mass) and model.actuator_gainprm[motor, 0] == pytest.approx(.9 * gain)
+    assert env.plant.hover_force == pytest.approx(mass * 9.81, rel=1e-3)  # controller side stays nominal
+    env.reset(options={"initial_coordinates": [1.2, 0, 0]})
+    for _ in range(3):
+        env.step(env.previous_action_ctbr.copy())
+    snapshot = env.episode_snapshot()
+    reference = [env.step(np.array([1.8, 1., 0., 0.]))[0] for _ in range(3)]
+    env.restore_episode(snapshot)
+    env.set_dynamics_scales()  # a later draw must not leak into the restored flight
+    env.restore_episode(snapshot)
+    assert env.dynamics_scales == dict(mass=1.1, thrust=.9) and model.body_mass[uav] == pytest.approx(1.1 * mass)
+    for expected in reference:
+        np.testing.assert_array_equal(env.step(np.array([1.8, 1., 0., 0.]))[0], expected)
+    env.set_dynamics_scales()
+    assert model.body_mass[uav] == mass and model.actuator_gainprm[motor, 0] == gain
+    with pytest.raises(ValueError):
+        env.set_dynamics_scales(mass=0.)
+

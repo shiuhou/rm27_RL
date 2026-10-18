@@ -15,7 +15,7 @@ DEFAULT_ARRIVAL_CONFIG = ROOT / "configs/agile_flight/terminal_arrival.json"
 # Every per-episode attribute that step/reset mutate besides the MuJoCo data.
 _EPISODE_FIELDS = ("initial_coordinates", "episode_start", "previous_action_ctbr", "_terminal_result",
                    "reward_component_totals", "informed_prefix_s", "action_clipped_time_s",
-                   "motor_command_saturation_time_s", "evaluator", "_active")
+                   "motor_command_saturation_time_s", "evaluator", "_active", "dynamics_scales")
 
 
 class AgileTerminalArrivalEnv(gym.Env):
@@ -29,6 +29,12 @@ class AgileTerminalArrivalEnv(gym.Env):
         if self.rl_config.get("observation_schema") != self.observation_schema:
             raise ValueError("Arrival requires its own observation schema")
         self.plant = RM27Plant(cfg, self.sources)
+        model = self.plant.model
+        self._uav_body = model.body("uav").id
+        self._motors = [model.actuator(f"uav_motor_{i}").id for i in range(4)]
+        self._nominal_mass = float(model.body_mass[self._uav_body])
+        self._nominal_thrust_gain = model.actuator_gainprm[self._motors, 0].copy()
+        self.dynamics_scales = dict(mass=1., thrust=1.)
         self.geometry = terminal_geometry(self.rl_config, self.plant.physical)
         self.target_position = self.geometry["position_target"].copy()
         self.target_normal = self.geometry["normal"].copy()
@@ -111,6 +117,20 @@ class AgileTerminalArrivalEnv(gym.Env):
         return self._observation(), self._info(0, self.episode_start, False, False,
                                               dict(progress=0., cost=0., event=0.))
 
+    def set_dynamics_scales(self, *, mass=1., thrust=1.):
+        """Scale the simulated plant's mass and motor thrust gain from their compiled values.
+
+        Training-only domain randomization: the rate proxy, mixer, hover command and
+        reference keep the nominal profile, as a real controller would. The new values
+        take effect from the next reset or step.
+        """
+        if not all(np.isfinite([mass, thrust])) or mass <= 0 or thrust <= 0:
+            raise ValueError("Dynamics scales must be positive and finite")
+        model = self.plant.model
+        model.body_mass[self._uav_body] = self._nominal_mass * mass
+        model.actuator_gainprm[self._motors, 0] = self._nominal_thrust_gain * thrust
+        self.dynamics_scales = dict(mass=float(mass), thrust=float(thrust))
+
     def episode_snapshot(self):
         """Complete mutable episode state: a full MjData copy plus env/evaluator accounting."""
         if self._closed or self.evaluator is None:
@@ -126,6 +146,7 @@ class AgileTerminalArrivalEnv(gym.Env):
         mujoco.mj_copyData(self.plant.data, self.plant.model, snapshot["data"])
         for name, value in copy.deepcopy(snapshot["fields"]).items():
             setattr(self, name, value)
+        self.set_dynamics_scales(**self.dynamics_scales)
 
     def start_scored_segment(self):
         """Training-only informed reset: later reward totals exclude the prefix.
@@ -215,6 +236,7 @@ class AgileTerminalArrivalEnv(gym.Env):
                     reward_component_totals=self.reward_component_totals.copy(),
                     total_reward=sum(self.reward_component_totals.values()),
                     informed_prefix_s=self.informed_prefix_s,
+                    dynamics_scales=dict(self.dynamics_scales),
                     action_clipped_time_s=self.action_clipped_time_s,
                     motor_command_saturation_time_s=self.motor_command_saturation_time_s,
                     terminal_precision_bonus=precision,
