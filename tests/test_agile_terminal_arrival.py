@@ -415,3 +415,37 @@ def test_perch_style_terms_regularize_actions_and_scale_success_by_accuracy():
     finally:
         env.close()
 
+
+def test_crossing_gated_precision_bonus_is_not_paid_for_hovering_to_timeout(tmp_path):
+    from rm27_contact_rl.arrival_env import DEFAULT_ARRIVAL_CONFIG
+    paid = {}
+    for name in ("terminal_arrival_moderate_precision.json", "explore/terminal_arrival_moderate_precision_crossing.json"):
+        task = json.loads((DEFAULT_ARRIVAL_CONFIG.parent / name).read_text())
+        task["horizon_s"] = .05
+        path = tmp_path / name.replace("/", "_")
+        path.write_text(json.dumps(task))
+        env = AgileTerminalArrivalEnv(path)
+        try:
+            env.reset(options={"initial_coordinates": [1.2, 0, 0]})
+            terminated = False
+            while not terminated:
+                _, _, terminated, _, info = env.step(env.previous_action_ctbr.copy())
+            assert info["result"]["failure_modes"] == ["ARRIVAL_TIMEOUT"]
+            paid[name] = info["result"]["terminal_precision_bonus"]
+        finally:
+            env.close()
+    assert paid["terminal_arrival_moderate_precision.json"] > 0
+    assert paid["explore/terminal_arrival_moderate_precision_crossing.json"] == 0
+    # An episode that reaches the gap window is still paid in full.
+    env = AgileTerminalArrivalEnv(DEFAULT_ARRIVAL_CONFIG.parent / "explore/terminal_arrival_moderate_precision_crossing.json")
+    try:
+        env.reset(options={"initial_coordinates": [1.2, 0, 0]})
+        geometry = env.evaluator.geometry
+        place(env, geometry["position_target"] + .042 * geometry["normal"], geometry["target_rotation"],
+              geometry["velocity_target"])
+        fresh_evaluator(env)
+        _, _, terminated, _, info = env.step(env.previous_action_ctbr.copy())
+        assert terminated and info["result"]["passed"] and info["result"]["terminal_precision_bonus"] == 15
+    finally:
+        env.close()
+
