@@ -441,54 +441,6 @@ def test_informed_prefix_flies_the_nominal_plant_and_scores_the_drawn_dynamics()
         fresh.close()
 
 
-def test_observation_noise_is_training_only_and_touches_only_estimate_fields(tmp_path):
-    from rm27_contact_rl.arrival_env import AgileTerminalArrivalEnv
-    from rm27_contact_rl.ppo import ObservationNoise
-
-    dr = load_train_config(ROOT / "configs/agile_flight/ppo_terminal_arrival_moderate_precision_long_dr.json")
-    config = load_train_config(ROOT / "configs/agile_flight/ppo_terminal_arrival_moderate_precision_long_dr_obsnoise.json")
-    seed2 = load_train_config(ROOT / "configs/agile_flight/ppo_terminal_arrival_moderate_precision_long_dr_obsnoise_seed2.json")
-    assert dict(config, status=None, observation_noise=None) == dict(dr, status=None, observation_noise=None)
-    assert dict(seed2, status=None, seed=0) == dict(config, status=None)
-    noisy = ObservationNoise(AgileTerminalArrivalEnv(ROOT / config["env_config"]), config["observation_noise"])
-    try:
-        observation, _ = noisy.reset(seed=4, options={"initial_coordinates": [1.2, 0, 0]})
-        exact = noisy.unwrapped._observation()
-        changed = np.flatnonzero(observation != exact)
-        assert set(changed) <= set(range(0, 3)) | set(range(6, 9)) | set(range(18, 21)) and len(changed) == 9
-        observation, *_ = noisy.step(noisy.unwrapped.previous_action_ctbr.copy())
-        assert np.array_equal(observation[[3, 4, 5, *range(9, 18), *range(21, 26)]],
-                              noisy.unwrapped._observation()[[3, 4, 5, *range(9, 18), *range(21, 26)]])
-        again, _ = noisy.reset(seed=4, options={"initial_coordinates": [1.2, 0, 0]})
-        first, _ = ObservationNoise(AgileTerminalArrivalEnv(ROOT / config["env_config"]), config["observation_noise"]).reset(
-            seed=4, options={"initial_coordinates": [1.2, 0, 0]})
-        np.testing.assert_array_equal(again, first)
-    finally:
-        noisy.close()
-    training, evaluation = make_vec_env(config, n_envs=1), make_vec_env(config, n_envs=1, training=False)
-    try:
-        assert isinstance(training.venv.envs[0].env.env, ObservationNoise)
-        assert not any(isinstance(layer, ObservationNoise) for layer in _wrapper_chain(evaluation.venv.envs[0]))
-    finally:
-        training.close()
-        evaluation.close()
-    path = tmp_path / "training.json"
-    for invalid in (dict(load_train_config(), observation_noise=config["observation_noise"]),
-                    dict(config, observation_noise=dict(config["observation_noise"], position_m=-.01)),
-                    dict(config, observation_noise=dict(config["observation_noise"], velocity_m_s=1.)),
-                    dict(config, observation_noise=dict(config["observation_noise"], attitude_rad=.01))):
-        path.write_text(json.dumps(invalid))
-        with pytest.raises(ValueError):
-            load_train_config(path)
-
-
-def _wrapper_chain(env):
-    while hasattr(env, "env"):
-        yield env
-        env = env.env
-    yield env
-
-
 def test_arrival_vector_autoreset_keeps_task_result_and_frozen_evaluation(tmp_path):
     task = json.loads((ROOT / "configs/agile_flight/terminal_arrival.json").read_text())
     task["horizon_s"] = .003

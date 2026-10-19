@@ -398,11 +398,3 @@ I4接口、共享步进及上述检查已落地；本批完成一次CPU容器构
 与 informed reset 组合时，参考前缀在名义机体上飞（只用于生成参考上的起点），在交给学习器的时刻施加本回合抽到的缩放；
 开环前缀若在随机化机体上飞会偏离参考（首次实现的运行 G：informed 成功 11%、前沿只到 0.4 s）。课程前沿累加以 9 位小数取整。
 
-### 10.12 训练用观测噪声（2026-10-19，ADOPTED 可选项）
-
-动力学随机化后三个 seed 的名义与机体偏差稳健性可复现，但大观测噪声（3 cm／15 cm/s／0.15 rad/s）下保留初态成功为 47／46／27 of 50。
-`ppo.py::ObservationNoise` 只挂在训练向量上，对 actor 看到的目标相对位置、速度和 body rate 每步加独立零均值高斯噪声；法向、
-旋转矩阵、上一实际指令和剩余时间不加噪；评价器、奖励与动力学用真值。噪声随机源在带 seed 的 reset 时重建。配置
-`ppo_terminal_arrival_moderate_precision_long_dr_obsnoise{,_seed2}.json` = 运行 G2（对应 seed）+ `observation_noise`
-（0.02 m、0.1 m/s、0.1 rad/s）。评价默认无噪声。
-
