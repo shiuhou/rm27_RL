@@ -441,6 +441,94 @@ def test_informed_prefix_flies_the_nominal_plant_and_scores_the_drawn_dynamics()
         fresh.close()
 
 
+def test_observation_history_is_policy_input_in_training_evaluation_and_checkpoints(tmp_path):
+    import torch
+    from stable_baselines3 import PPO
+    from rm27_contact_rl.ppo import ObservationHistory, _load_checkpoint, _save_checkpoint
+    from rm27_contact_rl.provenance import provenance
+
+    g2 = load_train_config(ROOT / "configs/agile_flight/ppo_terminal_arrival_moderate_precision_long_dr.json")
+    config = load_train_config(ROOT / "configs/agile_flight/explore/ppo_x5_history.json")
+    assert dict(config, status=None, observation_history=None) == dict(g2, status=None, observation_history=None)
+    torch.set_num_threads(1)
+    for training in (True, False):
+        vec = make_vec_env(config, n_envs=1, training=training)
+        try:
+            observations = vec.reset()
+            assert observations.shape == (1, 26 * 8)
+            history = vec.venv.envs[0].env.env
+            assert isinstance(history, ObservationHistory)
+            window = history.current().reshape(8, 26)
+            assert np.all(window == window[-1])  # a reset fills the window with its observation
+            vec.step(np.zeros((1, 4)))
+            moved = history.current().reshape(8, 26)
+            np.testing.assert_array_equal(moved[:-1], window[1:])
+            np.testing.assert_array_equal(moved[-1], history.unwrapped._observation())
+        finally:
+            vec.close()
+    vec = make_vec_env(config, n_envs=1)
+    try:
+        model = PPO("MlpPolicy", vec, seed=0, device="cpu", **config["ppo"])
+        vec.reset()
+        source = provenance(vec.venv.envs[0].unwrapped, algorithm="PPO_CPU", seed=0)
+        meta = _save_checkpoint(tmp_path / "history", model, vec, config, source, 0)
+        assert len(meta["probe_observation"]) == 26 * 8
+        restored, restored_vec, _ = _load_checkpoint(tmp_path / "history", training=False, n_envs=1)
+        restored_vec.close()
+    finally:
+        vec.close()
+    path = tmp_path / "training.json"
+    for invalid in (dict(load_train_config(), observation_history={"steps": 8}),
+                    dict(config, observation_history={"steps": 1}),
+                    dict(config, observation_history={"steps": 8, "stride": 2})):
+        path.write_text(json.dumps(invalid))
+        with pytest.raises(ValueError):
+            load_train_config(path)
+
+
+def test_sac_option_learns_in_chunks_and_round_trips_checkpoints(tmp_path):
+    import time
+    import torch
+    from stable_baselines3 import SAC
+    from stable_baselines3.common.logger import configure
+    from rm27_contact_rl.ppo import _learn_rollout, _load_checkpoint, _model_state, _save_checkpoint
+    from rm27_contact_rl.provenance import provenance
+
+    config = load_train_config(ROOT / "configs/agile_flight/explore/ppo_x4_sac.json")
+    assert config["algorithm"] == "SAC" and "ppo" not in config
+    config = deepcopy(config)
+    config["n_envs"] = 2
+    config["sac"].update(chunk_steps=16, learning_starts=32, batch_size=32, buffer_size=1000)
+    torch.set_num_threads(1)
+    vec = make_vec_env(config)
+    try:
+        kwargs = {k: v for k, v in config["sac"].items() if k != "chunk_steps"}
+        model = SAC("MlpPolicy", vec, seed=0, device="cpu", **kwargs)
+        model.set_logger(configure(format_strings=[]))
+        vec.reset()
+        evidence = [_learn_rollout(model, vec, time.monotonic() + 120, 32) for _ in range(3)]
+        assert [e["state"]["num_timesteps"] for e in evidence] == [32, 64, 96]
+        assert not evidence[0]["parameters_changed"] and evidence[2]["parameters_changed"]
+        assert evidence[0]["informed_reset"]["lead_s"] == config["informed_reset"]["initial_lead_s"]
+        source = provenance(vec.venv.envs[0].unwrapped, algorithm="SAC_CPU", seed=0)
+        meta = _save_checkpoint(tmp_path / "sac", model, vec, config, source, 3)
+        restored, restored_vec, _ = _load_checkpoint(tmp_path / "sac", training=False, n_envs=1)
+        try:
+            assert isinstance(restored, SAC) and _model_state(restored, restored_vec) == meta["state"]
+        finally:
+            restored_vec.close()
+    finally:
+        vec.close()
+    path = tmp_path / "training.json"
+    base = load_train_config(ROOT / "configs/agile_flight/explore/ppo_x4_sac.json")
+    for invalid in (dict(base, algorithm="TD3"), dict(base, sac=dict(base["sac"], chunk_steps=1024)),
+                    dict(base, sac={k: v for k, v in base["sac"].items() if k != "train_freq"}),
+                    dict(base, sac=dict(base["sac"], gamma=1.5))):
+        path.write_text(json.dumps(invalid))
+        with pytest.raises(ValueError):
+            load_train_config(path)
+
+
 def test_arrival_vector_autoreset_keeps_task_result_and_frozen_evaluation(tmp_path):
     task = json.loads((ROOT / "configs/agile_flight/terminal_arrival.json").read_text())
     task["horizon_s"] = .003

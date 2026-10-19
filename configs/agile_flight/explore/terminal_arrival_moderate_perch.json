@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "agile_terminal_arrival_v1",
+  "observation_schema": "arrival_world_v1",
+  "experiment_config": "configs/aggressive_contact.json",
+  "vehicle_config": "configs/drone.json",
+  "dynamics_profile": "configs/dynamics_150g.json",
+  "policy_dt_s": 0.005,
+  "action": {
+    "body_rate_limit_rad_s": 20
+  },
+  "horizon_s": 3,
+  "initial_state": {
+    "L_m": [
+      1.15,
+      1.25
+    ],
+    "eta1_m": [
+      -0.025,
+      0.025
+    ],
+    "eta2_m": [
+      -0.025,
+      0.025
+    ]
+  },
+  "terminal": {
+    "gap_m": 0.2,
+    "gap_tolerance_m": 0.04,
+    "tangent_position_tolerance_m": 0.04,
+    "normal_speed_m_s": 2.25,
+    "normal_speed_tolerance_m_s": 0.75,
+    "tangent_speed_tolerance_m_s": 0.5,
+    "attitude_tolerance_deg": 15,
+    "body_rate_tolerance_rad_s": 3
+  },
+  "safety": {
+    "position_min_m": [
+      -0.6,
+      -0.5,
+      0.5
+    ],
+    "position_max_m": [
+      1.4,
+      0.5,
+      3
+    ],
+    "max_speed_m_s": 6,
+    "max_tilt_deg": 80,
+    "max_body_rate_rad_s": 20,
+    "max_saturation_run_s": 0.4,
+    "min_gap_m": 0.12
+  },
+  "reward": {
+    "progress_gain": 5,
+    "distance_scale_m": 0.5,
+    "near_scale_m": 0.35,
+    "time_cost_per_s": 1.0,
+    "velocity_cost_per_s": 1.0,
+    "attitude_cost_per_s": 1.0,
+    "rate_cost_per_s": 0.5,
+    "saturation_cost_per_s": 0.25,
+    "velocity_scale_m_s": 1,
+    "attitude_scale_deg": 30,
+    "rate_scale_rad_s": 5,
+    "event_success": 45,
+    "event_failure": -10,
+    "remaining_failure_cost_per_s": 0,
+    "action_smoothness_cost_per_s": 2.0,
+    "action_magnitude_cost_per_s": 0.5,
+    "success_accuracy_bonus": 1.0
+  },
+  "baseline": {
+    "duration_s": 1.2
+  },
+  "status": "Exploration X2 reward: moderate terminal set with a PerchRL-inspired structure - success 45*(1+accuracy) vs constant failure -10 (ratio as PerchRL 900-1800 vs -200), no remaining-time penalty, stronger progress guidance, action smoothness and magnitude costs. Success criteria unchanged. Not validated."
+}

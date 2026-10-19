@@ -382,3 +382,36 @@ def test_dynamics_scales_change_only_the_plant_and_survive_snapshot_restore(env)
     with pytest.raises(ValueError):
         env.set_dynamics_scales(mass=0.)
 
+
+def test_perch_style_terms_regularize_actions_and_scale_success_by_accuracy():
+    from rm27_contact_rl.arrival_env import DEFAULT_ARRIVAL_CONFIG
+    path = DEFAULT_ARRIVAL_CONFIG.parent / "explore/terminal_arrival_moderate_perch.json"
+    env = AgileTerminalArrivalEnv(path)
+    try:
+        rewards = {}
+        for name, commands in (("steady", [[1.6, 2., 0., 0.]] * 4), ("jerky", [[1.6, 2., 0., 0.], [1.6, -2., 0., 0.]] * 2)):
+            env.reset(options={"initial_coordinates": [1.2, 0, 0]})
+            rewards[name] = sum(env.step(np.array(c))[1] for c in commands)
+        assert rewards["jerky"] < rewards["steady"]
+        env.reset(options={"initial_coordinates": [1.2, 0, 0]})
+        geometry = env.evaluator.geometry
+        # Just outside the moderate +/-0.04 m gap window, moving in at the target state.
+        place(env, geometry["position_target"] + .042 * geometry["normal"], geometry["target_rotation"],
+              geometry["velocity_target"])
+        fresh_evaluator(env)
+        assert not env.evaluator.done
+        _, reward, terminated, _, info = env.step(env.previous_action_ctbr.copy())
+        result = info["result"]
+        assert terminated and result["passed"] and 45 < info["reward_components"]["event"] <= 90
+        assert result["reward_status"] == "I4_PERCH_STYLE_SHAPING_V1_NOT_VALIDATED_LEARNING"
+        env.reset(options={"initial_coordinates": [1.2, 0, 0]})
+        # Below the gap window and moving in: the overshoot gate fails within the step.
+        place(env, geometry["position_target"] - .075 * geometry["normal"], geometry["target_rotation"],
+              geometry["velocity_target"])
+        fresh_evaluator(env)
+        assert not env.evaluator.done
+        _, _, terminated, _, info = env.step(env.previous_action_ctbr.copy())
+        assert terminated and not info["result"]["passed"] and info["reward_components"]["event"] == -10
+    finally:
+        env.close()
+

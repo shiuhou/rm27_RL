@@ -1,4 +1,4 @@
-"""One bounded CPU PPO trainer for Contact and agile terminal arrival.
+"""One bounded CPU trainer (PPO; SAC as an Arrival exploration option) for Contact and agile terminal arrival.
 
 Task physics, scoring and rewards stay in their environments. I3 retains its
 resume acceptance protocol; I4 uses independent fixed-set evaluation.
@@ -18,7 +18,7 @@ import traceback
 import gymnasium as gym
 import numpy as np
 import torch
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.monitor import Monitor
@@ -70,18 +70,25 @@ def load_train_config(path=DEFAULT_TRAIN_CONFIG):
     protocol = config.get("protocol", "i3_engineering")
     if protocol != ("i4_arrival" if arrival else "i3_engineering"):
         raise ValueError("Training protocol does not match its task")
-    for name, value in (("seed", config["seed"]), ("n_envs", config["n_envs"]),
-                        ("n_steps", config["ppo"]["n_steps"]), ("batch_size", config["ppo"]["batch_size"]),
-                        ("n_epochs", config["ppo"]["n_epochs"]), ("torch_threads", config["torch_threads"])):
-        if not isinstance(value, int) or isinstance(value, bool):
-            raise ValueError(f"{name} must be an integer")
-    if (not 0 <= config["seed"] < 2**32 or not 1 <= config["n_envs"] <= 4
-            or not 2 <= config["ppo"]["n_steps"] <= 512 or config["torch_threads"] != 1
-            or not 1 <= config["ppo"]["n_epochs"] <= 5):
-        raise ValueError("Training resources exceed the CPU experiment envelope")
-    rollout = config["n_envs"] * config["ppo"]["n_steps"]
-    if not 2 <= config["ppo"]["batch_size"] <= rollout or rollout % config["ppo"]["batch_size"]:
-        raise ValueError("Batch size must divide the complete rollout")
+    algorithm = config.get("algorithm", "PPO")
+    if algorithm not in ("PPO", "SAC") or (algorithm == "SAC" and (not arrival or "ppo" in config)):
+        raise ValueError("Algorithm must be PPO, or SAC for Arrival with its own 'sac' block")
+    if algorithm == "SAC":
+        _validate_sac(config)
+        rollout = config["n_envs"] * config["sac"]["chunk_steps"]
+    else:
+        for name, value in (("seed", config["seed"]), ("n_envs", config["n_envs"]),
+                            ("n_steps", config["ppo"]["n_steps"]), ("batch_size", config["ppo"]["batch_size"]),
+                            ("n_epochs", config["ppo"]["n_epochs"]), ("torch_threads", config["torch_threads"])):
+            if not isinstance(value, int) or isinstance(value, bool):
+                raise ValueError(f"{name} must be an integer")
+        if (not 0 <= config["seed"] < 2**32 or not 1 <= config["n_envs"] <= 4
+                or not 2 <= config["ppo"]["n_steps"] <= 512 or config["torch_threads"] != 1
+                or not 1 <= config["ppo"]["n_epochs"] <= 5):
+            raise ValueError("Training resources exceed the CPU experiment envelope")
+        rollout = config["n_envs"] * config["ppo"]["n_steps"]
+        if not 2 <= config["ppo"]["batch_size"] <= rollout or rollout % config["ppo"]["batch_size"]:
+            raise ValueError("Batch size must divide the complete rollout")
     budget = config["budget"]
     lower = rollout if arrival else 6144
     upper = ARRIVAL_MAX_TRANSITIONS if arrival else 65536
@@ -94,16 +101,17 @@ def load_train_config(path=DEFAULT_TRAIN_CONFIG):
             or not np.isfinite(budget["learning_wall_s"])
             or not 0 < budget["learning_wall_s"] <= wall):
         raise ValueError("Task requires its approved bounded rollout budget and protocol")
-    for name in ("learning_rate", "gamma", "gae_lambda"):
-        if not np.isfinite(config["ppo"][name]) or config["ppo"][name] <= 0:
-            raise ValueError(f"Invalid PPO {name}")
-    if config["ppo"]["gamma"] > 1 or config["ppo"]["gae_lambda"] > 1:
-        raise ValueError("PPO discount factors must not exceed one")
+    if algorithm == "PPO":
+        for name in ("learning_rate", "gamma", "gae_lambda"):
+            if not np.isfinite(config["ppo"][name]) or config["ppo"][name] <= 0:
+                raise ValueError(f"Invalid PPO {name}")
+        if config["ppo"]["gamma"] > 1 or config["ppo"]["gae_lambda"] > 1:
+            raise ValueError("PPO discount factors must not exceed one")
     parameterization = config.get("action_parameterization", BOUNDS_AFFINE)
     if parameterization not in (BOUNDS_AFFINE, HOVER_CENTERED) or (
             parameterization == HOVER_CENTERED and not arrival):
         raise ValueError("Unknown action parameterization, or one not declared for this task")
-    log_std_init = config["ppo"].get("policy_kwargs", {}).get("log_std_init", 0.)
+    log_std_init = config.get("ppo", {}).get("policy_kwargs", {}).get("log_std_init", 0.)
     if (isinstance(log_std_init, bool) or not isinstance(log_std_init, (int, float))
             or not -3. <= log_std_init <= 0. or (not arrival and log_std_init != 0.)):
         raise ValueError("Initial policy log standard deviation outside the declared envelope")
@@ -115,6 +123,12 @@ def load_train_config(path=DEFAULT_TRAIN_CONFIG):
                        or any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in r)
                        or not .5 <= r[0] <= r[1] <= 1.5 for r in ranges)):
             raise ValueError("Dynamics randomization must declare Arrival mass/thrust scale ranges in [0.5, 1.5]")
+    history = config.get("observation_history")
+    if history is not None:
+        steps = history.get("steps") if isinstance(history, dict) else None
+        if (not arrival or set(history) != {"steps"} or isinstance(steps, bool)
+                or not isinstance(steps, int) or not 2 <= steps <= 16):
+            raise ValueError("Observation history must declare 2-16 Arrival policy steps")
     informed = config.get("informed_reset")
     if informed is not None:
         keys = {"reference", "reference_duration_s", "probability", "initial_lead_s", "min_lead_s",
@@ -135,6 +149,48 @@ def load_train_config(path=DEFAULT_TRAIN_CONFIG):
     if not (ROOT / config["env_config"]).is_file():
         raise ValueError("PPO env_config must locate existing checkout assets")
     return config
+
+
+def _validate_sac(config):
+    """Arrival exploration envelope for SAC: same resources, budget and wrappers as PPO."""
+    sac = config.get("sac")
+    integers = ("chunk_steps", "batch_size", "buffer_size", "learning_starts", "train_freq", "gradient_steps")
+    allowed = set(integers) | {"learning_rate", "gamma", "tau", "ent_coef", "policy_kwargs"}
+    if not isinstance(sac, dict) or not set(integers) <= set(sac) <= allowed:
+        raise ValueError("SAC requires a declared 'sac' block")
+    for name in integers + ("seed", "n_envs", "torch_threads"):
+        value = sac[name] if name in sac else config[name]
+        if not isinstance(value, int) or isinstance(value, bool) or value < (0 if name in ("seed", "learning_starts") else 1):
+            raise ValueError(f"SAC {name} must be a nonnegative integer")
+    if (not 0 <= config["seed"] < 2**32 or not 1 <= config["n_envs"] <= 4 or config["torch_threads"] != 1
+            or not 2 <= sac["chunk_steps"] <= 512 or sac["buffer_size"] > 2_000_000):
+        raise ValueError("Training resources exceed the CPU experiment envelope")
+    for name in ("learning_rate", "gamma", "tau"):
+        if name in sac and (not np.isfinite(sac[name]) or not 0 < sac[name] <= 1):
+            raise ValueError(f"Invalid SAC {name}")
+
+
+def _algorithm_class(config):
+    return SAC if config.get("algorithm") == "SAC" else PPO
+
+
+def _algorithm_kwargs(config):
+    if config.get("algorithm") == "SAC":
+        return {key: value for key, value in config["sac"].items() if key != "chunk_steps"}
+    return config["ppo"]
+
+
+def _chunk_transitions(config):
+    """Transitions per learn call: one PPO rollout, or one declared SAC chunk."""
+    steps = config["sac"]["chunk_steps"] if config.get("algorithm") == "SAC" else config["ppo"]["n_steps"]
+    return config["n_envs"] * steps
+
+
+def _optimizers(model):
+    if isinstance(model, SAC):
+        named = dict(actor=model.actor.optimizer, critic=model.critic.optimizer, entropy=model.ent_coef_optimizer)
+        return {name: optimizer for name, optimizer in named.items() if optimizer is not None}
+    return {"policy": model.policy.optimizer}
 
 
 class NormalizedCTBR(gym.ActionWrapper):
@@ -300,6 +356,44 @@ class InformedReset(gym.Wrapper):
         return transition
 
 
+class ObservationHistory(gym.ObservationWrapper):
+    """Policy input = the last k environment observations, oldest first.
+
+    Part of the policy interface, so training and evaluation both carry it. A reset
+    fills the window with the reset observation (no history exists before it; an
+    informed-reset prefix is not part of the scored episode either).
+    """
+
+    def __init__(self, env, steps):
+        super().__init__(env)
+        self.steps = int(steps)
+        size = env.observation_space.shape[0]
+        self.observation_space = gym.spaces.Box(-np.inf, np.inf, (size * self.steps,), dtype=np.float32)
+        self._window = None
+
+    def reset(self, *, seed=None, options=None):
+        observation, info = self.env.reset(seed=seed, options=options)
+        self._window = [np.asarray(observation, np.float32)] * self.steps
+        return self.current(), info
+
+    def observation(self, observation):
+        self._window = self._window[1:] + [np.asarray(observation, np.float32)]
+        return self.current()
+
+    def current(self):
+        return np.concatenate(self._window).astype(np.float32)
+
+
+def _policy_observation(env):
+    """The observation the policy would receive now, through any history wrapper."""
+    layer = env
+    while hasattr(layer, "env"):
+        if isinstance(layer, ObservationHistory):
+            return layer.current()
+        layer = layer.env
+    return env.unwrapped._observation()
+
+
 class DynamicsRandomization(gym.Wrapper):
     """Training-only per-episode plant mass and thrust-gain scales, drawn uniformly.
 
@@ -336,6 +430,8 @@ def _make_dummy_vec(config, n_envs=None, curriculum=None, randomization=None):
             env = DynamicsRandomization(env, randomization)
         if curriculum is not None:
             env = InformedReset(env, curriculum)
+        if config.get("observation_history"):
+            env = ObservationHistory(env, config["observation_history"]["steps"])
         return Monitor(NormalizedCTBR(env, parameterization))
     vec = DummyVecEnv([build for _ in range(count)])
     vec.seed(config["seed"])
@@ -401,7 +497,8 @@ def _assert_finite(value):
 
 def _model_state(model, vec):
     return dict(policy_sha256=_state_hash(model.policy.state_dict()),
-                optimizer_sha256=_state_hash(model.policy.optimizer.state_dict()),
+                optimizer_sha256=_state_hash(model.policy.optimizer.state_dict() if not isinstance(model, SAC)
+                                             else {name: o.state_dict() for name, o in _optimizers(model).items()}),
                 normalization_sha256=_state_hash(_normalization_state(vec)),
                 num_timesteps=int(model.num_timesteps), sb3_epoch_updates=int(model._n_updates))
 
@@ -416,7 +513,7 @@ def _save_checkpoint(path, model, vec, config, source, completed_updates):
         path = Path(staging)
         model.save(path / "model.zip")
         vec.save(path / "normalize.pkl")
-        raw_probe = vec.venv.envs[0].unwrapped._observation()
+        raw_probe = _policy_observation(vec.venv.envs[0])
         normalized = vec.normalize_obs(raw_probe)
         action, _ = model.predict(normalized, deterministic=True)
         meta = dict(config=config, task=_task_contract(config), provenance=source,
@@ -478,7 +575,7 @@ def _load_checkpoint(path, *, training, n_envs=None, expected_task=None):
     vec.norm_reward = False
     try:
         # force_reset deliberately starts new episodes, retaining model counts.
-        model = PPO.load(path / "model.zip", env=vec, device="cpu", force_reset=True)
+        model = _algorithm_class(config).load(path / "model.zip", env=vec, device="cpu", force_reset=True)
         if _model_state(model, vec) != meta["state"]:
             raise ValueError("Policy/optimizer/statistics/counters did not restore exactly")
         action, _ = model.predict(vec.normalize_obs(np.array(meta["probe_observation"], np.float32)),
@@ -724,7 +821,10 @@ class _BudgetCallback(BaseCallback):
 
     def _on_rollout_end(self):
         # Behavior-policy Gaussian mean on the stored (normalized) rollout
-        # observations, before this rollout's optimization changes it.
+        # observations, before this rollout's optimization changes it (PPO only;
+        # SAC ends a "rollout" every train_freq steps and has no rollout buffer).
+        if not hasattr(self.model, "rollout_buffer"):
+            return
         observations = self.model.rollout_buffer.observations.reshape(-1, self.model.observation_space.shape[0])
         with torch.no_grad():
             mean = self.model.policy.get_distribution(
@@ -732,12 +832,11 @@ class _BudgetCallback(BaseCallback):
         _assert_finite(mean)
         self.policy_mean = dict(mean=mean.mean(axis=0).tolist(),
                                 outside_bounds_fraction=(np.abs(mean) > 1.).mean(axis=0).tolist())
-        curriculum = getattr(self.training_env, "informed_curriculum", None)
-        self.curriculum = None if curriculum is None else curriculum.update()
 
 
-def _learn_rollout(model, vec, deadline):
-    """Delegate all optimization to SB3; check one actual rollout/update."""
+def _learn_rollout(model, vec, deadline, chunk=None):
+    """Delegate all optimization to SB3; check one actual rollout/update (or SAC chunk)."""
+    chunk = model.n_steps * vec.num_envs if chunk is None else chunk
     if time.monotonic() >= deadline:
         raise _WallLimit("Learning wall budget exhausted before rollout")
     start_state = _model_state(model, vec)
@@ -749,16 +848,20 @@ def _learn_rollout(model, vec, deadline):
         _assert_finite(gradient)
         gradient_checks += 1
         return gradient
-    handles = [parameter.register_hook(gradient_check) for parameter in model.policy.parameters()]
+    handles = [parameter.register_hook(gradient_check) for parameter in model.policy.parameters()
+               if parameter.requires_grad]
     callback = _BudgetCallback(deadline)
     try:
-        model.learn(total_timesteps=model.n_steps * vec.num_envs, callback=callback,
-                    reset_num_timesteps=False, log_interval=1)
+        model.learn(total_timesteps=chunk, callback=callback, reset_num_timesteps=False, log_interval=1)
     finally:
         for handle in handles:
             handle.remove()
     if callback.expired:
         raise _WallLimit("Learning wall budget exhausted; incomplete rollout discarded")
+    # Once per completed chunk, after its optimization: resets in later chunks use the
+    # new frontier exactly as an update at PPO rollout end would.
+    curriculum = getattr(vec, "informed_curriculum", None)
+    callback.curriculum = None if curriculum is None else curriculum.update()
     metrics = {key: float(value) for key, value in model.logger.name_to_value.items()
                if key.startswith("train/")}
     for key, value in metrics.items():
@@ -766,18 +869,27 @@ def _learn_rollout(model, vec, deadline):
         if key != "train/explained_variance" or not np.isnan(value):
             _assert_finite(value)
     _assert_finite(model.policy.state_dict())
-    _assert_finite(model.policy.optimizer.state_dict())
+    for optimizer in _optimizers(model).values():
+        _assert_finite(optimizer.state_dict())
     end = _model_state(model, vec)
-    if (end["num_timesteps"] != start_state["num_timesteps"] + model.n_steps * vec.num_envs
+    changed = end["policy_sha256"] != start_state["policy_sha256"]
+    if isinstance(model, SAC):
+        # Before learning_starts SAC only collects; afterwards every chunk must update.
+        warm = start_state["num_timesteps"] >= model.learning_starts
+        if (end["num_timesteps"] != start_state["num_timesteps"] + chunk
+                or end["sb3_epoch_updates"] < start_state["sb3_epoch_updates"]
+                or (warm and (not changed or not gradient_checks))):
+            raise RuntimeError("SAC did not complete the expected finite chunk")
+    elif (end["num_timesteps"] != start_state["num_timesteps"] + chunk
             or end["sb3_epoch_updates"] != start_state["sb3_epoch_updates"] + model.n_epochs
-            or end["policy_sha256"] == start_state["policy_sha256"] or not gradient_checks):
+            or not changed or not gradient_checks):
         raise RuntimeError("PPO did not complete the expected finite parameter update")
     failure_counts = {}
     for episode in callback.episodes:
         for reason in episode["failure_modes"]:
             failure_counts[reason] = failure_counts.get(reason, 0) + 1
     return dict(state=end, gradient_checks=gradient_checks,
-                parameters_changed=True,
+                parameters_changed=changed,
                 episodes=dict(completed=len(callback.episodes),
                               successful=sum(e["passed"] for e in callback.episodes),
                               failure_counts=failure_counts,
@@ -806,11 +918,12 @@ def train(config_path, output):
     output = Path(output).resolve()
     output.mkdir(parents=True, exist_ok=False)
     vec = make_vec_env(config)
-    model = PPO("MlpPolicy", vec, seed=config["seed"], device="cpu", verbose=0, **config["ppo"])
+    algorithm = _algorithm_class(config)
+    model = algorithm("MlpPolicy", vec, seed=config["seed"], device="cpu", verbose=0, **_algorithm_kwargs(config))
     model.set_logger(configure(format_strings=[]))
     vec.reset()
     env = vec.venv.envs[0].unwrapped
-    source = provenance(env, algorithm="PPO_CPU", seed=config["seed"],
+    source = provenance(env, algorithm=f"{algorithm.__name__}_CPU", seed=config["seed"],
                         extra_sources={"training_config": Path(config_path).resolve()})
     wrapper = vec.venv.envs[0].env
     action_mapping = dict(low_physical_ctbr=wrapper.low.tolist(), high_physical_ctbr=wrapper.high.tolist(),
@@ -819,17 +932,20 @@ def train(config_path, output):
                           zero_normalized_physical_ctbr=wrapper.action(np.zeros(4)).tolist(),
                           parameterization=wrapper.parameterization,
                           half_range_physical_ctbr=wrapper.half_range.tolist())
-    defaults = {name: parameter.default for name, parameter in inspect.signature(PPO.__init__).parameters.items()
+    defaults = {name: parameter.default for name, parameter in inspect.signature(algorithm.__init__).parameters.items()
                 if parameter.default is not inspect.Parameter.empty
                 and name not in ("_init_setup_model", "policy_kwargs")}
-    resolved = dict(defaults, **config["ppo"], policy="MlpPolicy", device="cpu", seed=config["seed"],
+    first_optimizer = next(iter(_optimizers(model).values()))
+    resolved = dict(defaults, **_algorithm_kwargs(config), policy="MlpPolicy", device="cpu", seed=config["seed"],
                     observation_normalization=True, reward_normalization=False,
                     observation_clip=vec.clip_obs, normalization_epsilon=vec.epsilon,
                     policy_class=type(model.policy).__name__,
-                    activation_function=model.policy.activation_fn.__name__,
-                    optimizer_class=type(model.policy.optimizer).__name__,
-                    optimizer_defaults=model.policy.optimizer.defaults,
-                    learn_schedule="one complete rollout per learn call; fixed constant LR/clip defaults")
+                    activation_function=getattr(getattr(model.policy, "activation_fn", None), "__name__", None)
+                        or model.policy.net_args["activation_fn"].__name__,
+                    optimizer_class=type(first_optimizer).__name__,
+                    optimizer_defaults=first_optimizer.defaults,
+                    learn_schedule=("one complete rollout per learn call; fixed constant LR/clip defaults"
+                                    if algorithm is PPO else "one declared chunk per learn call; fixed constant LR"))
     _write_json(output / "config.json", dict(training=config, resolved_ppo=resolved,
                 action_mapping=action_mapping, rl=env.rl_config, experiment=env.plant.cfg,
                 physical=env.plant.physical, vehicle=env.plant.vehicle_config, profile=env.plant.profile))
@@ -851,9 +967,9 @@ def train(config_path, output):
         # clock covers all learning, saves, reloads and stage transitions.
         started = time.monotonic()
         deadline = started + config["budget"]["learning_wall_s"]
-        rollout_size = config["n_envs"] * config["ppo"]["n_steps"]
+        rollout_size = _chunk_transitions(config)
         for update in range(config["budget"]["transitions"] // rollout_size):
-            evidence = _learn_rollout(model, vec, deadline)
+            evidence = _learn_rollout(model, vec, deadline, rollout_size)
             completed += 1
             evidence.update(completed_rollout_updates=completed, learning_wall_s=time.monotonic() - started)
             with (output / "updates.jsonl").open("a") as stream:

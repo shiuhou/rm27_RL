@@ -56,8 +56,10 @@ class AgileTerminalArrivalEnv(gym.Env):
                     "velocity_cost_per_s", "attitude_cost_per_s", "rate_cost_per_s",
                     "saturation_cost_per_s", "velocity_scale_m_s", "attitude_scale_deg",
                     "rate_scale_rad_s", "event_success", "event_failure", "remaining_failure_cost_per_s"}
-        # Optional terminal-precision shaping; absent means the original I4 reward.
-        if (not required <= set(rewards) <= required | {"terminal_precision_bonus"}
+        # Optional shaping terms; absent means the original I4 reward.
+        optional = {"terminal_precision_bonus", "action_smoothness_cost_per_s",
+                    "action_magnitude_cost_per_s", "success_accuracy_bonus"}
+        if (not required <= set(rewards) <= required | optional
                 or not np.isfinite(list(rewards.values())).all()):
             raise ValueError("Expected declared finite arrival reward terms")
         if any(rewards[k] <= 0 for k in ("distance_scale_m", "near_scale_m", "velocity_scale_m_s",
@@ -202,6 +204,12 @@ class AgileTerminalArrivalEnv(gym.Env):
         command = np.clip(requested, self._action_low, self._action_high)
         clipped = not np.array_equal(command, requested)
         motors, saturated = self.plant.apply_ctbr(command)
+        # Optional action regularizers, normalized by the physical half-range per axis.
+        r = self.rl_config["reward"]
+        scale = (self._action_high - self._action_low) / 2
+        action_cost = (float(r.get("action_smoothness_cost_per_s", 0.)) * float(np.sum(((command - self.previous_action_ctbr) / scale) ** 2))
+                       + float(r.get("action_magnitude_cost_per_s", 0.)) * float(np.sum(
+                           ((command - np.r_[self.plant.hover_force, 0., 0., 0.]) / scale) ** 2)))
         self.previous_action_ctbr = command.copy()
         step_start = float(self.plant.data.time)
         components = dict(progress=0., cost=0., event=0.)
@@ -212,13 +220,19 @@ class AgileTerminalArrivalEnv(gym.Env):
             state = self.evaluator.advance(self.plant.model, self.plant.data, before, saturated=saturated)
             dt = state.timestamp - before.timestamp
             terms = self._process_reward(before_metrics, self.evaluator.last_metrics, dt, saturated)
+            terms["cost"] -= dt * action_cost
             self.action_clipped_time_s += dt * clipped
             self.motor_command_saturation_time_s += dt * bool(
                 np.any(motors <= 0.) or np.any(motors >= self.plant.maximum))
             substeps += 1
             if self.evaluator.done:
                 r = self.rl_config["reward"]
-                terms["event"] = (float(r["event_success"]) if self.evaluator.arrived else
+                accuracy = 0.
+                if self.evaluator.arrived:
+                    errors = self.evaluator.terminal_normalized_errors(self.evaluator.last_metrics)
+                    accuracy = float(np.clip(1. - np.mean(errors ** 2), 0., 1.))
+                terms["event"] = (float(r["event_success"]) * (1. + float(r.get("success_accuracy_bonus", 0.)) * accuracy)
+                                  if self.evaluator.arrived else
                                   float(r["event_failure"] - r["remaining_failure_cost_per_s"] *
                                         max(0., self.horizon_s - (state.timestamp - self.episode_start))))
                 ratio = self.evaluator.best_violation_ratio
@@ -243,6 +257,8 @@ class AgileTerminalArrivalEnv(gym.Env):
                     profile_status=self.plant.profile["status"],
                     reward_status=("I4_TERMINAL_PRECISION_SHAPING_V1_NOT_VALIDATED_LEARNING"
                                    if "terminal_precision_bonus" in self.rl_config["reward"]
+                                   else "I4_PERCH_STYLE_SHAPING_V1_NOT_VALIDATED_LEARNING"
+                                   if "success_accuracy_bonus" in self.rl_config["reward"]
                                    else "FROZEN_I4_FIRST_EXPERIMENT_NOT_VALIDATED_LEARNING"))
                 break
         return self._observation(), sum(components.values()), not self._active, False, self._info(

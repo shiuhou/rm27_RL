@@ -125,15 +125,11 @@ class ArrivalEvaluator:
                     flight_speed_m_s=float(np.linalg.norm(state.velocity)),
                     tilt_deg=float(np.rad2deg(np.arccos(np.clip(state.rotation[2, 2], -1., 1.)))))
 
-    def terminal_violation_ratio(self, metrics):
-        """Largest terminal error over its tolerance; <= 1 exactly when all gates qualify.
-
-        Diagnostic and shaping input only: the arrival decision in ``snapshot``
-        keeps its own direct comparisons.
-        """
+    def terminal_normalized_errors(self, metrics):
+        """Each terminal error over its tolerance, in the order of the arrival gates."""
         terminal = self.terminal
         speed = terminal["normal_speed_m_s"]
-        return float(max(
+        return np.array([
             metrics["plane_gap_error_m"] / terminal["gap_tolerance_m"],
             metrics["tangent_position_error_m"] / terminal["tangent_position_tolerance_m"],
             abs(metrics["com_normal_speed_m_s"] - speed) / terminal["normal_speed_tolerance_m_s"],
@@ -141,7 +137,15 @@ class ArrivalEvaluator:
             metrics["com_tangent_speed_m_s"] / terminal["tangent_speed_tolerance_m_s"],
             metrics["material_tangent_speed_m_s"] / terminal["tangent_speed_tolerance_m_s"],
             metrics["attitude_error_deg"] / terminal["attitude_tolerance_deg"],
-            metrics["angular_velocity_error_rad_s"] / terminal["body_rate_tolerance_rad_s"]))
+            metrics["angular_velocity_error_rad_s"] / terminal["body_rate_tolerance_rad_s"]])
+
+    def terminal_violation_ratio(self, metrics):
+        """Largest terminal error over its tolerance; <= 1 exactly when all gates qualify.
+
+        Diagnostic and shaping input only: the arrival decision in ``snapshot``
+        keeps its own direct comparisons.
+        """
+        return float(self.terminal_normalized_errors(metrics).max())
 
     def _fail(self, reason):
         self.reasons.add(reason)
