@@ -529,6 +529,38 @@ def test_sac_option_learns_in_chunks_and_round_trips_checkpoints(tmp_path):
             load_train_config(path)
 
 
+def test_wandb_tracking_is_opt_in_and_logs_live_and_imported_runs(tmp_path, monkeypatch):
+    import sys
+    from rm27_contact_rl import ppo, tracking
+
+    monkeypatch.delenv("RM27_WANDB", raising=False)
+    assert tracking.live_tracker(tmp_path, {}, None) == (None, None)
+    # One tiny real training run with live tracking in W&B's "disabled" mode (no network, nothing uploaded).
+    task = json.loads((ROOT / "configs/agile_flight/terminal_arrival_moderate_precision.json").read_text())
+    task["horizon_s"] = .05
+    (tmp_path / "task.json").write_text(json.dumps(task))
+    config = load_train_config(ROOT / "configs/agile_flight/explore/ppo_x1_no_curriculum.json")
+    config = dict(config, env_config=str(tmp_path / "task.json"), n_envs=1,
+                  ppo=dict(config["ppo"], n_steps=16, batch_size=16, n_epochs=1),
+                  budget={"transitions": 32, "learning_wall_s": 60})
+    (tmp_path / "training.json").write_text(json.dumps(config))
+    monkeypatch.setenv("RM27_WANDB", "1")
+    monkeypatch.setenv("WANDB_MODE", "disabled")
+    output = tmp_path / "run"
+    assert ppo.train(tmp_path / "training.json", output) == 0
+    summary = json.loads((output / "summary.json").read_text())
+    assert summary["tracking"] == {"wandb": True, "error": None}
+    records = [json.loads(line) for line in (output / "updates.jsonl").read_text().splitlines()]
+    metrics = tracking.update_metrics(records[-1], 16)
+    assert metrics["updates/completed"] == 2 and 0 <= metrics["actions/normalized_clip_rate"] <= 1
+    assert "train/loss" in metrics and "episodes/completed" in metrics
+    assert tracking.import_run(output, mode="disabled",
+                               robustness=[dict(condition="nominal", declared="9/9", held_out="50/50")])
+    values = tracking.summary_metrics(summary, output, [dict(condition="mass x1.2", declared="8/9", held_out="49/50")])
+    assert values["robust/mass_x1.2/held_out_success"] == 49 and values["eval/after_episodes"] == 9
+    assert "wandb" in sys.modules
+
+
 def test_arrival_vector_autoreset_keeps_task_result_and_frozen_evaluation(tmp_path):
     task = json.loads((ROOT / "configs/agile_flight/terminal_arrival.json").read_text())
     task["horizon_s"] = .003

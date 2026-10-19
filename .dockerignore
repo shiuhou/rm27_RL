@@ -68,3 +68,4 @@ src/rm27_contact_rl/*
 !src/rm27_contact_rl/ppo.py
 !src/rm27_contact_rl/provenance.py
 !src/rm27_contact_rl/rm27_adapter.py
+!src/rm27_contact_rl/tracking.py

@@ -14,6 +14,8 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest==9.1.1"]
+# Optional experiment tracking (W&B); imported only when a run enables it.
+tracking = ["wandb==0.31.0"]
 # First PPO closure is CPU-only, CPython 3.12 on Linux amd64, matching Docker.
 # Direct official wheel prevents the ordinary PyPI Torch CUDA distribution.
 train = [

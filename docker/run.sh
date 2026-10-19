@@ -9,11 +9,13 @@ usage() {
 Usage:
   run.sh build [IMAGE]                         # default: rm27-contact-rl:separated-cpu
   run.sh run IMAGE RESULTS_ROOT RUN_ID [--source] [--check]
-  run.sh train IMAGE RESULTS_ROOT RUN_ID [--source] [--config CONFIG]
+  run.sh train IMAGE RESULTS_ROOT RUN_ID [--source] [--config CONFIG] [--wandb]
   run.sh arrival-baseline IMAGE RESULTS_ROOT RUN_ID [--source] [--config CONFIG]
   run.sh evaluate IMAGE RESULTS_ROOT RUN_ID CHECKPOINT_DIRECTORY [--source]
 --source: read-only mount of this checkout at /workspace; uses image dependencies.
 --check: import/config/reset/step smoke check, then the same single CLI baseline.
+--wandb: train only; log to Weights & Biases. Enables container networking and passes
+    WANDB_API_KEY from ~/.config/rm27/wandb.env, else from the host `wandb login` (~/.netrc).
 RESULTS_ROOT is a dedicated host results directory; RUN_ID must be new.
 train defaults to the packaged Contact PPO configuration; --config selects another
 packaged configuration using its /workspace-relative path or absolute container path.
@@ -69,11 +71,13 @@ case "$operation" in
         fi
         source_mount=false
         check=false
+        wandb=false
         config_container=''
         while [[ $# -gt 0 ]]; do
             case "$1" in
                 --source) source_mount=true; shift ;;
                 --check) [[ "$operation" == run ]] || usage; check=true; shift ;;
+                --wandb) [[ "$operation" == train ]] || usage; wandb=true; shift ;;
                 --config)
                     [[ "$operation" == train || "$operation" == arrival-baseline ]] || usage
                     [[ $# -ge 2 && -z "$config_container" && -n "$2" ]] || usage
@@ -110,7 +114,24 @@ case "$operation" in
             }
             checkpoint_container=/checkpoint
         fi
-        options=(--rm --init --network none --read-only --cap-drop ALL
+        network=none
+        if "$wandb"; then
+            # Credentials: the private env file wins, else the host login; never on the command line.
+            key_file="$HOME/.config/rm27/wandb.env"
+            if [[ -f "$key_file" ]]; then
+                file_key=$(sed -n 's/^WANDB_API_KEY=//p' "$key_file" | tail -n 1)
+                file_entity=$(sed -n 's/^WANDB_ENTITY=//p' "$key_file" | tail -n 1)
+                [[ -n "$file_key" ]] && WANDB_API_KEY=$file_key
+                [[ -n "$file_entity" ]] && WANDB_ENTITY=$file_entity
+            fi
+            if [[ -z "${WANDB_API_KEY:-}" ]]; then
+                WANDB_API_KEY=$(python3 -c 'import netrc; a = netrc.netrc().authenticators("api.wandb.ai"); print(a[2] if a else "")' 2>/dev/null || true)
+            fi
+            [[ -n "${WANDB_API_KEY:-}" ]] || { echo 'No W&B key: run `wandb login` or fill ~/.config/rm27/wandb.env.' >&2; exit 1; }
+            export WANDB_API_KEY WANDB_ENTITY="${WANDB_ENTITY:-}" RM27_WANDB_PROJECT="${RM27_WANDB_PROJECT:-rm27-agile-flight-rl}"
+            network=bridge
+        fi
+        options=(--rm --init --network "$network" --read-only --cap-drop ALL
                  --security-opt no-new-privileges --user "$(id -u):$(id -g)"
                  --tmpfs '/tmp:rw,nosuid,nodev,size=128m'
                  --mount "type=bind,src=$results_root,dst=/data"
@@ -119,6 +140,11 @@ case "$operation" in
                  --env CONTACT_RL_EXECUTION_SOURCE=IMAGE)
         if [[ "$operation" == evaluate ]]; then
             options+=(--mount "type=bind,src=$checkpoint_host,dst=/checkpoint,readonly")
+        fi
+        if "$wandb"; then
+            options+=(--env WANDB_API_KEY --env WANDB_ENTITY --env RM27_WANDB_PROJECT --env RM27_WANDB=1
+                      --env WANDB_CONFIG_DIR=/tmp/wandb-config --env WANDB_CACHE_DIR=/tmp/wandb-cache
+                      --env WANDB_DATA_DIR=/tmp/wandb-data)
         fi
         if "$source_mount"; then
             options+=(--mount "type=bind,src=$repo_root,dst=/workspace,readonly"

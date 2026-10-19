@@ -38,7 +38,7 @@ def provenance(env, *, algorithm, seed=0, extra_sources=None):
                       for name in modules]
     rl_root = Path(__file__).resolve().parent
     code_hashes = [source_hash(rl_root / f"{name}.py") for name in
-                   ("__init__", "env", "rm27_adapter", "baselines", "__main__", "provenance", "ppo", "paths")]
+                   ("__init__", "env", "rm27_adapter", "baselines", "__main__", "provenance", "ppo", "paths", "tracking")]
     code_hashes += physics_hashes
     if getattr(env, "task_id", None) == "agile_terminal_arrival_v1":
         code_hashes.append(source_hash(rl_root / "arrival_env.py"))

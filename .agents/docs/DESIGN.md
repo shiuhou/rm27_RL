@@ -398,3 +398,18 @@ I4接口、共享步进及上述检查已落地；本批完成一次CPU容器构
 与 informed reset 组合时，参考前缀在名义机体上飞（只用于生成参考上的起点），在交给学习器的时刻施加本回合抽到的缩放；
 开环前缀若在随机化机体上飞会偏离参考（首次实现的运行 G：informed 成功 11%、前沿只到 0.4 s）。课程前沿累加以 9 位小数取整。
 
+### 10.13 Weights & Biases 追踪（2026-10-19，用户要求；可选）
+
+- 依赖：`pyproject.toml` 新增 extra `tracking = ["wandb==0.31.0"]`，用同一条 uv 命令（加 `--extra tracking` 与
+  `--no-emit-package rm27-contact-physics`，后者沿用“第一方 Physics 不进第三方锁”的约定）以原锁为约束重新生成哈希锁：
+  原 26 个版本不变，新增 wandb 及其 30 个传递依赖（含 W&B 官方的预发布客户端 `cwevals==0.0.1b1`，已核对 PyPI 来源与证明）。
+  依赖变化需重建镜像；旧镜像保留。
+- `rm27_contact_rl/tracking.py`：把每次更新记录（`updates.jsonl` 的同一份内容）展平成标量，供即时记录与事后导入共用；
+  只有启用时才 import wandb。训练配置不含追踪项，同一配置可带或不带追踪运行；追踪失败只写入 `summary.json` 的
+  `tracking.error`，不影响实验。
+- 即时：`docker/run.sh train ... --wandb` 才开启容器网络（缺省仍 `--network none`），以环境变量名传入 `WANDB_API_KEY`
+  （来自私有文件 `~/.config/rm27/wandb.env`，否则主机 `wandb login` 的 `~/.netrc`），并设 `RM27_WANDB=1`；W&B 本地文件写入
+  运行目录，配置／缓存在容器 `/tmp`。项目缺省 `rm27-agile-flight-rl`，按环境配置分组，按算法／课程／历史／随机化打标签。
+- 事后：`python -m rm27_contact_rl track-import <运行目录>... [--robustness-dir DIR]` 回放已存证据为一个 W&B 运行（步数为
+  transitions），可附加稳健性结果为摘要。
+

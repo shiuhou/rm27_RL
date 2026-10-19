@@ -83,7 +83,23 @@ def main():
     evaluate_parser.add_argument("--output", type=Path, required=True)
     evaluate_parser.add_argument("--task", choices=("contact_recovery_v1", "agile_terminal_arrival_v1"),
                                  help="reject checkpoints belonging to a different task")
+    importer = commands.add_parser("track-import", help="replay finished run directories into Weights & Biases")
+    importer.add_argument("runs", type=Path, nargs="+", help="training result directories")
+    importer.add_argument("--project", default=None)
+    importer.add_argument("--entity", default=None)
+    importer.add_argument("--mode", choices=("online", "offline"), default=None)
+    importer.add_argument("--robustness-dir", type=Path, default=None,
+                          help="optional <run-name>.jsonl robustness rows to attach as summary")
     args = parser.parse_args()
+    if args.command == "track-import":
+        from .tracking import DEFAULT_PROJECT, import_run
+        for run in args.runs:
+            rows = None
+            if args.robustness_dir and (args.robustness_dir / f"{run.name}.jsonl").is_file():
+                rows = [json.loads(line) for line in (args.robustness_dir / f"{run.name}.jsonl").read_text().splitlines() if line]
+            print(json.dumps(dict(run=run.name, wandb_id=import_run(run, project=args.project or DEFAULT_PROJECT,
+                                                                     entity=args.entity, mode=args.mode, robustness=rows))))
+        return 0
     if args.command == "baseline":
         return baseline(args.config, args.output)
     # Baseline/environment imports do not require training libraries.

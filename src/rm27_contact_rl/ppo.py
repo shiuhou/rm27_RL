@@ -950,6 +950,8 @@ def train(config_path, output):
                 action_mapping=action_mapping, rl=env.rl_config, experiment=env.plant.cfg,
                 physical=env.plant.physical, vehicle=env.plant.vehicle_config, profile=env.plant.profile))
     _write_json(output / "provenance.json", source)
+    from .tracking import live_tracker
+    tracker, tracking_error = live_tracker(output, config, env.rl_config)
     checkpoints = output / "checkpoints"
     completed = 0
     resume = dict(status="NOT_REQUIRED" if arrival else "NOT_COMPLETED")
@@ -974,6 +976,11 @@ def train(config_path, output):
             evidence.update(completed_rollout_updates=completed, learning_wall_s=time.monotonic() - started)
             with (output / "updates.jsonl").open("a") as stream:
                 stream.write(json.dumps(evidence, allow_nan=False) + "\n")
+            if tracker is not None:
+                try:
+                    tracker.log_update(evidence, rollout_size)
+                except Exception as exc:  # Tracking never invalidates the saved evidence.
+                    tracking_error, tracker = f"{type(exc).__name__}: {exc}", None
             _save_checkpoint(checkpoints / "latest", model, vec, config, source, completed)
             curriculum_state = evidence.get("informed_reset")
             if curriculum_state and curriculum_state["advanced"]:
@@ -1045,8 +1052,14 @@ def train(config_path, output):
                            "NOT_RUN" if after is None else "PASS" if after["passed"] else "FAIL",
                        terminal_arrival="NOT_EVALUATED" if not arrival else
                            "NOT_RUN" if after is None else after["terminal_arrival"],
-                       stable_learning_reliability_generalization="NOT_VERIFIED")
+                       stable_learning_reliability_generalization="NOT_VERIFIED",
+                       tracking=dict(wandb=tracker is not None, error=tracking_error))
         _write_json(output / "summary.json", summary)
+        if tracker is not None:
+            try:
+                tracker.finish(summary, output)
+            except Exception as exc:
+                print(json.dumps(dict(tracking_error=f"{type(exc).__name__}: {exc}")), flush=True)
         print(json.dumps({key: summary[key] for key in
                           ("engineering_loop", "stop_reason", "training_transitions", "learning_wall_s",
                            "nominal_contact_recovery")}), flush=True)
