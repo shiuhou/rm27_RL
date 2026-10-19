@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "task_id": "agile_terminal_arrival_v1",
+  "observation_schema": "arrival_world_v1",
+  "protocol": "i4_arrival",
+  "env_config": "configs/agile_flight/terminal_arrival_moderate_precision.json",
+  "algorithm": "SAC",
+  "action_parameterization": "hover_centered_v1",
+  "observation_history": {
+    "steps": 8
+  },
+  "informed_reset": {
+    "reference": "flatness_feedforward_v1",
+    "reference_duration_s": 1.0,
+    "probability": 0.8,
+    "initial_lead_s": 0.1,
+    "min_lead_s": 0.05,
+    "lead_step_s": 0.1,
+    "advance_success_rate": 0.5,
+    "advance_window_episodes": 32,
+    "reference_reuse_episodes": 8,
+    "advance_statistic": "frontier_band_v1"
+  },
+  "dynamics_randomization": {
+    "mass_scale": [
+      0.9,
+      1.15
+    ],
+    "thrust_scale": [
+      0.85,
+      1.15
+    ]
+  },
+  "seed": 0,
+  "n_envs": 4,
+  "torch_threads": 1,
+  "budget": {
+    "transitions": 2097152,
+    "learning_wall_s": 3600
+  },
+  "sac": {
+    "chunk_steps": 512,
+    "batch_size": 256,
+    "buffer_size": 1000000,
+    "learning_starts": 10000,
+    "train_freq": 1,
+    "gradient_steps": 1,
+    "learning_rate": 0.0003,
+    "gamma": 0.995,
+    "tau": 0.005,
+    "ent_coef": "auto",
+    "policy_kwargs": {
+      "net_arch": [
+        256,
+        256
+      ]
+    }
+  },
+  "status": "Exploration X9: X4 (SAC) with 8-step observation history. Single factor relative to X4."
+}
