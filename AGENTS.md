@@ -41,6 +41,11 @@ and observed results; a plan's restatement alone is not evidence of confirmation
   The plan is ignored by Git and is not distributed with the repository.
   Formal requirements and designs remain self-contained in the tracked docs;
   reading the local plan is not required to understand them.
+- Start every activity plan with a "§0 progress and handoff" block: the single place for
+  task progress, ordered todo items (each with a runnable command and a done criterion),
+  repository state, key results and active authorization (format in SPEC §3). Update it at
+  milestones, before handoff or interruption, and when authorization changes. A new session
+  resumes from that block; do not create separate processing, status, todo or handoff files.
 - The user has authorized I4 implementation using the current local plan:
   terminal-arrival integration, focused checks, one bounded CPU PPO run and its
   fixed evaluation set. That batch is completed; preserve its results, Contact
