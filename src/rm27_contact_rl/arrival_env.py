@@ -57,7 +57,8 @@ class AgileTerminalArrivalEnv(gym.Env):
                     "saturation_cost_per_s", "velocity_scale_m_s", "attitude_scale_deg",
                     "rate_scale_rad_s", "event_success", "event_failure", "remaining_failure_cost_per_s"}
         # Optional shaping terms; absent means the original I4 reward.
-        optional = {"terminal_precision_bonus", "terminal_precision_requires_crossing", "action_smoothness_cost_per_s",
+        optional = {"terminal_precision_bonus", "terminal_precision_requires_crossing",
+                    "terminal_precision_excludes_timeout", "action_smoothness_cost_per_s",
                     "action_magnitude_cost_per_s", "success_accuracy_bonus"}
         if (not required <= set(rewards) <= required | optional
                 or not np.isfinite(list(rewards.values())).all()):
@@ -241,6 +242,10 @@ class AgileTerminalArrivalEnv(gym.Env):
                 crossed = self.evaluator.min_plane_gap <= (self.rl_config["terminal"]["gap_m"]
                                                            + self.rl_config["terminal"]["gap_tolerance_m"])
                 eligible = crossed or not r.get("terminal_precision_requires_crossing", 0)
+                # Optionally pay nothing to an episode that only ran out of time, so hovering (inside or
+                # outside the gap window) until the deadline cannot harvest the closeness bonus.
+                timed_out = "ARRIVAL_TIMEOUT" in self.evaluator.reasons and not self.evaluator.arrived
+                eligible = eligible and not (timed_out and r.get("terminal_precision_excludes_timeout", 0))
                 precision = (0. if not np.isfinite(ratio) or not eligible else
                              float(r.get("terminal_precision_bonus", 0.)) * (1. if ratio <= 1. else 1. / ratio))
                 terms["event"] += precision

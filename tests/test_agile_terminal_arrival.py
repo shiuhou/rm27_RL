@@ -449,3 +449,30 @@ def test_crossing_gated_precision_bonus_is_not_paid_for_hovering_to_timeout(tmp_
     finally:
         env.close()
 
+
+def test_timeout_exclusion_withholds_precision_bonus_after_hovering_inside_the_window(tmp_path):
+    from rm27_contact_rl.arrival_env import DEFAULT_ARRIVAL_CONFIG
+    paid = {}
+    for name in ("explore/terminal_arrival_moderate_precision_crossing.json",
+                 "explore/terminal_arrival_moderate_precision_crossing_notimeout.json"):
+        task = json.loads((DEFAULT_ARRIVAL_CONFIG.parent / name).read_text())
+        task["horizon_s"] = .03
+        path = tmp_path / name.replace("/", "_")
+        path.write_text(json.dumps(task))
+        env = AgileTerminalArrivalEnv(path)
+        try:
+            env.reset(options={"initial_coordinates": [1.2, 0, 0]})
+            geometry = env.evaluator.geometry
+            # Hovering inside the gap window, far from the terminal speed: crossed, then times out.
+            place(env, geometry["position_target"] - .01 * geometry["normal"], geometry["target_rotation"])
+            fresh_evaluator(env)
+            terminated = False
+            while not terminated:
+                _, _, terminated, _, info = env.step(env.previous_action_ctbr.copy())
+            assert info["result"]["failure_modes"] == ["ARRIVAL_TIMEOUT"]
+            paid[name] = info["result"]["terminal_precision_bonus"]
+        finally:
+            env.close()
+    assert paid["explore/terminal_arrival_moderate_precision_crossing.json"] > 0
+    assert paid["explore/terminal_arrival_moderate_precision_crossing_notimeout.json"] == 0
+
