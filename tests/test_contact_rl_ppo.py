@@ -645,3 +645,14 @@ def test_checkpoint_task_schema_and_legacy_contact_guard_without_optimization(tm
         vec.close()
         if restored is not None:
             restored.close()
+
+
+def test_x16_differs_from_x15_only_by_undiscounted_ppo():
+    explore = ROOT / "configs/agile_flight/explore"
+    for seed in (0, 1, 2):
+        x15 = json.loads((explore / f"ppo_x15_constant_failure_seed{seed}.json").read_text())
+        x16 = json.loads((explore / f"ppo_x16_gamma1_seed{seed}.json").read_text())
+        assert x16["ppo"]["gamma"] == 1.0 and x15["ppo"]["gamma"] == 0.999
+        assert dict(x16, ppo=None, status=None) == dict(x15, ppo=None, status=None)
+        assert dict(x16["ppo"], gamma=None) == dict(x15["ppo"], gamma=None)
+        assert load_train_config(explore / f"ppo_x16_gamma1_seed{seed}.json")["ppo"]["gamma"] == 1.0
