@@ -656,3 +656,13 @@ def test_x16_differs_from_x15_only_by_undiscounted_ppo():
         assert dict(x16, ppo=None, status=None) == dict(x15, ppo=None, status=None)
         assert dict(x16["ppo"], gamma=None) == dict(x15["ppo"], gamma=None)
         assert load_train_config(explore / f"ppo_x16_gamma1_seed{seed}.json")["ppo"]["gamma"] == 1.0
+
+
+def test_x17_differs_from_x16_only_by_task_with_yaw_rate_limit():
+    explore = ROOT / "configs/agile_flight/explore"
+    for seed in (0, 1, 2):
+        x16 = json.loads((explore / f"ppo_x16_gamma1_seed{seed}.json").read_text())
+        x17 = json.loads((explore / f"ppo_x17_yaw3_seed{seed}.json").read_text())
+        assert x17["env_config"].endswith("terminal_arrival_moderate_precision_x17.json")
+        assert dict(x17, env_config=None, status=None) == dict(x16, env_config=None, status=None)
+        load_train_config(explore / f"ppo_x17_yaw3_seed{seed}.json")

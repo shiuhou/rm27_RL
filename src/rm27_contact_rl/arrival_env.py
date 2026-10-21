@@ -72,8 +72,12 @@ class AgileTerminalArrivalEnv(gym.Env):
         if any(v < 0 for k, v in rewards.items() if k != "event_failure"):
             raise ValueError("Reward gains and costs must be nonnegative")
         rate = float(self.rl_config["action"]["body_rate_limit_rad_s"])
-        self._action_low = np.array([0., -rate, -rate, -rate])
-        self._action_high = np.array([4 * self.plant.maximum, rate, rate, rate])
+        # Optional tighter yaw-rate command bound; absent means the original symmetric limit.
+        yaw_rate = float(self.rl_config["action"].get("yaw_rate_limit_rad_s", rate))
+        if not np.isfinite(yaw_rate) or not 0 < yaw_rate <= rate:
+            raise ValueError("Yaw-rate limit must be positive and within the body-rate limit")
+        self._action_low = np.array([0., -rate, -rate, -yaw_rate])
+        self._action_high = np.array([4 * self.plant.maximum, rate, rate, yaw_rate])
         self.action_space = spaces.Box(self._action_low.astype(np.float32), self._action_high.astype(np.float32))
         self.observation_space = spaces.Box(-np.inf, np.inf, (26,), dtype=np.float32)
         self.previous_action_ctbr = np.r_[self.plant.hover_force, np.zeros(3)]

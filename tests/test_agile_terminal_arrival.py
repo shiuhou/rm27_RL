@@ -510,3 +510,26 @@ def test_time_independent_failure_penalty_charges_early_failure_and_timeout_alik
     assert old_early < old_timeout  # time-dependent: failing late is cheaper
     assert new_early == pytest.approx(-20 - 2 * .5) and new_timeout == pytest.approx(-20 - 2 * .5)
 
+
+
+def test_optional_yaw_rate_limit_bounds_only_the_yaw_command(tmp_path):
+    from rm27_contact_rl.arrival_env import DEFAULT_ARRIVAL_CONFIG
+    from rm27_contact_rl.ppo import HOVER_CENTERED, NormalizedCTBR
+    explore = DEFAULT_ARRIVAL_CONFIG.parent / "explore"
+    x15 = json.loads((explore / "terminal_arrival_moderate_precision_x15.json").read_text())
+    x17 = json.loads((explore / "terminal_arrival_moderate_precision_x17.json").read_text())
+    assert x17["action"] == dict(x15["action"], yaw_rate_limit_rad_s=3.0)
+    assert dict(x17, action=None, status=None) == dict(x15, action=None, status=None)
+    for name, yaw in (("x15", 20.), ("x17", 3.)):
+        env = AgileTerminalArrivalEnv(explore / f"terminal_arrival_moderate_precision_{name}.json")
+        try:
+            assert env._action_high[1:].tolist() == [20., 20., yaw] and env._action_low[1:].tolist() == [-20., -20., -yaw]
+            wrapped = NormalizedCTBR(env, HOVER_CENTERED)
+            assert wrapped.action(np.array([0., 1., -1., 1.]))[1:].tolist() == [20., -20., yaw]
+        finally:
+            env.close()
+    for bad in (0., 25., float("nan")):
+        path = tmp_path / "bad.json"
+        path.write_text(json.dumps(dict(x17, action=dict(x17["action"], yaw_rate_limit_rad_s=bad))))
+        with pytest.raises(ValueError):
+            AgileTerminalArrivalEnv(path)
