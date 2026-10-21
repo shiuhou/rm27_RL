@@ -58,7 +58,8 @@ class AgileTerminalArrivalEnv(gym.Env):
                     "rate_scale_rad_s", "event_success", "event_failure", "remaining_failure_cost_per_s"}
         # Optional shaping terms; absent means the original I4 reward.
         optional = {"terminal_precision_bonus", "terminal_precision_requires_crossing",
-                    "terminal_precision_excludes_timeout", "action_smoothness_cost_per_s",
+                    "terminal_precision_excludes_timeout", "failure_penalty_time_independent",
+                    "action_smoothness_cost_per_s",
                     "action_magnitude_cost_per_s", "success_accuracy_bonus"}
         if (not required <= set(rewards) <= required | optional
                 or not np.isfinite(list(rewards.values())).all()):
@@ -235,7 +236,10 @@ class AgileTerminalArrivalEnv(gym.Env):
                 terms["event"] = (float(r["event_success"]) * (1. + float(r.get("success_accuracy_bonus", 0.)) * accuracy)
                                   if self.evaluator.arrived else
                                   float(r["event_failure"] - r["remaining_failure_cost_per_s"] *
-                                        max(0., self.horizon_s - (state.timestamp - self.episode_start))))
+                                        # Optionally charge every failure and timeout the full-horizon penalty,
+                                        # so delaying a failure is never cheaper than failing early.
+                                        (self.horizon_s if r.get("failure_penalty_time_independent", 0) else
+                                         max(0., self.horizon_s - (state.timestamp - self.episode_start)))))
                 ratio = self.evaluator.best_violation_ratio
                 # Optionally pay the closeness bonus only to episodes whose facing point reached the
                 # gap window, so hovering in front of the target cannot harvest it until timeout.

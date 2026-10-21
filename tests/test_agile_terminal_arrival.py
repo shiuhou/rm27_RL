@@ -476,3 +476,37 @@ def test_timeout_exclusion_withholds_precision_bonus_after_hovering_inside_the_w
     assert paid["explore/terminal_arrival_moderate_precision_crossing.json"] > 0
     assert paid["explore/terminal_arrival_moderate_precision_crossing_notimeout.json"] == 0
 
+
+def test_time_independent_failure_penalty_charges_early_failure_and_timeout_alike(tmp_path):
+    from rm27_contact_rl.arrival_env import DEFAULT_ARRIVAL_CONFIG
+    events = {}
+    for name in ("explore/terminal_arrival_moderate_precision_crossing_notimeout.json",
+                 "explore/terminal_arrival_moderate_precision_x15.json"):
+        task = json.loads((DEFAULT_ARRIVAL_CONFIG.parent / name).read_text())
+        task["horizon_s"] = .5
+        path = tmp_path / name.replace("/", "_")
+        path.write_text(json.dumps(task))
+        env = AgileTerminalArrivalEnv(path)
+        try:
+            env.reset(options={"initial_coordinates": [1.2, 0, 0]})
+            geometry = env.evaluator.geometry
+            # Early failure: below the gap window and moving in, overshoot within the first step.
+            place(env, geometry["position_target"] - .075 * geometry["normal"], geometry["target_rotation"],
+                  geometry["velocity_target"])
+            fresh_evaluator(env)
+            _, _, terminated, _, info = env.step(env.previous_action_ctbr.copy())
+            assert terminated and info["result"]["failure_modes"] == ["TERMINAL_OVERSHOOT"]
+            early = info["reward_components"]["event"] - info["result"]["terminal_precision_bonus"]
+            env.reset(options={"initial_coordinates": [1.2, 0, 0]})
+            terminated = False
+            while not terminated:
+                _, _, terminated, _, info = env.step(env.previous_action_ctbr.copy())
+            assert info["result"]["failure_modes"] == ["ARRIVAL_TIMEOUT"]
+            events[name] = (early, info["reward_components"]["event"])
+        finally:
+            env.close()
+    old_early, old_timeout = events["explore/terminal_arrival_moderate_precision_crossing_notimeout.json"]
+    new_early, new_timeout = events["explore/terminal_arrival_moderate_precision_x15.json"]
+    assert old_early < old_timeout  # time-dependent: failing late is cheaper
+    assert new_early == pytest.approx(-20 - 2 * .5) and new_timeout == pytest.approx(-20 - 2 * .5)
+
