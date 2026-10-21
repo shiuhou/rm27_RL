@@ -666,3 +666,62 @@ def test_x17_differs_from_x16_only_by_task_with_yaw_rate_limit():
         assert x17["env_config"].endswith("terminal_arrival_moderate_precision_x17.json")
         assert dict(x17, env_config=None, status=None) == dict(x16, env_config=None, status=None)
         load_train_config(explore / f"ppo_x17_yaw3_seed{seed}.json")
+
+
+def test_tolerance_curriculum_widens_training_terminal_set_only(tmp_path):
+    from rm27_contact_rl.arrival_env import TOLERANCE_KEYS, AgileTerminalArrivalEnv
+    from rm27_contact_rl.ppo import ToleranceCurriculum, ToleranceCurriculumReset
+    explore = ROOT / "configs/agile_flight/explore"
+    spec = {"initial_scale": 1.6, "scale_step": 0.25, "advance_success_rate": 0.5, "advance_window_episodes": 4}
+    curriculum = ToleranceCurriculum(spec)
+    env = ToleranceCurriculumReset(AgileTerminalArrivalEnv(explore / "terminal_arrival_sparse_x18.json"), curriculum)
+    try:
+        declared = env.unwrapped.rl_config["terminal"]
+        env.reset()
+        assert env.unwrapped.terminal_tolerance_scale == 1.6
+        for key, value in declared.items():
+            expected = value * 1.6 if key in TOLERANCE_KEYS else value
+            assert env.unwrapped.evaluator.terminal[key] == pytest.approx(expected)
+        env.reset(options={"initial_coordinates": [1.2, 0., 0.]})
+        assert env.unwrapped.evaluator.terminal == declared
+    finally:
+        env.close()
+    for passed in (True, False, True):
+        curriculum.record(passed)
+    assert not curriculum.update()["advanced"]  # window not full
+    curriculum.record(False)
+    state = curriculum.update()
+    assert state["advanced"] and state["scale"] == 1.35 and state["window_episodes"] == 0
+    for _ in range(3):
+        for _ in range(4):
+            curriculum.record(True)
+        curriculum.update()
+    assert curriculum.scale == 1.0  # floors at the declared set
+    for _ in range(4):
+        curriculum.record(True)
+    assert not curriculum.update()["advanced"]
+
+
+def test_x18_configs_and_tolerance_curriculum_validation(tmp_path):
+    explore = ROOT / "configs/agile_flight/explore"
+    task17 = json.loads((explore / "terminal_arrival_moderate_precision_x17.json").read_text())
+    task18 = json.loads((explore / "terminal_arrival_sparse_x18.json").read_text())
+    assert dict(task18, reward=None, status=None) == dict(task17, reward=None, status=None)
+    assert all(task18["reward"][k] == 0 for k in ("time_cost_per_s", "velocity_cost_per_s", "attitude_cost_per_s",
+                                                  "rate_cost_per_s", "saturation_cost_per_s",
+                                                  "remaining_failure_cost_per_s"))
+    assert not any(k.startswith(("terminal_precision", "failure_penalty")) for k in task18["reward"])
+    for seed in (0, 1, 2):
+        x17 = json.loads((explore / f"ppo_x17_yaw3_seed{seed}.json").read_text())
+        path = explore / f"ppo_x18_sparse_tolcur_seed{seed}.json"
+        x18 = json.loads(path.read_text())
+        assert dict(x18, env_config=None, status=None, tolerance_curriculum=None) == dict(
+            x17, env_config=None, status=None, tolerance_curriculum=None)
+        load_train_config(path)
+    good = x18["tolerance_curriculum"]
+    for bad in ({"initial_scale": 0.5}, {"scale_step": 0}, {"advance_success_rate": 1.5},
+                {"advance_window_episodes": 0}, {"extra": 1}):
+        candidate = tmp_path / "bad.json"
+        candidate.write_text(json.dumps(dict(x18, tolerance_curriculum=dict(good, **bad))))
+        with pytest.raises(ValueError):
+            load_train_config(candidate)

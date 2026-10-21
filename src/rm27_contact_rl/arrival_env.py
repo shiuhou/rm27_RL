@@ -18,6 +18,10 @@ _EPISODE_FIELDS = ("initial_coordinates", "episode_start", "previous_action_ctbr
                    "motor_command_saturation_time_s", "evaluator", "_active", "dynamics_scales")
 
 
+TOLERANCE_KEYS = ("gap_tolerance_m", "tangent_position_tolerance_m", "normal_speed_tolerance_m_s",
+                  "tangent_speed_tolerance_m_s", "attitude_tolerance_deg", "body_rate_tolerance_rad_s")
+
+
 class AgileTerminalArrivalEnv(gym.Env):
     metadata = {"render_modes": []}
     task_id = "agile_terminal_arrival_v1"
@@ -85,6 +89,16 @@ class AgileTerminalArrivalEnv(gym.Env):
         self._closed = False
         self.evaluator = None
         self._terminal_result = None
+        # Training-only terminal-set widening (tolerance curriculum); 1 is the declared set.
+        self.terminal_tolerance_scale = 1.
+
+    def _evaluator_config(self):
+        """Task config for this episode's evaluator: tolerances widened by the curriculum scale."""
+        if self.terminal_tolerance_scale == 1.:
+            return self.rl_config
+        terminal = {key: value * self.terminal_tolerance_scale if key in TOLERANCE_KEYS else value
+                    for key, value in self.rl_config["terminal"].items()}
+        return dict(self.rl_config, terminal=terminal)
 
     def _observation(self):
         state = self.plant.state
@@ -119,7 +133,7 @@ class AgileTerminalArrivalEnv(gym.Env):
         self.informed_prefix_s = 0.
         self.action_clipped_time_s = 0.
         self.motor_command_saturation_time_s = 0.
-        self.evaluator = ArrivalEvaluator(self.rl_config, self.plant.physical, self.episode_start)
+        self.evaluator = ArrivalEvaluator(self._evaluator_config(), self.plant.physical, self.episode_start)
         self.evaluator.initialize(self.plant.model, self.plant.data, state)
         self._active = True
         return self._observation(), self._info(0, self.episode_start, False, False,

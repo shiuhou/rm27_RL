@@ -146,6 +146,17 @@ def load_train_config(path=DEFAULT_TRAIN_CONFIG):
                 or not 0 < informed["min_lead_s"] <= informed["initial_lead_s"] <= informed["reference_duration_s"]
                 or informed["lead_step_s"] <= 0):
             raise ValueError("Informed reset must be a declared Arrival training curriculum")
+    tolerance = config.get("tolerance_curriculum")
+    if tolerance is not None:
+        keys = {"initial_scale", "scale_step", "advance_success_rate", "advance_window_episodes"}
+        numbers = [tolerance.get(key) for key in sorted(keys - {"advance_window_episodes"})]
+        window = tolerance.get("advance_window_episodes")
+        if (not arrival or set(tolerance) != keys
+                or any(isinstance(v, bool) or not isinstance(v, (int, float)) or not np.isfinite(v) for v in numbers)
+                or isinstance(window, bool) or not isinstance(window, int) or window < 1
+                or not 1 <= tolerance["initial_scale"] <= 10 or tolerance["scale_step"] <= 0
+                or not 0 < tolerance["advance_success_rate"] <= 1):
+            raise ValueError("Tolerance curriculum must be a declared Arrival training curriculum")
     if not (ROOT / config["env_config"]).is_file():
         raise ValueError("PPO env_config must locate existing checkout assets")
     return config
@@ -269,6 +280,52 @@ class InformedResetCurriculum:
         return dict(lead_s=self.lead_s, window_episodes=len(self.window) if not advanced else 0,
                     window_success_rate=rate, advanced=advanced, prefix_failures=self.prefix_failures,
                     reference_flights=self.reference_flights)
+
+
+class ToleranceCurriculum:
+    """Training-only terminal-set widening shared by one training vector's environments.
+
+    Episodes are judged with every terminal tolerance multiplied by ``scale``. After a
+    full window of completed episodes reaches the declared success rate the scale drops
+    by ``scale_step`` (never below 1, the declared set); it is checked once per complete
+    rollout. Evaluation always uses the declared set.
+    """
+
+    def __init__(self, spec):
+        self.spec = dict(spec)
+        self.scale = float(spec["initial_scale"])
+        self.window = []
+
+    def record(self, success):
+        self.window = (self.window + [bool(success)])[-self.spec["advance_window_episodes"]:]
+
+    def update(self):
+        full = len(self.window) == self.spec["advance_window_episodes"]
+        rate = float(np.mean(self.window)) if self.window else None
+        advanced = full and rate >= self.spec["advance_success_rate"] and self.scale > 1.
+        if advanced:
+            self.scale = max(round(self.scale - self.spec["scale_step"], 9), 1.)
+            self.window = []
+        return dict(scale=self.scale, window_episodes=0 if advanced else len(self.window),
+                    window_success_rate=rate, advanced=advanced)
+
+
+class ToleranceCurriculumReset(gym.Wrapper):
+    """Applies the shared tolerance scale at each training reset; explicit-option resets use the declared set."""
+
+    def __init__(self, env, curriculum):
+        super().__init__(env)
+        self.curriculum = curriculum
+
+    def reset(self, *, seed=None, options=None):
+        self.env.unwrapped.terminal_tolerance_scale = 1. if options is not None else self.curriculum.scale
+        return self.env.reset(seed=seed, options=options)
+
+    def step(self, action):
+        transition = self.env.step(action)
+        if transition[2]:
+            self.curriculum.record(transition[-1]["result"]["passed"])
+        return transition
 
 
 class InformedReset(gym.Wrapper):
@@ -414,7 +471,7 @@ class DynamicsRandomization(gym.Wrapper):
         return self.env.reset(options={"initial_coordinates": base.initial_coordinates})
 
 
-def _make_dummy_vec(config, n_envs=None, curriculum=None, randomization=None):
+def _make_dummy_vec(config, n_envs=None, curriculum=None, randomization=None, tolerance=None):
     path = ROOT / config["env_config"]
     count = config["n_envs"] if n_envs is None else n_envs
     # Every factory creates its own model/data/evaluator/proxy/action memory.
@@ -428,6 +485,8 @@ def _make_dummy_vec(config, n_envs=None, curriculum=None, randomization=None):
         env = env_class(path)
         if randomization is not None:
             env = DynamicsRandomization(env, randomization)
+        if tolerance is not None:
+            env = ToleranceCurriculumReset(env, tolerance)
         if curriculum is not None:
             env = InformedReset(env, curriculum)
         if config.get("observation_history"):
@@ -443,9 +502,12 @@ def make_vec_env(config, n_envs=None, training=True):
     curriculum = (InformedResetCurriculum(config["informed_reset"])
                   if training and config.get("informed_reset") else None)
     randomization = config.get("dynamics_randomization") if training else None
-    vec = VecNormalize(_make_dummy_vec(config, n_envs, curriculum, randomization), training=training,
+    tolerance = (ToleranceCurriculum(config["tolerance_curriculum"])
+                 if training and config.get("tolerance_curriculum") else None)
+    vec = VecNormalize(_make_dummy_vec(config, n_envs, curriculum, randomization, tolerance), training=training,
                        norm_obs=True, norm_reward=False)
     vec.informed_curriculum = curriculum
+    vec.tolerance_curriculum = tolerance
     return vec
 
 
@@ -796,6 +858,7 @@ class _BudgetCallback(BaseCallback):
         self.normalized_action_clipped_steps_per_axis = np.zeros(4, dtype=int)
         self.policy_mean = None
         self.curriculum = None
+        self.tolerance = None
 
     def _on_step(self):
         _assert_finite(self.locals["new_obs"])
@@ -862,6 +925,8 @@ def _learn_rollout(model, vec, deadline, chunk=None):
     # new frontier exactly as an update at PPO rollout end would.
     curriculum = getattr(vec, "informed_curriculum", None)
     callback.curriculum = None if curriculum is None else curriculum.update()
+    tolerance = getattr(vec, "tolerance_curriculum", None)
+    callback.tolerance = None if tolerance is None else tolerance.update()
     metrics = {key: float(value) for key, value in model.logger.name_to_value.items()
                if key.startswith("train/")}
     for key, value in metrics.items():
@@ -901,6 +966,7 @@ def _learn_rollout(model, vec, deadline, chunk=None):
                 normalized_action_clipped_steps=callback.normalized_action_clipped_steps,
                 normalized_action_clipped_steps_per_axis=callback.normalized_action_clipped_steps_per_axis.tolist(),
                 policy_mean_on_rollout=callback.policy_mean,
+                tolerance_curriculum=callback.tolerance,
                 informed_reset=None if callback.curriculum is None else dict(
                     callback.curriculum,
                     informed_completed=sum(e["informed"] for e in callback.episodes),
