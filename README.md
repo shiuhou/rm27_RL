@@ -11,10 +11,27 @@ autonomously commands the same CTBR chain; arrival is scored independently of
 contact recovery. Original Contact defaults and historical checkpoints remain
 available. New task/schema metadata prevents loading a Contact policy as Arrival.
 
+## Version and ownership boundary
+
+The install commands below target this published `main`: it still includes
+`packages/physics/`, and both first-party packages are installed from this checkout.
+The development workspace has a later extraction of shared Physics to
+[rm27_sim](https://github.com/shiuhou/rm27_sim), locally named
+`components/rm_uav_mujoco/`. Do not apply that branch's external-package install
+instructions to this version or remove its bundled Physics through a docs edit.
+RL environments, rewards, policies and training Docker remain owned here; shared
+simulation scenes, complete missions and viewers are developed in Sim.
+
+The published task described here is no-contact I4 Arrival. Later development
+research and the proposed Ver2 first-contact task do not make this checkout a
+completed learned contact/return system. Follow this revision's SPEC and DESIGN;
+existing training commands are entry points, not permission to reopen a completed
+budget. The ignored local activity plan is not available from a fresh clone.
+
 ## Install (Linux amd64, Python 3.12)
 
 ```bash
-git clone --branch refactor/repository-separation https://github.com/shiuhou/rm27_RL.git
+git clone --branch main https://github.com/shiuhou/rm27_RL.git
 cd rm27_RL
 python3.12 -m venv .venv
 uv pip sync --python .venv/bin/python --require-hashes requirements-contact-rl.lock
@@ -60,7 +77,6 @@ It is ignored and not distributed through Git; SPEC and DESIGN fully describe
 the task contract without requiring this local file. A newer source checkout
 must be built into the image before using its new task configuration.
 
-History and `research/contact-rl` remain intact. Original RM27 consumer adaptation
-(S3) is pending; the old system still uses its existing implementation. The review
-branch does not automatically become the GitHub default. No hardware calibration,
-GPU scaling or simulation-to-real success is claimed.
+History and `research/contact-rl` remain intact. S3 consumer adaptation is not
+claimed by this published baseline; later local integration has separate evidence.
+No hardware calibration, GPU scaling or simulation-to-real success is claimed.
