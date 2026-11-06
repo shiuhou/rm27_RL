@@ -16,6 +16,13 @@ from rm27_contact_physics.model import unit
 from .rm27_adapter import DEFAULT_CONFIG, RM27Plant, load_rl_config
 
 
+def contact_observation(state, target_position, target_normal, previous_action_ctbr, remaining):
+    """Existing contact_world_v1 observation; also used by offline interface consumers."""
+    return np.r_[target_position - state.position, target_normal,
+                 state.velocity, state.rotation.reshape(-1), state.omega_body,
+                 previous_action_ctbr, remaining].astype(np.float32)
+
+
 class ContactRecoveryEnv(gym.Env):
     """Fixed nominal plant; all dynamic state is private to this instance."""
 
@@ -50,9 +57,8 @@ class ContactRecoveryEnv(gym.Env):
     def _observation(self):
         state = self.plant.state
         remaining = max(0., self.horizon_s - (state.timestamp - self.episode_start))
-        return np.r_[self.target_position - state.position, self.target_normal,
-                     state.velocity, state.rotation.reshape(-1), state.omega_body,
-                     self.previous_action_ctbr, remaining].astype(np.float32)
+        return contact_observation(state, self.target_position, self.target_normal,
+                                   self.previous_action_ctbr, remaining)
 
     def _info(self, substeps, step_start, motors, saturated, clipped, events):
         now = float(self.plant.data.time)

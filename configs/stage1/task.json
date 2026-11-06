@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "task_id": "fixed_surface_contact_v1",
+  "observation_schema": "fixed_surface_state_v1",
+  "parameter_status": "PROPOSED_UNCONFIRMED",
+  "training_allowed": false,
+  "status": "Engineering fixture for interface and event tests only. Numeric contact, safety, reset and reward parameters are proposals, not official task acceptance or aircraft calibration. Separate bounded PPO smoke permission does not enable long training.",
+  "scene_directory": "../rm_uav_mujoco/artifacts/2027-base-dock-ready",
+  "expected_scene_sha256": "12ff07734cb22530a84b6786db9b7fa182e360cf0f38b0cadc1dc869b00e2e5e",
+  "expected_scene_summary_sha256": "98082666eb95cc9ad1415bb8ea0995ccf830e2bb18005f19cf90cff6a49649db",
+  "scene_cache_directory": "artifacts/agile_flight/stage1_foundation_01/scene",
+  "target_mapping": "../rm_uav_mujoco/configs/base_target.json",
+  "target_registration_source": "../rm_mjcf/rmuc2027_moving_base_mjcf/collision_geoms.xml",
+  "vehicle_config": "../rm_uav_mujoco/configs/drone_v2.json",
+  "dynamics_profile": "../rm_uav_mujoco/configs/impact_recovery/dynamics_v2_150g.json",
+  "contact_fixture_config": "../rm_uav_mujoco/configs/impact_recovery/contact_base_v2.json",
+  "physics_dt_s": 0.001,
+  "policy_dt_s": 0.005,
+  "rate_gain": 17.0,
+  "horizon_s": 4.0,
+  "action": {
+    "body_rate_limit_rad_s": 20.0
+  },
+  "initial_state": {
+    "normal_standoff_m": 1.0,
+    "position_perturbation_halfwidth_target_frame_m": [0.03, 0.03, 0.04],
+    "velocity_perturbation_halfwidth_world_m_s": [0.03, 0.03, 0.03],
+    "rotation_vector_halfwidth_body_deg": [2.0, 2.0, 2.0],
+    "body_rate_perturbation_halfwidth_rad_s": [0.05, 0.05, 0.05]
+  },
+  "initial_state_frame": "Position perturbations use the proper target frame [-registered slope, registered across, outward normal]; velocity is world-frame, attitude is a rotation vector about the nominal world-aligned body, angular velocity is body-frame. No reference trajectory or action labels.",
+  "contact_acceptance": {
+    "normal_speed_range_m_s": [0.0, 1.0],
+    "max_tangent_speed_m_s": 1.0,
+    "max_bottom_normal_error_deg": 20.0,
+    "max_body_rate_rad_s": 4.0,
+    "max_surface_normal_error_deg": 20.0,
+    "max_penetration_m": 0.005,
+    "max_plane_error_m": 0.005
+  },
+  "contact_region_status": "Existing registered central ray-audit footprint, not an official scoring region. All numerical acceptance gates remain PROPOSED_UNCONFIRMED. Physical compressive contact by the assumed S1c underside fixture is necessary; proximity is insufficient. Orientation gate compares body positive Z with surface normal; yaw about that normal is unconstrained for the axisymmetric assumed sphere. Plane error tolerance is a proposal, not a correction to the registered physical surface.",
+  "safety": {
+    "position_min_target_frame_m": [-0.8, -0.8, 0.0],
+    "position_max_target_frame_m": [0.8, 0.8, 2.0],
+    "max_speed_m_s": 6.0,
+    "max_body_rate_rad_s": 20.0
+  },
+  "reward": {
+    "guide_gain": 4.0,
+    "guide_distance_scale_m": 1.0,
+    "near_alignment_gain_per_s": 0.05,
+    "alignment_distance_scale_m": 0.25,
+    "action_magnitude_cost_per_s": 0.01,
+    "action_smoothness_cost_per_s": 0.01,
+    "speed_cost_per_s": 0.2,
+    "body_rate_cost_per_s": 0.02,
+    "saturation_cost_per_s": 0.02,
+    "input_clip_cost_per_s": 0.02,
+    "time_cost_per_s": 0.1,
+    "event_success": 20.0,
+    "event_failure": -5.0
+  },
+  "reward_status": "PerchRL-inspired bounded guidance and near-target alignment plus command magnitude/smoothness, speed/rate and time costs. Coefficients are new engineering proposals; no energy optimization, imitation, prescribed trajectory or prescribed attitude timetable. Independent contact scoring never reads these weights."
+}

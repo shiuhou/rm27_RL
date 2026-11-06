@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "protocol": "stage1_action_scale_diagnostic_no_training",
+  "task_config": "configs/stage1/task_stage1a_seed0.json",
+  "reference_run": "artifacts/agile_flight/stage1a_seed0_01/run",
+  "checkpoint": "final",
+  "action_parameterization": "hover_centered_v1",
+  "rate_scale_betas": [1.0, 0.1],
+  "budget": {"controls": 4096, "physics_substeps": 20480, "wall_s": 120},
+  "hover_s": 4.0,
+  "pulse_rate_rad_s": 1.0,
+  "pulse_s": 0.2,
+  "release_s": 0.6,
+  "frozen_policy_max_s": 1.0,
+  "engineering_checks": {
+    "physical_equivalence_atol": 1e-10,
+    "release_rate_error_max_rad_s": 0.1,
+    "frozen_policy_mixer_clip_reduction_min_fraction": 0.5
+  },
+  "scope": "Diagnostic mapping only. No PPO updates; environment, reward, scorer, Physics and historical checkpoint meanings unchanged. Engineering checks are not task success gates."
+}

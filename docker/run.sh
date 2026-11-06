@@ -12,7 +12,9 @@ Usage:
   run.sh train IMAGE RESULTS_ROOT RUN_ID [--source] [--config CONFIG] [--wandb]
   run.sh arrival-baseline IMAGE RESULTS_ROOT RUN_ID [--source] [--config CONFIG]
   run.sh evaluate IMAGE RESULTS_ROOT RUN_ID CHECKPOINT_DIRECTORY [--source]
---source: read-only mount of this checkout at /workspace; uses image dependencies.
+--source: read-only mounts of RL at /workspace and Physics at /opt/physics.
+RM27_PHYSICS_ROOT overrides the sibling rm_uav_mujoco/packages/physics location.
+Rebuild older images before using --source with this layout.
 --check: import/config/reset/step smoke check, then the same single CLI baseline.
 --wandb: train only; log to Weights & Biases. Enables container networking and passes
     WANDB_API_KEY from ~/.config/rm27/wandb.env, else from the host `wandb login` (~/.netrc).
@@ -43,6 +45,15 @@ print(json.dumps(dict(git_commit=git('rev-parse', 'HEAD'), git_dirty=bool(status
 PY
 }
 
+physics_root=${RM27_PHYSICS_ROOT:-"$repo_root/../rm_uav_mujoco/packages/physics"}
+check_physics() {
+    [[ -f "$physics_root/pyproject.toml" && -d "$physics_root/src/rm27_contact_physics" ]] || {
+        echo "Physics package missing: $physics_root. Set RM27_PHYSICS_ROOT to its checkout path." >&2
+        exit 1
+    }
+    physics_root=$(realpath -e -- "$physics_root")
+}
+
 [[ $# -ge 1 ]] || usage
 operation=$1
 shift
@@ -50,8 +61,9 @@ case "$operation" in
     build)
         [[ $# -le 1 ]] || usage
         image=${1:-rm27-contact-rl:separated-cpu}
+        check_physics
         source_identity=$(git_source)
-        exec docker build --platform linux/amd64 \
+        exec docker build --platform linux/amd64 --build-context "physics=$physics_root" \
             --build-arg "SOURCE_GIT_JSON=$source_identity" \
             --file "$script_dir/Dockerfile" --tag "$image" "$repo_root"
         ;;
@@ -147,7 +159,10 @@ case "$operation" in
                       --env WANDB_DATA_DIR=/tmp/wandb-data)
         fi
         if "$source_mount"; then
+            check_physics
             options+=(--mount "type=bind,src=$repo_root,dst=/workspace,readonly"
+                      --mount "type=bind,src=$physics_root,dst=/opt/physics,readonly"
+                      --env PYTHONPATH=/opt/physics/src
                       --env "CONTACT_RL_GIT_SOURCE=$(git_source)"
                       --env CONTACT_RL_EXECUTION_SOURCE=BIND_MOUNT)
         fi

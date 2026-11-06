@@ -33,6 +33,10 @@ CONTACT_TASK = "contact_recovery_v1"
 CONTACT_SCHEMA = "contact_world_v1"
 ARRIVAL_TASK = "agile_terminal_arrival_v1"
 ARRIVAL_SCHEMA = "arrival_world_v1"
+STAGE1_TASK = "fixed_surface_contact_v1"
+STAGE1_SCHEMA = "fixed_surface_state_v1"
+FLIGHT_TASK = "state_flight_control_probe_v1"
+FLIGHT_SCHEMA = "flight_reference_state_v1"
 # Normalized-action maps: the original affine map onto [low, high], and an
 # Arrival-only map whose zero is synthetic hover (collective m*g, zero rates).
 BOUNDS_AFFINE = "bounds_affine_v1"
@@ -55,7 +59,8 @@ FRONTIER_BAND = "frontier_band_v1"
 def _task_contract(config):
     task = config.get("task_id", CONTACT_TASK)
     schema = config.get("observation_schema", CONTACT_SCHEMA)
-    pairs = {CONTACT_TASK: CONTACT_SCHEMA, ARRIVAL_TASK: ARRIVAL_SCHEMA}
+    pairs = {CONTACT_TASK: CONTACT_SCHEMA, ARRIVAL_TASK: ARRIVAL_SCHEMA,
+             STAGE1_TASK: STAGE1_SCHEMA, FLIGHT_TASK: FLIGHT_SCHEMA}
     if task not in pairs or schema != pairs[task]:
         raise ValueError("Unknown or mismatched task/observation schema")
     return {"task_id": task, "observation_schema": schema}
@@ -66,6 +71,14 @@ def load_train_config(path=DEFAULT_TRAIN_CONFIG):
     if config.get("schema_version") != 1:
         raise ValueError("PPO config requires schema_version 1")
     contract = _task_contract(config)
+    if contract["task_id"] == FLIGHT_TASK:
+        from .flight_probe_runner import validate_train_config
+        return validate_train_config(config)
+    if contract["task_id"] == STAGE1_TASK:
+        from .stage1_runner import validate_train_config
+        return validate_train_config(config)
+    if any(key in config for key in ("rate_scale_beta", "initial_checkpoint", "evidence")):
+        raise ValueError("Action-scale comparison options are Stage 1 only")
     arrival = contract["task_id"] == ARRIVAL_TASK
     protocol = config.get("protocol", "i3_engineering")
     if protocol != ("i4_arrival" if arrival else "i3_engineering"):
@@ -213,8 +226,14 @@ class NormalizedCTBR(gym.ActionWrapper):
     to the environment's reported input clip, not hidden here.
     """
 
-    def __init__(self, env, parameterization=BOUNDS_AFFINE):
+    def __init__(self, env, parameterization=BOUNDS_AFFINE, *, rate_scale_beta=1.):
         super().__init__(env)
+        # Explicit diagnostic policy-output gain, not an environment limit.
+        # In particular, reward normalization must retain the physical bounds.
+        if (isinstance(rate_scale_beta, bool) or not np.isfinite(rate_scale_beta)
+                or not 0 < rate_scale_beta <= 1):
+            raise ValueError("Diagnostic rate scale beta must be finite and in (0, 1]")
+        self.rate_scale_beta = float(rate_scale_beta)
         # Use the environment's double-precision physical limits, not rounded
         # Box metadata; preserve the proxy chain.
         self.low = env.unwrapped._action_low.copy()
@@ -232,6 +251,9 @@ class NormalizedCTBR(gym.ActionWrapper):
             self.hover_action = np.zeros(4)
         else:
             raise ValueError("Unknown action parameterization")
+        self.mapping_identity = dict(parameterization=self.parameterization,
+                                     rate_scale_beta=self.rate_scale_beta,
+                                     scope="POLICY_OUTPUT_ONLY_ENV_BOUNDS_UNCHANGED")
 
     def action(self, action):
         requested = np.asarray(action, dtype=float)
@@ -240,8 +262,12 @@ class NormalizedCTBR(gym.ActionWrapper):
         clipped = np.clip(requested, -1., 1.)
         if self.parameterization == BOUNDS_AFFINE:
             # Keep the original expression so earlier runs replay bit-for-bit.
-            return self.low + (clipped + 1) * (self.high - self.low) / 2
-        return self.center + clipped * self.half_range
+            physical = self.low + (clipped + 1) * (self.high - self.low) / 2
+        else:
+            physical = self.center + clipped * self.half_range
+        if self.rate_scale_beta != 1.:
+            physical[1:] *= self.rate_scale_beta
+        return physical
 
 
 class InformedResetCurriculum:
@@ -475,9 +501,16 @@ def _make_dummy_vec(config, n_envs=None, curriculum=None, randomization=None, to
     path = ROOT / config["env_config"]
     count = config["n_envs"] if n_envs is None else n_envs
     # Every factory creates its own model/data/evaluator/proxy/action memory.
-    if _task_contract(config)["task_id"] == ARRIVAL_TASK:
+    task = _task_contract(config)["task_id"]
+    if task == ARRIVAL_TASK:
         from .arrival_env import AgileTerminalArrivalEnv
         env_class = AgileTerminalArrivalEnv
+    elif task == FLIGHT_TASK:
+        from .flight_probe import FlightProbeEnv
+        env_class = FlightProbeEnv
+    elif task == STAGE1_TASK:
+        from .stage1_env import Stage1ContactEnv
+        env_class = Stage1ContactEnv
     else:
         env_class = ContactRecoveryEnv
     parameterization = config.get("action_parameterization", BOUNDS_AFFINE)
@@ -491,7 +524,8 @@ def _make_dummy_vec(config, n_envs=None, curriculum=None, randomization=None, to
             env = InformedReset(env, curriculum)
         if config.get("observation_history"):
             env = ObservationHistory(env, config["observation_history"]["steps"])
-        return Monitor(NormalizedCTBR(env, parameterization))
+        return Monitor(NormalizedCTBR(env, parameterization,
+                                      rate_scale_beta=config.get("rate_scale_beta", 1.)))
     vec = DummyVecEnv([build for _ in range(count)])
     vec.seed(config["seed"])
     return vec
@@ -791,8 +825,14 @@ def evaluate(checkpoint, output, *, expected_task=None):
     contract = _task_contract(metadata["config"])
     if expected_task is not None and expected_task != contract["task_id"]:
         raise ValueError("Checkpoint cannot be evaluated for a different task")
+    if contract["task_id"] == FLIGHT_TASK:
+        from .flight_probe_runner import evaluate_probe
+        return evaluate_probe(checkpoint, output)
     if contract["task_id"] == CONTACT_TASK:
         return _evaluate_contact(checkpoint, output)
+    if contract["task_id"] == STAGE1_TASK:
+        from .stage1_runner import evaluate_stage1
+        return evaluate_stage1(checkpoint, output)
     output = Path(output).resolve()
     output.mkdir(parents=True, exist_ok=False)
     model, vec, meta = _load_checkpoint(checkpoint, training=False, n_envs=1,
@@ -897,7 +937,7 @@ class _BudgetCallback(BaseCallback):
                                 outside_bounds_fraction=(np.abs(mean) > 1.).mean(axis=0).tolist())
 
 
-def _learn_rollout(model, vec, deadline, chunk=None):
+def _learn_rollout(model, vec, deadline, chunk=None, *, callback_factory=None):
     """Delegate all optimization to SB3; check one actual rollout/update (or SAC chunk)."""
     chunk = model.n_steps * vec.num_envs if chunk is None else chunk
     if time.monotonic() >= deadline:
@@ -913,7 +953,7 @@ def _learn_rollout(model, vec, deadline, chunk=None):
         return gradient
     handles = [parameter.register_hook(gradient_check) for parameter in model.policy.parameters()
                if parameter.requires_grad]
-    callback = _BudgetCallback(deadline)
+    callback = (_BudgetCallback(deadline) if callback_factory is None else callback_factory(deadline))
     try:
         model.learn(total_timesteps=chunk, callback=callback, reset_num_timesteps=False, log_interval=1)
     finally:
@@ -979,15 +1019,29 @@ def _learn_rollout(model, vec, deadline, chunk=None):
 def train(config_path, output):
     """One approved budget; task-specific evaluation and optional I3 resume check."""
     config = load_train_config(config_path)
+    if config["task_id"] == FLIGHT_TASK:
+        raise ValueError("Flight probe requires the paired flight_probe_runner entry; independent arm training is not authorized")
     arrival = _task_contract(config)["task_id"] == ARRIVAL_TASK
+    stage1 = _task_contract(config)["task_id"] == STAGE1_TASK
+    stage1_pilot = stage1 and config["protocol"] == "stage1_state_ppo"
+    independent_evaluation = arrival or stage1
+    if stage1:
+        from .stage1_runner import check_training_scope
+        check_training_scope(config)
     torch.set_num_threads(config["torch_threads"])
     output = Path(output).resolve()
     output.mkdir(parents=True, exist_ok=False)
+    initialization_started = time.monotonic()
     vec = make_vec_env(config)
     algorithm = _algorithm_class(config)
     model = algorithm("MlpPolicy", vec, seed=config["seed"], device="cpu", verbose=0, **_algorithm_kwargs(config))
     model.set_logger(configure(format_strings=[]))
     vec.reset()
+    initial_comparison = None
+    if config.get("initial_checkpoint"):
+        from .stage1_runner import initialize_comparison
+        initial_comparison = initialize_comparison(model, vec, config)
+        _write_json(output / "initial_comparison.json", initial_comparison)
     env = vec.venv.envs[0].unwrapped
     source = provenance(env, algorithm=f"{algorithm.__name__}_CPU", seed=config["seed"],
                         extra_sources={"training_config": Path(config_path).resolve()})
@@ -997,6 +1051,8 @@ def train(config_path, output):
                           hover_normalized=wrapper.hover_action.tolist(),
                           zero_normalized_physical_ctbr=wrapper.action(np.zeros(4)).tolist(),
                           parameterization=wrapper.parameterization,
+                          rate_scale_beta=wrapper.rate_scale_beta,
+                          effective_rate_half_range=(wrapper.half_range[1:]*wrapper.rate_scale_beta).tolist(),
                           half_range_physical_ctbr=wrapper.half_range.tolist())
     defaults = {name: parameter.default for name, parameter in inspect.signature(algorithm.__init__).parameters.items()
                 if parameter.default is not inspect.Parameter.empty
@@ -1016,30 +1072,59 @@ def train(config_path, output):
                 action_mapping=action_mapping, rl=env.rl_config, experiment=env.plant.cfg,
                 physical=env.plant.physical, vehicle=env.plant.vehicle_config, profile=env.plant.profile))
     _write_json(output / "provenance.json", source)
+    training_budget = evaluation_budget = None
+    if stage1_pilot:
+        from .stage1_runner import SmokeBudget, BudgetedTrainingEnv, evaluate_stage1, record_checkpoint_behavior
+        spec = config["evaluation_budget"]
+        evaluation_budget = SmokeBudget(controls=spec["controls"], substeps=spec["physics_substeps"], wall_s=spec["wall_s"])
+        evaluation_budget.pause()
+        training_budget = SmokeBudget(controls=config["budget"]["transitions"],
+                                      substeps=5*config["budget"]["transitions"], wall_s=config["budget"]["learning_wall_s"])
+        training_budget.pause()
+        vec.venv.envs[0] = BudgetedTrainingEnv(vec.venv.envs[0], training_budget,
+                                             output=output / "training_representatives",
+                                             record_all=config.get("evidence", {}).get("all_training_episodes", False))
+
+    def independent_check(checkpoint, destination):
+        if evaluation_budget is None:
+            return evaluate(checkpoint, destination)
+        with evaluation_budget.activity():
+            return evaluate_stage1(checkpoint, destination, budget=evaluation_budget)
+
+    initialization_wall_s = time.monotonic() - initialization_started
     from .tracking import live_tracker
     tracker, tracking_error = live_tracker(output, config, env.rl_config)
     checkpoints = output / "checkpoints"
     completed = 0
-    resume = dict(status="NOT_REQUIRED" if arrival else "NOT_COMPLETED")
+    resume = dict(status="NOT_REQUIRED" if independent_evaluation else "NOT_COMPLETED")
     started = None
     before = after = traditional = None
     stop_reason = "TRANSITION_BUDGET"
     error = None
     error_traceback = None
     engineering_passed = False
+    behavior = {}
+    midpoint_saved = False
     try:
         _save_checkpoint(checkpoints / "initial", model, vec, config, source, 0)
         _save_checkpoint(checkpoints / "latest", model, vec, config, source, 0)
-        before = evaluate(checkpoints / "initial", output / "evaluation_before")
+        before = independent_check(checkpoints / "initial", output / "evaluation_before")
+        if stage1_pilot and not before["complete"]:
+            raise TimeoutError("Initial 19-case assessment exhausted the independent evaluation budget")
         # The initial evaluation is outside the learning budget. One shared
         # clock covers all learning, saves, reloads and stage transitions.
         started = time.monotonic()
         deadline = started + config["budget"]["learning_wall_s"]
+        if training_budget is not None:
+            training_budget.resume()
+            deadline = min(deadline, training_budget.deadline)
         rollout_size = _chunk_transitions(config)
         for update in range(config["budget"]["transitions"] // rollout_size):
             evidence = _learn_rollout(model, vec, deadline, rollout_size)
             completed += 1
             evidence.update(completed_rollout_updates=completed, learning_wall_s=time.monotonic() - started)
+            if training_budget is not None:
+                evidence["training_cost"] = training_budget.summary()
             with (output / "updates.jsonl").open("a") as stream:
                 stream.write(json.dumps(evidence, allow_nan=False) + "\n")
             if tracker is not None:
@@ -1048,12 +1133,21 @@ def train(config_path, output):
                 except Exception as exc:  # Tracking never invalidates the saved evidence.
                     tracking_error, tracker = f"{type(exc).__name__}: {exc}", None
             _save_checkpoint(checkpoints / "latest", model, vec, config, source, completed)
+            if config.get("evidence", {}).get("all_update_checkpoints", False):
+                shutil.copytree(checkpoints / "latest", checkpoints / f"update_{completed:04d}")
+            if stage1_pilot:
+                if completed == 1:
+                    shutil.copytree(checkpoints / "latest", checkpoints / "early")
+                if not midpoint_saved and (model.num_timesteps >= config["budget"]["transitions"] / 2
+                        or time.monotonic() - started >= config["budget"]["learning_wall_s"] / 2):
+                    shutil.copytree(checkpoints / "latest", checkpoints / "midpoint")
+                    midpoint_saved = True
             curriculum_state = evidence.get("informed_reset")
             if curriculum_state and curriculum_state["advanced"]:
                 # Policy that has just passed the advance gate, for later offline evaluation.
                 _save_checkpoint(checkpoints / f"frontier_{curriculum_state['lead_s']:.2f}s",
                                  model, vec, config, source, completed)
-            if not arrival and completed == 2:
+            if not independent_evaluation and completed == 2:
                 saved = _save_checkpoint(checkpoints / "pre_resume", model, vec, config, source, completed)
                 if saved["state"]["num_timesteps"] != 4096:
                     raise RuntimeError("Unexpected pre-resume timestep count")
@@ -1061,7 +1155,7 @@ def train(config_path, output):
                 model, vec, restored = _load_checkpoint(checkpoints / "pre_resume", training=True)
                 resume.update(restored_state=restored["state"], exact_state_restore=True,
                               deterministic_action_match=True, fresh_independent_environments=True)
-            if not arrival and completed == 3:
+            if not independent_evaluation and completed == 3:
                 if model.num_timesteps != 6144:
                     raise RuntimeError("Resume did not extend counters to 6144")
                 resume.update(status="PASS", resumed_state=evidence["state"],
@@ -1071,16 +1165,20 @@ def train(config_path, output):
             if completed in (2, 3) or completed % 8 == 0:
                 print(json.dumps(dict(completed_updates=completed, transitions=model.num_timesteps,
                                       learning_wall_s=round(time.monotonic() - started, 3))), flush=True)
-        engineering_passed = completed > 0 if arrival else resume["status"] == "PASS"
+        engineering_passed = completed > 0 if independent_evaluation else resume["status"] == "PASS"
     except _WallLimit as exc:
         stop_reason = "LEARNING_WALL_BUDGET"
         error = str(exc)
-        engineering_passed = completed > 0 if arrival else resume["status"] == "PASS"
+        engineering_passed = completed > 0 if independent_evaluation else resume["status"] == "PASS"
     except Exception as exc:
         stop_reason = "ENGINEERING_ERROR"
         error = f"{type(exc).__name__}: {exc}"
         error_traceback = traceback.format_exc()
     finally:
+        if stage1_pilot and config.get("evidence", {}).get("all_training_episodes", False):
+            vec.venv.envs[0].flush_partial()
+        if training_budget is not None and training_budget.paused_at is None:
+            training_budget.pause()
         collected = int(model.num_timesteps)
         vec.close()
         # On interruption retain the last wholly validated update, never a
@@ -1089,11 +1187,22 @@ def train(config_path, output):
         if (checkpoints / "latest" / "checkpoint.json").is_file():
             shutil.copytree(checkpoints / "latest", checkpoints / "final")
             final_state = json.loads((checkpoints / "final" / "checkpoint.json").read_text())["state"]
-        learning_wall = 0. if started is None else time.monotonic() - started
+        learning_wall = (training_budget.summary()["elapsed_wall_s"] if training_budget is not None
+                         else 0. if started is None else time.monotonic() - started)
         if (checkpoints / "final").is_dir():
             if stop_reason != "ENGINEERING_ERROR":
                 try:
-                    after = evaluate(checkpoints / "final", output / "evaluation_after")
+                    after = independent_check(checkpoints / "final", output / "evaluation_after")
+                    if stage1_pilot:
+                        if not after["complete"]:
+                            raise TimeoutError("Final 19-case assessment exhausted the independent evaluation budget")
+                        # Formal pre/post sets have priority. Additional same-start
+                        # behavior trials consume the remaining evaluation allowance.
+                        for label in ("early", "midpoint"):
+                            if (checkpoints / label).is_dir():
+                                with evaluation_budget.activity():
+                                    behavior[label] = record_checkpoint_behavior(
+                                        checkpoints / label, output / "behavior" / label, evaluation_budget)
                     if arrival:
                         traditional = evaluate_arrival_baseline(ROOT / config["env_config"],
                                                                output / "evaluation_baseline")
@@ -1104,22 +1213,33 @@ def train(config_path, output):
                     error_traceback = traceback.format_exc()
         summary = dict(passed=engineering_passed, engineering_loop="PASS" if engineering_passed else "INCOMPLETE",
                        stop_reason=stop_reason, error=error, error_traceback=error_traceback,
-                       training_transitions=collected,
+                       training_transitions=training_budget.controls if training_budget is not None else collected,
                        final_checkpoint_state=final_state,
                        discarded_transitions=collected - (0 if final_state is None else final_state["num_timesteps"]),
                        completed_rollout_updates=completed, learning_wall_s=learning_wall,
                        budget=config["budget"], resume=resume, provenance=source,
                        task=_task_contract(config),
-                       before=_evaluation_brief(before, arrival),
-                       after=_evaluation_brief(after, arrival),
-                       traditional=_evaluation_brief(traditional, arrival),
+                       before=_evaluation_brief(before, independent_evaluation),
+                       after=_evaluation_brief(after, independent_evaluation),
+                       traditional=_evaluation_brief(traditional, independent_evaluation),
                        comparison="whole training pipeline; checkpoint-specific normalization, no policy-only attribution",
-                       nominal_contact_recovery="NOT_EVALUATED" if arrival else
+                       nominal_contact_recovery="NOT_EVALUATED" if independent_evaluation else
                            "NOT_RUN" if after is None else "PASS" if after["passed"] else "FAIL",
                        terminal_arrival="NOT_EVALUATED" if not arrival else
                            "NOT_RUN" if after is None else after["terminal_arrival"],
                        stable_learning_reliability_generalization="NOT_VERIFIED",
                        tracking=dict(wandb=tracker is not None, error=tracking_error))
+        if stage1:
+            summary["stage1_contact"] = "NOT_RUN" if after is None else after["task_result"]
+        if stage1_pilot:
+            summary.update(training_cost=training_budget.summary(), evaluation_cost=evaluation_budget.summary(),
+                           initialization_wall_s=initialization_wall_s, scene_compilation_wall_s=0.,
+                           scene_cache="REUSED_HASH_VERIFIED_FOUNDATION_MJB", behavior=behavior,
+                           confirmed_parameter_scope=env.rl_config.get("confirmation_scope"),
+                           initial_comparison=initial_comparison,
+                           checkpoint_schedule=dict(initial=0, early=1,
+                               midpoint="first complete update at half transition OR learning-wall allowance",
+                               midpoint_saved=midpoint_saved, final="last wholly validated update"))
         _write_json(output / "summary.json", summary)
         if tracker is not None:
             try:
@@ -1135,6 +1255,9 @@ def train(config_path, output):
 def _evaluation_brief(result, arrival):
     if result is None:
         return None
+    if result.get("task_id") == STAGE1_TASK:
+        return {key: result[key] for key in ("passed", "success_count", "episode_count", "success_rate",
+                    "mean_total_reward", "failure_counts", "task_result", "parameters_confirmed")}
     keys = ("passed", "success_count", "episode_count", "success_rate", "mean_total_reward",
             "mean_event_reward", "failure_counts", "terminal_arrival", "candidate_agility") if arrival else (
                 "passed", "total_event_reward", "episode_elapsed_s", "failure_modes", "events")

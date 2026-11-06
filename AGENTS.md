@@ -1,5 +1,31 @@
 # RM27 Agile Flight RL repository instructions
 
+## RK3576 reference documents
+
+For hardware or deployment work in the RM27 parent checkout, first read
+`../../docs/REAL_HARDWARE.md`, section "RK3576 vendor references (DDR5 only)";
+raw manuals are in `../../RK3576/`. Use only LPDDR5 CV00 / MV12 references,
+not LPDDR4 variants. These local manuals are not bundled with standalone clones;
+if absent, report the missing references and do not guess board-specific values.
+The selected documents do not establish the installed revision or hardware qualification.
+
+## PDF-aligned current scope (2026-10-30)
+
+Research source: `RM27 无人机组开发文档 (2).pdf`, SHA-256
+`d4526f85248623ada0a7c64e120184c8b6838dae215593ea034ee6e8825c437e`. Current goal: repeated fixed-base underside contact,
+separation, attitude/estimation recovery and target reacquisition in one sortie.
+RK3576 is the new platform direction; its full hardware/data chain is not qualified.
+Return-to-dock and precision landing below belong to historical baselines, not the
+new season's mandatory deliverables. Traditional/RL allocation remains a research
+choice. Detailed algorithms/hardware tasks are scheduled separately by the user.
+
+Component responsibility: Autonomous agile-flight/contact policy research and fair traditional-control comparison. First Contact is a research direction, not a completed capability or permanent policy allocation. This batch only exposes existing observation/action conversion and fixed-seed untrained actor inference; no learning.
+
+The authorized cross-repo interface batch is synthetic/offline only, with no
+learning, firmware execution, hardware operations or Git publication. The root
+repository coordinates the single activity plan and derived report. Component
+contracts remain self-contained; the shared engineering method is unchanged.
+
 Read `.agents/docs/SPEC.md` for adopted engineering conventions, current research
 scope and acceptance; read `.agents/docs/DESIGN.md` for implementation and proposals.
 The repository documents are self-contained. `engineering.md` is the user-named
@@ -15,7 +41,8 @@ Preserve later explicit user decisions over earlier draft suggestions.
 Distinguish user-confirmed goals, proposed parameters, adopted implementations
 and observed results; a plan's restatement alone is not evidence of confirmation.
 
-- This repository owns Agile Flight RL and the canonical `packages/physics` package.
+- This repository owns Agile Flight RL. The canonical Physics package lives in
+  `rm_uav_mujoco/packages/physics` and is consumed as an external dependency.
   Physics must not import RL, Gymnasium, Torch or the parent RM27 working tree.
 - The research goal is autonomous policy discovery for fixed-target agile flight,
   then contact, separation and recovery. Teacher/Student imitation is not a
@@ -66,3 +93,25 @@ file remains the RL-specific adapter: it defines package ownership, research
 scope, evidence boundaries and authorization. Keep the common file synchronized
 with the RM27 integration repository when the shared standard changes; do not
 copy RL-specific requirements into the common file.
+
+
+## Shared real-camera test videos
+
+Read `data/shared_vision/README.md` and its linked manifest before using the
+shared real-camera MP4 fixtures. This local relative link points to the RM27
+integration workspace's `data/vision/` catalog; raw videos are not bundled in
+Git clones. Keep inputs unchanged and derived results in this repo's ignored
+artifacts. Encoded video alone is not synchronized Camera+IMU VIO or verified
+sensor/exposure timing evidence. If the link/data is absent, obtain or relink
+the shared dataset instead of inventing missing provenance.
+
+## Shared M3C and MaixCAM2 board references
+
+For M3C/MaixCAM2 carrier, wiring or mechanical reference work, read
+`data/shared_m3c_board/README.md` and `data/shared_m3c_board/manifest.json`;
+source files are under `data/shared_m3c_board/raw/`. This relative local link
+resolves to the integration repo's single hardware reference collection. Match
+378C/379C/3.0 documents to the actual board; filenames do not verify installed
+revision, IMU wiring or camera synchronization. Keep sources unchanged and
+derivatives in this repo's artifacts. Standalone clones need the payloads and a
+new local link; report missing data.

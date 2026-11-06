@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "task_id": "state_flight_control_probe_v1",
+  "observation_schema": "flight_reference_state_v1",
+  "base_task_config": "configs/stage1/task_stage1a_seed0.json",
+  "horizon_s": 4.0,
+  "lambda_control": 1,
+  "stability": {
+    "window_s": 0.5,
+    "position_m": 0.05,
+    "speed_m_s": 0.1,
+    "tilt_deg": 5.0,
+    "body_rate_rad_s": 0.2
+  },
+  "control_cost": {
+    "position_scale_m": 0.2,
+    "speed_scale_m_s": 0.5,
+    "tilt_scale_deg": 20.0,
+    "cap": 4.0
+  },
+  "references_world_m": [
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.2,
+      0.0,
+      0.0
+    ],
+    [
+      -0.2,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.2,
+      0.0
+    ],
+    [
+      0.0,
+      -0.2,
+      0.0
+    ]
+  ],
+  "reference_probabilities": [
+    0.5,
+    0.125,
+    0.125,
+    0.125,
+    0.125
+  ],
+  "confirmation_scope": "USER_APPROVED_SINGLE_SEED_NONCONTACT_AB_PILOT_NOT_HARDWARE_CALIBRATION"
+}

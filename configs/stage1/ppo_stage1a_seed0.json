@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "task_id": "fixed_surface_contact_v1",
+  "observation_schema": "fixed_surface_state_v1",
+  "protocol": "stage1_state_ppo",
+  "algorithm": "PPO",
+  "env_config": "configs/stage1/task_stage1a_seed0.json",
+  "seed": 0,
+  "n_envs": 1,
+  "torch_threads": 1,
+  "action_parameterization": "hover_centered_v1",
+  "ppo": {
+    "n_steps": 512,
+    "batch_size": 128,
+    "n_epochs": 4,
+    "learning_rate": 0.0003,
+    "gamma": 0.999,
+    "gae_lambda": 0.95,
+    "policy_kwargs": {
+      "net_arch": [
+        64,
+        64
+      ],
+      "log_std_init": -1.5
+    }
+  },
+  "budget": {
+    "transitions": 131072,
+    "learning_wall_s": 1800
+  },
+  "evaluation_budget": {
+    "controls": 30400,
+    "physics_substeps": 152000,
+    "wall_s": 600
+  }
+}

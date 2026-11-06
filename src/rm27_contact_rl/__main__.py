@@ -81,8 +81,20 @@ def main():
     evaluate_parser = commands.add_parser("evaluate", help="task-specific deterministic evaluation, frozen normalization")
     evaluate_parser.add_argument("--checkpoint", type=Path, required=True)
     evaluate_parser.add_argument("--output", type=Path, required=True)
-    evaluate_parser.add_argument("--task", choices=("contact_recovery_v1", "agile_terminal_arrival_v1"),
+    evaluate_parser.add_argument("--task", choices=("contact_recovery_v1", "agile_terminal_arrival_v1", "fixed_surface_contact_v1", "state_flight_control_probe_v1"),
                                  help="reject checkpoints belonging to a different task")
+    prepare = commands.add_parser("stage1-prepare", help="verify and compile a private fixed-surface scene")
+    prepare.add_argument("--config", type=Path, default=ROOT / "configs/stage1/task_contact_geometry.json")
+    prepare.add_argument("--output", type=Path, required=True)
+    smoke = commands.add_parser("stage1-smoke", help="bounded contact-task engineering test, one 64-step PPO update")
+    smoke.add_argument("--output", type=Path, required=True)
+    smoke.add_argument("--config", type=Path, default=ROOT / "configs/stage1/ppo_foundation.json")
+    smoke.add_argument("--continue-after", type=Path, help="preserved pre-update failure, charged to the same smoke budget")
+    replay = commands.add_parser("stage1-replay", help="verify or display a complete recorded contact-task episode")
+    replay.add_argument("episode", type=Path)
+    replay_mode = replay.add_mutually_exclusive_group()
+    replay_mode.add_argument("--view", action="store_true")
+    replay_mode.add_argument("--render", type=Path, help="new output directory for three recorded-state images")
     importer = commands.add_parser("track-import", help="replay finished run directories into Weights & Biases")
     importer.add_argument("runs", type=Path, nargs="+", help="training result directories")
     importer.add_argument("--project", default=None)
@@ -91,6 +103,30 @@ def main():
     importer.add_argument("--robustness-dir", type=Path, default=None,
                           help="optional <run-name>.jsonl robustness rows to attach as summary")
     args = parser.parse_args()
+    if args.command == "stage1-prepare":
+        from .stage1_env import load_stage1_config
+        from .stage1_plant import compile_stage1_scene
+        model, manifest = compile_stage1_scene(load_stage1_config(args.config), args.output)
+        print(json.dumps({key: manifest[key] for key in ("compiled", "compile_wall_s", "nq", "nv", "nu", "ngeom")}))
+        return 0
+    if args.command == "stage1-smoke":
+        from .stage1_runner import run_smoke
+        result = run_smoke(args.config, args.output, previous_attempt=args.continue_after)
+        print(json.dumps({key: result[key] for key in ("passed", "stop_reason", "policy_capability")}))
+        return 0 if result["passed"] else 2
+    if args.command == "stage1-replay":
+        if args.view:
+            from .stage1_replay import view_episode
+            view_episode(args.episode)
+            return 0
+        if args.render:
+            from .stage1_replay import render_episode
+            result = render_episode(args.episode, args.render)
+        else:
+            from .stage1_runner import verify_episode_replay
+            result = verify_episode_replay(args.episode)
+        print(json.dumps(result))
+        return 0 if result["passed"] else 2
     if args.command == "track-import":
         from .tracking import DEFAULT_PROJECT, import_run
         for run in args.runs:

@@ -32,6 +32,33 @@ def rms_state(vec):
                                vec.ret_rms.mean, vec.ret_rms.var, vec.ret_rms.count))
 
 
+@pytest.mark.parametrize("parameterization", ["bounds_affine_v1", "hover_centered_v1"])
+def test_diagnostic_rate_scale_preserves_default_and_physical_bounds(parameterization):
+    import gymnasium as gym
+    from types import SimpleNamespace
+
+    env = gym.Env()
+    env._action_low = np.array([0., -20., -20., -20.])
+    env._action_high = np.array([4.4145, 20., 20., 20.])
+    env.plant = SimpleNamespace(hover_force=1.4715)
+    old = NormalizedCTBR(env, parameterization)
+    new = NormalizedCTBR(env, parameterization, rate_scale_beta=.1)
+    for action in np.random.default_rng(0).uniform(-2, 2, (32, 4)):
+        clipped = np.clip(action, -1., 1.)
+        expected = (old.low + (clipped+1)*(old.high-old.low)/2
+                    if parameterization == "bounds_affine_v1"
+                    else old.center+clipped*old.half_range)
+        np.testing.assert_array_equal(old.action(action), expected)
+        expected[1:] *= .1
+        np.testing.assert_array_equal(new.action(action), expected)
+    np.testing.assert_array_equal(env._action_low, [0., -20., -20., -20.])
+    np.testing.assert_array_equal(env._action_high, [4.4145, 20., 20., 20.])
+    assert new.mapping_identity["rate_scale_beta"] == .1
+    for invalid in (0., -1., 1.1, np.nan, np.inf, True):
+        with pytest.raises(ValueError):
+            NormalizedCTBR(env, parameterization, rate_scale_beta=invalid)
+
+
 def test_normalized_ctbr_uses_physical_chain_and_hover_initialization():
     wrapped = NormalizedCTBR(ContactRecoveryEnv())
     direct = ContactRecoveryEnv()
@@ -529,17 +556,22 @@ def test_sac_option_learns_in_chunks_and_round_trips_checkpoints(tmp_path):
             load_train_config(path)
 
 
-def test_wandb_tracking_is_opt_in_and_logs_live_and_imported_runs(tmp_path, monkeypatch):
+@pytest.mark.parametrize("tolerance", [False, True], ids=["no-curriculum", "tolerance-curriculum"])
+def test_wandb_tracking_is_opt_in_and_logs_live_and_imported_runs(tmp_path, monkeypatch, tolerance):
     import sys
     from rm27_contact_rl import ppo, tracking
 
     monkeypatch.delenv("RM27_WANDB", raising=False)
     assert tracking.live_tracker(tmp_path, {}, None) == (None, None)
     # One tiny real training run with live tracking in W&B's "disabled" mode (no network, nothing uploaded).
-    task = json.loads((ROOT / "configs/agile_flight/terminal_arrival_moderate_precision.json").read_text())
+    filename = "ppo_x18_sparse_tolcur_seed0.json" if tolerance else "ppo_x1_no_curriculum.json"
+    config = load_train_config(ROOT / "configs/agile_flight/explore" / filename)
+    labels = tracking.run_config(config)
+    assert labels["curriculum"] is tolerance
+    assert ("tolerance-curriculum" in tracking.run_tags(labels)) is tolerance
+    task = json.loads((ROOT / config["env_config"]).read_text())
     task["horizon_s"] = .05
     (tmp_path / "task.json").write_text(json.dumps(task))
-    config = load_train_config(ROOT / "configs/agile_flight/explore/ppo_x1_no_curriculum.json")
     config = dict(config, env_config=str(tmp_path / "task.json"), n_envs=1,
                   ppo=dict(config["ppo"], n_steps=16, batch_size=16, n_epochs=1),
                   budget={"transitions": 32, "learning_wall_s": 60})
@@ -554,11 +586,44 @@ def test_wandb_tracking_is_opt_in_and_logs_live_and_imported_runs(tmp_path, monk
     metrics = tracking.update_metrics(records[-1], 16)
     assert metrics["updates/completed"] == 2 and 0 <= metrics["actions/normalized_clip_rate"] <= 1
     assert "train/loss" in metrics and "episodes/completed" in metrics
+    if tolerance:
+        state = records[-1]["tolerance_curriculum"]
+        assert metrics["tolerance_curriculum/scale"] == state["scale"] == 3.
+        assert metrics["tolerance_curriculum/window_episodes"] == state["window_episodes"] > 0
+        assert metrics["tolerance_curriculum/window_success_rate"] == state["window_success_rate"] == 0.
+        assert metrics["tolerance_curriculum/advanced"] == 0
+        # The real curriculum produces both empty and advancing windows. Preserve
+        # missing rates as missing, rather than inventing failed episodes.
+        curriculum = ppo.ToleranceCurriculum(dict(config["tolerance_curriculum"], advance_window_episodes=2))
+        empty = dict(records[-1], tolerance_curriculum=curriculum.update())
+        assert "tolerance_curriculum/window_success_rate" not in tracking.update_metrics(empty, 16)
+        curriculum.record(True)
+        curriculum.record(True)
+        advancing = dict(records[-1], tolerance_curriculum=curriculum.update())
+        projected = tracking.update_metrics(advancing, 16)
+        assert projected["tolerance_curriculum/scale"] == 2.75
+        assert projected["tolerance_curriculum/window_success_rate"] == 1.
+        assert projected["tolerance_curriculum/window_episodes"] == 0
+        assert projected["tolerance_curriculum/advanced"] == 1
+    else:
+        assert not any(key.startswith("tolerance_curriculum/") for key in metrics)
+        legacy = {key: value for key, value in records[-1].items() if key != "tolerance_curriculum"}
+        assert tracking.update_metrics(legacy, 16) == metrics
     assert tracking.import_run(output, mode="disabled",
                                robustness=[dict(condition="nominal", declared="9/9", held_out="50/50")])
     values = tracking.summary_metrics(summary, output, [dict(condition="mass x1.2", declared="8/9", held_out="49/50")])
     assert values["robust/mass_x1.2/held_out_success"] == 49 and values["eval/after_episodes"] == 9
     assert "wandb" in sys.modules
+
+
+def test_tracking_preserves_informed_reset_labels():
+    from rm27_contact_rl import tracking
+
+    config = load_train_config(ROOT / "configs/agile_flight/explore/ppo_x9_sac_history.json")
+    labels = tracking.run_config(config)
+    assert labels["curriculum"] is True
+    assert tracking.run_tags(labels) == ["SAC", "curriculum", "terminal_arrival_moderate_precision",
+                                         "history8", "dynamics-randomization"]
 
 
 def test_arrival_vector_autoreset_keeps_task_result_and_frozen_evaluation(tmp_path):

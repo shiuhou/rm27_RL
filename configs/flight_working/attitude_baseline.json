@@ -1,0 +1,53 @@
+{
+  "task_id": "state_flight_working_v1",
+  "base_config": "configs/flight_probe/task_b.json",
+  "observation": "body_error_velocity_up_rates_v1",
+  "collective_fraction": 0.5,
+  "rate_gain_rad_s": 2.0,
+  "reward": {
+    "position_scale_m": 0.2,
+    "fine_position_scale_m": 0.05,
+    "speed_scale_m_s": 0.2,
+    "tilt_scale_rad": 0.2,
+    "rate_scale_rad_s": 0.5,
+    "gain_per_s": 4.0,
+    "event_success": 5.0,
+    "event_failure": -5.0
+  },
+  "ppo": {
+    "learning_rate": 0.0001,
+    "n_steps": 512,
+    "batch_size": 256,
+    "n_epochs": 5,
+    "gamma": 0.999,
+    "gae_lambda": 0.99,
+    "ent_coef": 0.0,
+    "vf_coef": 0.5,
+    "max_grad_norm": 1.0,
+    "target_kl": 0.015
+  },
+  "policy": {
+    "net_arch": [
+      64,
+      64
+    ],
+    "activation": "Tanh",
+    "log_std_init": -1.8971199848858813,
+    "zero_initial_action_head": true,
+    "observation_normalization": "fixed_physical_scales",
+    "actor_zero_equilibrium": true
+  },
+  "budget": {
+    "transitions": 803392,
+    "learning_wall_s": 3052.604981686047,
+    "evaluation_wall_s": 421.2417357189115,
+    "maximum_candidates": 1
+  },
+  "seed": 0,
+  "action_mode": "attitude_setpoint",
+  "tilt_range_rad": 0.2,
+  "attitude_gain_per_s": 5.0,
+  "yaw_rate_gain_rad_s": 0.5,
+  "horizon_bootstrap": true,
+  "iteration_basis": "Candidate1 stalled at196608; full flights but positional bias/braking failure. Attitude setpoint interface and time-limit bootstrap; lower LR/std. Joint redesign, no causal isolation, no PD position controller. Bias-free tanh actor preserves zero-error hover equilibrium; feedback weights remain learned from PPO, no PD labels or gains."
+}

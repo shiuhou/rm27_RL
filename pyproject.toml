@@ -34,6 +34,6 @@ include-package-data = false
 [tool.setuptools.package-dir]
 rm27_contact_rl = "src/rm27_contact_rl"
 
-# Lock resolution reads the local first-party project; it is installed separately.
+# Lock resolution reads the external simulator package; it is installed separately.
 [tool.uv.sources]
-rm27-contact-physics = { path = "packages/physics" }
+rm27-contact-physics = { path = "../rm_uav_mujoco/packages/physics" }

@@ -1,0 +1,21 @@
+{
+  "task_config": "configs/agile_flight/terminal_arrival_moderate_precision.json",
+  "seed": 20261102,
+  "states_per_group": 32,
+  "horizon_steps": [1, 8, 32, 128],
+  "reference_transition_cap": 65536,
+  "physics_substep_cap": 2000000,
+  "wall_seconds_cap": 1800,
+  "forward_p95_limits": {
+    "position_m": 0.005,
+    "velocity_m_s": 0.05,
+    "attitude_deg": 1.0,
+    "body_rate_rad_s": 0.1
+  },
+  "self_gradient_relative_limit": 0.0001,
+  "reference_gradient_relative_limit": 0.05,
+  "reference_gradient_cosine_min": 0.95,
+  "finite_difference_epsilon": 0.000001,
+  "ppo_evaluation": "artifacts/agile_flight/docker/i4_20261019_moderate_long_dr_02/evaluation_after",
+  "sac_evaluation": "artifacts/agile_flight/docker/i4_explore_x9_sac_history_01/evaluation_after"
+}

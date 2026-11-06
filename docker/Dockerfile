@@ -17,12 +17,14 @@ RUN apt-get update \
     && python3 -m venv /opt/venv
 
 WORKDIR /workspace
-COPY pyproject.toml requirements-contact-rl.lock ./
+COPY requirements-contact-rl.lock ./
 RUN python -m pip install --no-cache-dir --only-binary=:all: --require-hashes \
     --no-deps -r requirements-contact-rl.lock
 
 # COPY uses the whitelist and the real checkout, not git archive HEAD.
 COPY . .
+COPY --from=physics pyproject.toml /opt/physics/pyproject.toml
+COPY --from=physics src/rm27_contact_physics /opt/physics/src/rm27_contact_physics
 ARG SOURCE_GIT_JSON
 RUN <<'BUILD_SOURCE'
 python - <<'PY'
@@ -43,6 +45,9 @@ if set(files) != allowed:
                        f'missing={sorted(allowed - set(files))}')
 print(f'Build context: {len(files)} whitelisted files, '
       f'{sum((root / name).stat().st_size for name in files)} bytes')
+physics_root = Path('/opt/physics')
+files.update({'physics/' + str(p.relative_to(physics_root)): hashlib.sha256(p.read_bytes()).hexdigest()
+              for p in sorted(physics_root.rglob('*')) if p.is_file()})
 dockerfile = (root / 'docker/Dockerfile').read_text()
 base = next(line.split()[1] for line in dockerfile.splitlines() if line.startswith('FROM '))
 identity.update(base_image=base, included_files_sha256=files,
@@ -54,7 +59,7 @@ output.parent.mkdir(parents=True, exist_ok=True)
 output.write_text(json.dumps(identity, indent=2) + '\n')
 PY
 BUILD_SOURCE
-RUN python -m pip install --no-deps --no-build-isolation --no-index -e ./packages/physics -e .
+RUN python -m pip install --no-deps --no-build-isolation --no-index -e /opt/physics -e .
 
 # The launcher uses the caller's UID:GID; direct runs also default to non-root.
 USER 65532:65532

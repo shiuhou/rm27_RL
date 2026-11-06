@@ -49,6 +49,12 @@ def update_metrics(evidence, chunk_transitions):
         if curriculum["informed_completed"]:
             metrics["curriculum/informed_success_rate"] = (curriculum["informed_successful"]
                                                            / curriculum["informed_completed"])
+    tolerance = evidence.get("tolerance_curriculum")
+    if tolerance:
+        for key in ("scale", "window_episodes", "window_success_rate"):
+            if tolerance.get(key) is not None:
+                metrics[f"tolerance_curriculum/{key}"] = tolerance[key]
+        metrics["tolerance_curriculum/advanced"] = int(tolerance["advanced"])
     for name, value in evidence["metrics"].items():
         if value is not None:
             metrics[name] = value
@@ -58,7 +64,7 @@ def update_metrics(evidence, chunk_transitions):
 def run_config(training, rl=None):
     """W&B config: the training configuration plus labels used to group runs."""
     labels = dict(algorithm=training.get("algorithm", "PPO"),
-                  curriculum=bool(training.get("informed_reset")),
+                  curriculum=bool(training.get("informed_reset") or training.get("tolerance_curriculum")),
                   history_steps=(training.get("observation_history") or {}).get("steps", 1),
                   dynamics_randomization=bool(training.get("dynamics_randomization")),
                   env_config=Path(training["env_config"]).stem)
@@ -70,6 +76,8 @@ def run_config(training, rl=None):
 
 def run_tags(config):
     tags = [config["algorithm"], "curriculum" if config["curriculum"] else "no-curriculum", config["env_config"]]
+    if config["training"].get("tolerance_curriculum"):
+        tags.append("tolerance-curriculum")
     if config["history_steps"] > 1:
         tags.append(f"history{config['history_steps']}")
     if config["dynamics_randomization"]:

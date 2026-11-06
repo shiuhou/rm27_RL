@@ -1,5 +1,20 @@
 # RM27 Agile Flight RL — DESIGN
 
+当前主线为从稳定悬停状态学习完整机动与受控底部物理接触的两阶段 PPO；任务要求归 SPEC §10，
+当前接入见 §14。E0／E1-A、旧 I4 和移动 approach 的设计保留各自适用范围。
+
+## PDF season and historical interface batch (2026-10-30)
+
+Current season source and component role are stated in the repository README.
+Previous I0–I4 task contracts, checkpoints, scoring and training budgets are historical
+experiment boundaries and are preserved. The new season goal is repeated contact
+and recovery. The historical interface batch below does not supersede the current
+two-stage PPO allocation. This interface batch itself authorizes no training.
+`interface_worker.py` uses contact_world_v1, the existing
+observation formula and NormalizedCTBR with an untrained fixed-seed actor. This is
+an inference/transport test, not First Contact implementation or policy success.
+Physics stays external and no parent implementation is imported by the worker.
+
 日期：2026-10-13。状态：**I0／I1／I2／I3 ADOPTED**，依据用户对各批次的明确实施请求；I3为有界CPU PPO工程闭环，不代表学习成功。后续扩展研究／部署仍待批准。目标、工程规则与验收仅维护于 [SPEC.md](SPEC.md)，具体运行结果维护于对应任务的唯一活动计划。
 
 现有 §1—§9 保留 I0—I3 与 S1/S2 的实现及兼容契约。I4为新增独立任务；用户2026-10-13明确批准以新活动计划实施，§10作为首轮 **ADOPTED** 设计。接口采用、工程通过和学习效果分别判断；附件中的阅读声明和性能目标不自动成为运行事实。
@@ -8,7 +23,7 @@
 
 独立仓库从 `578b09794407edd74e72327d5a89c5811c40e2a7` 保留历史建立，审阅分支 `refactor/repository-separation`。此前I0—I3源于ec9db048的接触研究；旧工作区及证据不迁移或清理。
 
-研究代码位于 `src/rm27_contact_rl/`；活动物理、控制和评分实现位于 `packages/physics/src/rm27_contact_physics/`。原RM27消费者接入留待S3；旧分支实现是保留的历史/过渡来源。原生 MuJoCo 为参考后端，不预建 GPU、多后端工厂或仿真服务。PerchRL 提供研究启发，不复制其质量、时钟、成功率或附着终止条件。
+研究代码位于 `src/rm27_contact_rl/`；共享物理、控制及历史 Contact／Arrival 评分实现位于 `../rm_uav_mujoco/packages/physics/src/rm27_contact_physics/`，新 Stage 1 的独立任务 scorer 位于 RL。原RM27消费者接入留待S3；旧分支实现是保留的历史/过渡来源。原生 MuJoCo 为参考后端，不预建 GPU、多后端工厂或仿真服务。PerchRL 提供研究启发，不复制其质量、时钟、成功率或附着终止条件。
 
 ```text
 基线或策略 CTBR
@@ -74,7 +89,7 @@ reset沿原名义场景位置、单位姿态与零速度。`data.act` 和 `data.
 
 ## 5. 包与运行环境
 
-根 `pyproject.toml` 声明RL；`packages/physics/pyproject.toml` 声明独立Physics。
+根 `pyproject.toml` 声明RL；`../rm_uav_mujoco/packages/physics/pyproject.toml` 声明独立Physics。
 第三方版本仅由原 `requirements-contact-rl.lock` 固定，27个依赖版本不变。
 Physics wheel可单独安装；RL当前支持完整checkout的editable安装，配置由
 `rm27_contact_rl.paths.ROOT` 从安装源码定位，不依赖cwd或父工作区。
@@ -84,13 +99,13 @@ Physics wheel可单独安装；RL当前支持完整checkout的editable安装，�
 ```bash
 python3.12 -m venv .venv
 uv pip sync --python .venv/bin/python --require-hashes requirements-contact-rl.lock
-uv pip install --python .venv/bin/python --no-deps --no-build-isolation -e ./packages/physics -e .
+uv pip install --python .venv/bin/python --no-deps --no-build-isolation -e ../rm_uav_mujoco/packages/physics -e .
 # 仅构建独立Physics；输出按需生成并忽略。
-.venv/bin/python -m pip wheel --no-deps --no-build-isolation packages/physics --wheel-dir artifacts/wheels
+.venv/bin/python -m pip wheel --no-deps --no-build-isolation ../rm_uav_mujoco/packages/physics --wheel-dir artifacts/wheels
 ```
 
 更新锁需独立理由；同时解析两个打包声明，并将单独安装的第一方Physics包排除在第三方哈希锁外。本次保留原锁字节及所有依赖版本。
-同checkout安装本地Physics；未来原RM27用完整Git SHA和`subdirectory=packages/physics`
+从相邻 rm_uav_mujoco checkout 安装 Physics；未来原RM27用完整Git SHA和`subdirectory=packages/physics`
 或固定wheel URL/SHA-256消费。S3未实施，版本0.1.0不代替内容标识。
 
 生成锁只证明解析，安装只证明安装；行为证据另外报告。宿主登录环境可能设置ROS的PYTHONPATH；运行时使用 `env -u PYTHONPATH` 排除宿主附加包路径，测试另设 `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`。测试依原计划选定节点及根 `tests/test_contact_rl_env.py`，不自动执行全仓测试。
@@ -131,6 +146,9 @@ I2仅检查镜像构建及默认镜像源码路径；可选源码挂载不额外
 先Git＋独立venv，再Docker＋外部数据；I2／I3原生CPU MuJoCo及CPU PPO无需CUDA。未来采用GPU PyTorch时需要同时支持5060 Ti的sm_120与4090的sm_89，并检查宿主驱动／Toolkit。Docker不解决宿主驱动。服务器权限、驱动、CPU／内存、存储和调度UNKNOWN；先单设备迁移再扩独立实验，不预设七卡联合训练。
 
 I3的成熟PPO接入见§7；后续课程、历史观测、视觉误差、延迟丢帧、动力学／接触随机化和PX4路线按独立任务进入。只有实际吞吐瓶颈与收益明确才评估MuJoCo Warp；原生接触参考保留独立数值对照职责，不为GPU先重写全部动力学。
+MuJoCo Warp（GPU 并行仿真）＋mjlab（训练框架）＋viser（网页查看器）是候选加速手段（用户 2026-10-22 记录，未实施）。触发条件：
+单轮实验等待超过约 1 小时，或需要 ≥5 个 seed 才能判断可靠性；或要做大规模随机化／超参数扫描。满足时由执行方主动提出可行性提案——
+吞吐测量、与原生 MuJoCo 逐步数值对照、单 seed 训练后用原生评价器打分——经用户批准后才实施。原生 MuJoCo 始终是评分基准。
 
 ## 7. CPU PPO、Checkpoint与评价（I3 ADOPTED）
 
@@ -236,7 +254,7 @@ q 是每个时刻选出的朝板几何点，不是固定在机体上的同一材
 
 ### 10.3 独立环境与共享物理区间推进
 
-首选新增轻量 `src/rm27_contact_rl/arrival_env.py::AgileTerminalArrivalEnv`；复用 RM27Plant、动作包装和现有配置入口。新增 `packages/physics/src/rm27_contact_physics/arrival.py::ArrivalEvaluator` 拥有独立到达评分；训练奖励仍归 RL，不复制 Contact 评分。原 ContactRecoveryEnv 的默认行为保留，不在其结果结算后补改 done 或 result。
+首选新增轻量 `src/rm27_contact_rl/arrival_env.py::AgileTerminalArrivalEnv`；复用 RM27Plant、动作包装和现有配置入口。新增 `../rm_uav_mujoco/packages/physics/src/rm27_contact_physics/arrival.py::ArrivalEvaluator` 拥有独立到达评分；训练奖励仍归 RL，不复制 Contact 评分。原 ContactRecoveryEnv 的默认行为保留，不在其结果结算后补改 done 或 result。
 
 分离基线的唯一生产步进原位于`evaluation.py::ContactEvaluator.advance`。I4已在现有
 `model.py`的`truth_estimate`附近局部提取共享接口，Contact和Arrival均实际调用：
@@ -407,9 +425,392 @@ I4接口、共享步进及上述检查已落地；本批完成一次CPU容器构
 - `rm27_contact_rl/tracking.py`：把每次更新记录（`updates.jsonl` 的同一份内容）展平成标量，供即时记录与事后导入共用；
   只有启用时才 import wandb。训练配置不含追踪项，同一配置可带或不带追踪运行；追踪失败只写入 `summary.json` 的
   `tracking.error`，不影响实验。
+- 容差课程使用独立的 `tolerance_curriculum/{scale,window_episodes,window_success_rate,advanced}` 曲线；
+  空窗口不记录成功率。课程标签同时识别 informed reset 和容差课程，后者另加 `tolerance-curriculum` 标签。
+  既有 informed reset 的 `curriculum/*` 字段与历史无课程配置标签保持不变；即时与事后导入共用同一投影。
 - 即时：`docker/run.sh train ... --wandb` 才开启容器网络（缺省仍 `--network none`），以环境变量名传入 `WANDB_API_KEY`
   （来自私有文件 `~/.config/rm27/wandb.env`，否则主机 `wandb login` 的 `~/.netrc`），并设 `RM27_WANDB=1`；W&B 本地文件写入
   运行目录，配置／缓存在容器 `/tmp`。项目缺省 `rm27-agile-flight-rl`，按环境配置分组，按算法／课程／历史／随机化打标签。
 - 事后：`python -m rm27_contact_rl track-import <运行目录>... [--robustness-dir DIR]` 回放已存证据为一个 W&B 运行（步数为
   transitions），可附加稳健性结果为摘要。
 
+
+
+## 11. 场地目标注册与历史移动进场接管基线
+
+SPEC §10 的新任务先按当前场地测量目标。目标注册包含可见前表面、背板与绿灯的来源，板面坐标系、
+有效区域、对应碰撞 geom 及全套资产哈希。碰撞面名称仅为候选集合；有效接触仍需检验接触点位于
+注册板面区域。外观网格与碰撞壳的偏差独立记录，不因碰撞壳较厚而移动视觉目标或扩张命中范围。
+原生绿灯、框架和底部接触件的碰撞覆盖不能由装甲板中心检查推定。
+
+工程验证使用完整场地与 drone_v2 的既有碰撞体，不重新生成 base。原生飞机与已有配置附加的底部球
+分列验证，明确球的几何来自工程假设。先做来源/几何检查，再用多位置射线核对板面和碰撞壳，最后
+从无初始接触的固定初态通过 mj_step 检查首次接触对、有限状态及接触力。夹具初始化不作为飞行轨迹；
+步进中不直接写姿态或速度。测试输出保留原始失败，不能据此调奖励或自动启动训练。
+
+以下移动交接设计只描述此前 approach 工程检查，不是当前 Stage 1 的接管条件。
+非接触连续进场工程检查由独立模拟器的 `rm27_sim.experiments.approach` 提供：复用位置/SO(3)
+控制器，经 CTBR 投影和既有 rate proxy 驱动真实电机动态；5 ms 控制、1 ms 物理步进。
+参考轨迹先向机库外侧离场并绕过中央结构，垂直参考从外围绕行起点开始平顺下降，至最后定速段前
+结束。水平参考与交接速度连续；不在板前停车或重置，不以直接写状态代替飞行。
+
+工程交接保存 MuJoCo 完整积分状态（含时间、电机 act/ctrl）、上一实际 CTBR、控制器垂直积分和
+seed；从该快照恢复后，以相同闭环参考续飞验证一致性。当前基线不进行随机抽样，seed 是保存的
+实验身份，并不代表已经实现随机源状态恢复；后续引入随机源时必须保存其真实状态。
+轨迹中的正常结束状态只有在安全与移动交接窗口共同通过时才可标为交接状态，失败终态不可充当
+有效训练初态。这些旧移动交接状态不自动成为新任务训练初态。新 Stage 1 的独立悬停 reset 已在 §14 接入；
+从机库真实连续飞行到悬停控制器、再切换至 policy 的任务交接仍需实现，不能以 reset 冒充。
+新增任务身份、快照及训练/评价配置显式区分旧 I4，无接触旧任务的公开行为不变。
+
+## 12. RL 侧解析可微分代理（E0）
+
+`diff_dynamics.py` 的 `DynamicsParameters.from_env(env)` 从当前编译模型提取固定
+参数并校验支持范围；模型与 CTBR 控制器的惯量／mixer 分开保存。参数抽取不修改
+MuJoCo，不复用旧文档中估计值替代实际数组。当前质量快取不一致会显式拒绝；
+不要在这个接口内调用 `mj_setConst` 或绕过拒绝来改变旧执行语义。
+
+`step_control(state, physical_ctbr, params)` 是可批量、保留 autograd 图的纯 Torch
+计算。状态顺序为世界位置3、body→world的wxyz四元数4、世界速度3、body角速3、
+四电机act4，共17标量（旋转只有3自由度）；输入为N及rad/s的物理CTBR，不能直接
+传SB3归一化动作。输出含最终状态、全部五个1ms端点、raw／clipped motor command
+及clipped CTBR。时间、上一CTBR、观测历史、reward／terminal history仍属环境／
+未来训练层，不混入物理状态或丢弃后冒充可恢复episode。
+
+先按原界限clip CTBR，再计算 `I_c*K*(omega_cmd-omega) + omega×(I_c*omega)`，
+以原 inverse mixer 分配并clip电机；五个子步中指令保持不变。各步使用旧act产生
+body力矩／推力，经四元数旋转加重力；电机更新是
+`act_next = act + (1-exp(-dt/tau))*(command-act)`，与actearly=false一致。
+半隐式平移用新速度更新位置。MuJoCo3.12.0独立自由体的implicitfast局部求解为
+`(I + dt*J_gyro) * angular_acceleration = torque - omega×(I*omega)`，
+`J_gyro = skew(omega)*I - skew(I*omega)`；新角速用于四元数右乘指数更新。
+零角速处用解析级数保证一阶／二阶导数有限；不删除真实限幅来制造梯度。
+这些是指定离散模型的适配，不是实机参数辨识或新物理权威。
+
+`diff_validation.py` 使用原 `ArrivalEvaluator.advance` 逐1ms驱动参考，终止后
+不再推进该窗口。先重放18条归档输入，再以128固定窗口核对四跨度；候选及参考
+使用同一物理初态、同一开环CTBR序列。扰动方向同时包含初态和动作，四元数扰动
+投影到切空间再归一化。整个640ms链均参与autograd，只有非光滑分支单列；这不是
+把逐步局部导数当长期BPTT。输出包括逐样本数值、方向、覆盖、边界与来源hash。
+窗口重建评分器历史只用于物理局部核对；归档全episode另行重放，不宣称任意中途
+窗口重建了原episode的累计saturation／reward记忆。阈值与预算只由SPEC及配置定义。
+
+按用户最新分层要求，`diff_analysis.py` 只读原审计并继承已用计算预算；原结果保持
+原协议语义。它重用保存的MuJoCo正负扰动轨迹核对边界两侧，另以固定PPO／SAC
+机动及末端窗口补测action-only、state-only与原hover-centered归一化动作链。
+归一化映射的Torch组合在归档输入上与原 `NormalizedCTBR.action` 逐值核对；不改变
+原wrapper或PPO／SAC行为。完全clip方向专门核对零导数；epsilon sweep区分有限步长
+误差与微小导数差分噪声。单侧导数采用扰动侧的JVP对该侧割线，报告有限步长，
+不以边界中心差分或Torch选定subgradient宣称存在唯一导数。
+
+分类使用整段前缀的实际CTBR及raw motor距限幅面的距离，1e-10相对尺度以内列边界；
+严格超限与内域分别报告。到达／安全／接触事件按真实事件时间屏蔽，包含第五子步
+恰好结束的情况。预算中断时保存完成探针清单及活跃探针计数，不能用未完成样本
+制造覆盖PASS。补充分析的COMPLETE只表示计划核对完成，E1适用范围需独立判断。
+
+补充产物 `sources.json` 记录两仓HEAD／dirty、实际模块路径、依赖版本与编译参数；
+`sources.tar.gz` 固定相关源码／配置／依赖锁的当前内容，包含必要未提交文件，
+`model.xml` 固定生成的场景。旧轨迹不复制，其原始文件及摘要hash继续核对。
+float32前向用同一冻结reference单独分析；没有把float32前向一致性当float32梯度
+或策略吞吐证明。原始数据与补充分析分别记录，以保留旧判定和最新解释。
+
+上述E0接口已在后续独立E1-A接入（§13），不接入PPO/SAC默认路径。优先以短窗口
+解析模型验证自主学习；世界模型／残差模型与JAX迁移留到有偏差或吞吐证据后。
+
+## 13. E1-A：80ms actor／critic 工程链
+
+`diff_policy.py` 独立于原SB3训练器。`arrival_observation(state17, previous_action4,
+elapsed_s, env)`只构造原26字段并保留float32观测转换；`ActorCritic`使用固定物理尺度，
+actor／critic为独立26→64→64的tanh网络，actor输出4维tanh动作。`physical_action`
+与原NormalizedCTBR表达式一致，包括normalized clip和后续物理CTBR clip。
+电机、累计饱和、事件phase和best_violation_ratio不进入任一网络。
+
+`rollout_window(env, policy, steps=16, gamma=.995, budget=...)`从专用环境当前完整状态
+建立窗口，初始状态与历史为常数。每个控制用E0模型生成五端点，再用detached动作
+执行原 `env.step`。临时包裹该评分器实例的advance调用以记录实际1ms区间与precision
+更新有效性，finally恢复实例方法；没有替换评分器逻辑或修改Physics来源。按实际
+子步数选取解析端点，只累计已执行区间；影子MuJoCo自然保存电机和完整评分历史。
+严格核对state／observation／reward，接触差异或unsupported参数直接失败。
+
+连续reward按原公式组合，包括material-point速度、动作正则、成功精度和历史
+terminal-precision项。窗口前best_ratio为detached常数，窗口内有效端点累积可微min；
+安全失效端点不得刷新best_ratio，timeout发生前的合法端点仍可刷新。姿态使用与原
+acos同值的atan2表达式避免identity处无限导数；pi切面只保留有限选定次梯度，不宣称
+全域光滑。饱和／成功／安全／逾时等离散选择由原评分器决定，不求事件时间导数。
+
+`WindowRollout`返回return、detached critic_target、原初／末观测、内部末状态、
+实际子步、逐控制奖励、bootstrap、前向误差及饱和诊断。bootstrap只在窗口仍存活时
+启用；临时冻结critic权重但保持输入梯度，finally恢复参数标志。初始已终止窗口
+返回零控制／零return／零bootstrap，不能自动reset或查询actor。
+
+独立checkpoint包含actor、critic、尺度buffer及任务／配置／来源／编译参数契约；
+`save_checkpoint`只创建新文件，`load_checkpoint`严格核对后使用原predict接口。
+`diff_smoke.py`使用原 `_arrival_episode/_arrival_initials/_arrival_summary`评估九初态，
+只是适配policy与观测归一化，不改正式评估函数。优化器状态单独保存并逐内容核对；
+加载策略的中心初态轨迹结果与原策略核对。
+
+Smoke用固定8个fresh resets验证3次SGD actor更新、6次SGD momentum critic更新，
+包括actor参数方向有限差分、同批冻结critic目标前后比较、critic拟合下降与梯度隔离。
+这是工程更新验证，不是覆盖全episode的E1-B采样器或收敛试验。原3s hover逾时探针
+跨多个80ms窗口，另测第2／5子步到达、第5子步安全事件、初始接触及严格饱和。
+计算上限与验收归SPEC §12，参数归唯一smoke配置；不创建完整E1-B入口。
+
+## 14. 固定表面 Stage 1 PPO 工程基础
+
+### 14.1 研究来源及有意简化
+
+研究原文为 PerchRL `arXiv:2606.03441v1`，重点为 §3.2、附录 A.3/A.5。
+本实现采用状态预训练后转估计观测微调的路线、CTBR、密集引导与终端事件奖励的组织方式，
+并保留小范围初态扰动。此处的 reward 是适配固定平台的新提案，不逐项复制论文公式、权重、容差和训练预算。
+
+RM27 平台固定，因此不引入论文的随机移动平台、TCN 历史编码、未来平台状态特权 critic 或主动感知机制。
+现有 SB3 `MlpPolicy` 的 Actor 和 critic 使用同一 26 维输入；不使用 Teacher 标签或 imitation。
+Stage 2 计划使用上游 Tracking、VIO／PX4 的处理后估计，不让 policy 识别 RGB；是否需要历史网络、
+失视预测或额外感知机制由后续结果决定。论文性能和附着行为不能作为本任务能力或成功定义。
+
+### 14.2 冻结场景、命名飞机和控制链
+
+`configs/stage1/task_contact_geometry.json` 绑定独立模拟器保存的 `artifacts/2027-base-dock-ready` 场景及来源／摘要哈希，
+并沿用 Foundation 的全部数值和已编译模型。旧 `task.json` 及 `ppo_foundation.json` 原内容保留。
+`stage1_plant.py` 只生成有 manifest 的私有变体：固定名义平台运动关节，附加既有 S1c 底部球假设，
+保留场地、原飞机、电机动态和禁碰几何。`stage1-prepare` 显式验证来源并编译；正常环境加载只消费已验证的 MJB，
+不在每次 reset 编译。私有 XML、MJB、MuJoCo 版本和输入哈希都必须一致；不修改冻结源和 Physics。
+
+源注册表包含目标侧和对侧的候选面。私有场景的目标集合依据冻结完整场地、目标位置及抽取区域解析，
+保留目标侧真实表面，记录对侧排除来源，并对同一已注册板面范围做射线核对；不能把缺失的目标侧碰撞面
+静默忽略或扩大允许区域。注册的 ray-audit 足迹仍是工程范围，不是官方计分区。
+
+后续源重建证明原私有 manifest 的17面漏掉 `visual_117` 装甲正面壳。当前任务以可选
+`contact_surface_registration`／`expected_contact_surface_registration_sha256` 在物理缓存验证后加载任务自有登记，
+只追加 `36286..36293` 八面；没有该字段的旧配置仍走原17面、原来源集合。新增登记及其原来源进入 checkpoint
+的 `sources`，使新旧语义可区分。校验覆盖原 target／MJB SHA、未变的中心／轴／90×100mm矩形、原XML属性与世界顶点、
+正面源分组及 compiled float32 mesh 身份。该核对的微米级误差限是身份检查，不是新的接触／评分容差。
+所有源场地、私有XML/MJB/manifest、材质、控制与 scorer 均不修改；不重新编译，也不改既有checkpoint。
+
+全场景含其他关节，状态读取按 `drone_1_free` 的 qpos／dof 地址，动作按 `drone_1_motor_*` 的 actuator／act 地址。
+不能沿用旧单刚体 `qpos[:3]` 或 `uav` 名称假设。物理 CTBR 调用共享 `RateThrust/apply_proxy` 和既有混控；
+normalized CTBR 使用现有 `NormalizedCTBR`，负集体推力请求由环境明确限幅并计入诊断／成本。
+本任务不使用 E0 发现缓存不一致的运行时质量缩放路径，不迁移 JAX／GPU。
+
+### 14.3 独立观测、reset、物理事件与 reward
+
+`Stage1ContactEnv` 的 task/schema 为 `fixed_surface_contact_v1`／`fixed_surface_state_v1`。
+26 维字段和 12 维 `initial_perturbation` 契约归 SPEC §10.1。板面框架采用 `[-slope, across, normal]`，
+把源注册的轴序转换为 SO(3)，矩形绝对坐标范围不变。固定评价中心和位置／速度／旋转各轴两侧形成 19 例。
+Reset 的位置、速度、旋转向量和角速度均从声明范围独立抽样，电机 act／ctrl 为悬停值，
+没有参考轨迹前缀。Actor 的剩余时间直接来自物理时钟，不能依赖 evaluator 的阶段或缓存。
+
+`Stage1Evaluator` 完全独立于 reward。每个 1 ms 区间执行 `mj_step → 读取该区间 contacts/forces → mj_forward`，
+之后读取命名飞机状态；控制步骤在第一个终止区间立即停止。共享旧 interval helper 的返回状态硬编码 `uav`，
+因此此处保留相同顺序的局部任务适配，不修改 Physics。接触门槛使用区间前状态计算接触点速度与底部法向，
+前后边界均核对安全；同区间安全违规优先。接触记录含实际 pair、force、位置、局部坐标、前后自机／电机状态和
+区间起止时间。几何接近不是成功，初始重叠也不是有效接触。球夹具绕法向 yaw 不受限，未声称完整姿态对齐。
+
+`_running_reward` 组合有界距离 potential 的差分、近目标法向对齐、相对悬停 CTBR 幅值与相邻动作变化、
+速度／角速度、饱和／输入限幅和时间代价，再加一次终端事件。权重与尺度只来自任务配置，按实际完成区间的 dt 计费；
+时间代价大于近目标对齐项最大收益，防止原地等待取得正 running reward。
+这是飞行动作学习的候选塑形，不是能量最优目标，也不控制独立 scorer 的接触判定。
+
+### 14.4 PPO 接入、工程验证与回放
+
+原 `ppo.py` 只增加显式任务分支：配置校验、环境工厂、独立评测和 checkpoint 元数据；
+旧 Contact、Arrival、SAC 和 E0／E1-A 路径保留。Stage 1 checkpoint 复用 SB3 保存／加载、VecNormalize、
+optimizer／counter 与确定性 probe 检查，核对独立 task/schema 及实际 scene/config 来源。
+这不表示已经实现 Stage 2 改观测后的继续微调接口。
+
+`configs/stage1/ppo_foundation.json` 固定一个环境、64 transitions、一个 PPO rollout／epoch和最多 60 s 学习墙钟。
+`stage1_runner.py` 负责编排独立 19 初态评价、有界 smoke、完整 episode 记录和按已记录命令重新模拟；
+`stage1_replay.py` 另做已记录状态的 viewer／静态图，不把观看轨迹当成独立重模拟。
+轨迹保留完整场景 qpos/qvel、motor act/ctrl、物理／归一化动作、观测、reward、实际区间数和初始完整积分状态；
+回放必须保留输入限幅语义并核对逐步时间、终态、reward 和状态。
+
+工程入口如下；命令说明不授予新运行、重复 smoke 或正式训练预算：
+
+```bash
+env -u PYTHONPATH .venv/bin/python -m rm27_contact_rl stage1-prepare --config configs/stage1/task.json --output artifacts/agile_flight/stage1_foundation_01/scene
+env -u PYTHONPATH .venv/bin/python -m rm27_contact_rl stage1-smoke --config configs/stage1/ppo_foundation.json --output artifacts/agile_flight/stage1_foundation_01/smoke
+env -u PYTHONPATH .venv/bin/python -m rm27_contact_rl evaluate --checkpoint <checkpoint-dir> --task fixed_surface_contact_v1 --output <new-evaluation-dir>
+env -u PYTHONPATH .venv/bin/python -m rm27_contact_rl stage1-replay <episode-dir>
+env -u PYTHONPATH .venv/bin/python -m rm27_contact_rl stage1-replay <episode-dir> --view
+env -u PYTHONPATH .venv/bin/python -m rm27_contact_rl stage1-replay <episode-dir> --render <new-image-dir>
+```
+
+本轮产物目录为 `artifacts/agile_flight/stage1_foundation_01/`。工程结果、实际覆盖、成本和未通过项见 §14.5，
+不宣称 64-step policy 已学会飞行。
+`PROPOSED_UNCONFIRMED`／`training_allowed=false` 保留在任务配置；正式训练必须先确认任务参数并另获预算授权。
+Recovery 控制器／估计器重新准入和不中断物理状态的 policy 交接属于独立后续支线。
+
+### 14.5 本批实测、失败边界与下一轮提案
+
+2026-11-04：原论文实际内容、版本和 SHA-256 在 `paper.json`；26 项新测试 6.08s、67 项相关旧回归 11.78s。
+后续新增零步 frame0 回归，并与既有短回放共2项检查通过（4.04s）；初始qpos被篡改1mm会正确判失败。
+私有场景仅编译一次，88.01s，4 个自由飞行体，28 qpos／24 qvel／16 motors／29102 geoms，MuJoCo 3.12.0。
+`smoke` 和 `smoke_continued` 保留两次尚未进入策略更新的工程失败；`smoke_completed/summary.json`
+累计扣除先前成本，并复用已经记录的夹具，不重复消费已完成物理检查。总计 8512 次控制／42505 个实际 1ms 区间／188.77s，
+低于 20000／100000／900s 上限。编译、开发测试、图像渲染另计；没有额外 PPO 更新。
+
+唯一 PPO rollout 为 seed0、64 transitions、1 epoch（batch32，共2个minibatch optimizer steps）、0.792s；26 次有限梯度 hook，actor／critic 参数变化 L2 为
+0.026635／0.033446。critic explained variance 为 -12.16，不能据此判断长期估值充分。
+原保存／加载接口逐内容恢复 policy、optimizer、归一化、计数器和确定性动作。
+19 例独立评测全部 `FLIGHT_VOLUME_EXIT`，0/19；冻结归一化统计，所有失败保留。
+hover timeout、指定接触夹具、限幅饱和夹具、policy 中心完整 Episode 的 MuJoCo 命令重模拟均为逐值零差，
+包含 motor act/ctrl、qpos/qvel、观察、reward、物理时间、子步数及终止结果。
+
+**实体接触夹具 FAIL，正式训练未就绪**。6ms 的同一求解同时出现底部球对 `rmuc2027_surface_35364` 的注册接触
+及对 `rmuc2027_surface_36293` 的未注册接触，力约 7.31N／7.08N；前后状态和全部 pair 完整保存。
+后者是原冻结 CAD 碰撞凸壳，来源几何最吻合 `visual_117` 的 5mm 置中壳。须区分“未登记”与“实际非目标”：
+既有 `base_target.json` 明确将浅灰 `visual_117` 记作已确认装甲、`visual_115` 为周围暗框；因此不能把 36293
+断言为非目标，也不能只因共面就直接扩大合法集合。同一 90×100mm 足迹内对其逐 mesh 射线有 389/441 命中，
+与 `visual_117` 深度差约 -2.5mm，与 `visual_115` 近共面（-0.136～+0.291µm）。
+需由 Sim 核对已有 corrected 面和原板壳的来源归属、外表面位置及登记完整性。
+原射线审计只证明最前方注册面覆盖，不能证明没有后方重叠壳或目标语义正确。
+区域外 across=0.06m 的夹具开始已有重叠，真实分类为 `INITIAL_OVERLAP`，没有继续平移寻找有利结果。
+新 scorer、成功语义、所有原碰撞面和有效区均未为这两项失败改变。解决该资产／注册问题属于进入正式训练前的明确工作。
+
+### 14.6 接触几何后续核对：工程 PASS，训练仍待批准
+
+证据为 `artifacts/agile_flight/stage1_contact_geometry_01/`。来源不是仍保留STEP装配料号的CAD树，
+可机械追溯到原runtime mesh、triangle group、分片生成器与碰撞XML，不能冒称具体STEP零件名。
+`35364` 为 `visual_115` partition8，加既有向内2.5mm backing，重建世界顶点Hausdorff误差9.39e-10m；
+`36293` 为确认装甲 `visual_117` partition7，误差5.53e-11m。该装甲全部22片中，仅最前8片对应朝向目标的
+triangle group24..363（340 triangles）；另两方向的14片未登记。原17面来自corrected代理，未覆盖该原装甲壳，
+这才是同一合法区域的同时接触被误拒绝的原因；不能因共面把整个visual115或visual117都放行。
+八片完整重建最大差1.072µm来自原生成器10µm共用mesh网格，原XML与compiled身份检查通过；不涉及scorer放宽。
+
+中心夹具原非重叠初态、gap1mm、vn0.2m/s，在6ms底部球同时碰35364/36293，压缩力7.311/7.077N，
+两pair均被接受。旧配置相同状态／命令仍原判FAIL；qpos/qvel、motor act/ctrl、姿态、速度、时间及CTBR逐值0差，
+改变仅为登记语义。原区域外1mm gap小于当地碰撞壳相对名义面的约2.22mm凸起，导致底部球预先穿入1.20/1.22mm，
+不是已证明的其他机体结构重叠。保留across60mm，改gap30mm／vn0.5m/s，初始无活动飞机接触，61ms首次碰35369/35370，
+局部across59.455/60.000mm，唯一失败 `CONTACT_OUTSIDE_REGION`。倒置错误部件夹具由非重叠起点79ms碰到core_board_29，
+保留 `UNDESIGNATED_CONTACT` 及姿态／速度／区域等全部失败。原重叠夹具仍零步拒绝。
+另外用小型真实MuJoCo fixture覆盖同geom背／侧面及同区间合法+非法pair，不替代全场资产来源证据。
+
+5例完整记录及重模拟通过，物理主检查66controls／304个1ms区间／10.675s；前置夹具定位146区间／2.766s，
+最終来源正例重模拟另2controls／6区间／1.479s，主工程累计456区间，低于4096controls／20000区间／300s上限。
+针对性17tests通过、22 deselected、3.20s；来源重建、pytest、只读载入另计，无全场编译／PPO更新。
+来源与最终载入防错补充的版本分别记录，不重写较早的证据。历史checkpoint只读载入仍原17面且内置状态／动作probe通过。
+接触工程已可验收；Stage1自主飞行动作学习尚未执行，旧0/19不改判。前述seed0预算仍为提案；当前评测入口尚未传
+共同预算，批准后须最小接入600s／30400controls／152000区间硬限，才可启动，不能声称此上限已经实施。
+本轮保留双壳同时解算；所报压缩力是该未标定模型的模拟输出，不是真实硬件接触力测量，也不据此推导整组接触门槛。
+
+此前 seed0 pilot 提案（现已由用户批准为单次simulation-only baseline，见§14.7）：单 CPU 线程、单环境，n_steps=512、batch_size=128、n_epochs=4，
+最多 131072 transitions 或 1800s 学习，先到即停；使用同一 26 维／CTBR／无 DR 初态契约。
+前后各一次完整 19 初态评价，独立上限 30400 controls／152000 区间／600s，总墙钟上限 2400s。
+按当前短更新约 81 transitions/s 作部分成本估算，长运行含 checkpoint 等开销，可能先到墙钟而未满 transition。
+保存最后一个完整有效更新；非有限值、MuJoCo warning、来源或观测／评分契约变化立即停止。不能凭 reward 上升或单例成功提前宣称学会。
+评价记录完整成功率、失败类型、接触前相对速度／法向误差／body rate、到达时间、动作变化和饱和／裁切占比，
+并保留完整 Episode。物理注册问题、接触件尺寸／材质、有效区、速度／姿态／穿入容差、悬停范围和4s时限须先确认。
+
+### 14.7 Stage 1-A 单次seed0学习接入
+
+当前批准配置为`task_stage1a_seed0.json`／`ppo_stage1a_seed0.json`，原参数已被用户接受为本轮仿真假设；没有实机标定声明。
+复用原`ppo.train`／SB3更新／checkpoint，不建立另一个trainer。Stage1-A分支加独立训练与评测预算：
+`SmokeBudget.activity`只累计活动阶段墙钟，评测时钟在学习期间暂停；`BudgetedTrainingEnv`在每次实际控制步前检查限额，
+并记录实际1ms区间与不完整rollout消耗。原gradient hook在optimizer阶段检查学习deadline，控制步和梯度操作为检查边界；
+不可再启动超时后的动作或更新。文件落盘／异常收尾属于不可拆分操作，若跨越边界须在实测墙钟中保留，不能删去成本。
+初始前评测完成后才启动学习时钟；学习期的记录、保存及中点快照扣学习预算。后评测及早期／中期名义初态行为试验
+共享剩余评测预算，不能把它们当免费额外rollout。参数、reward、scorer、原场地及Physics没有改变。
+
+checkpoint初始0、early首个完整update、midpoint首次完成半transition或半学习墙钟额度时、final最后完整有效update。
+正式前后各19例不缩减；`record_episode`遇预算耗尽保存`INCOMPLETE_BUDGET`与已执行完整状态，不能当作物理终止或完整回放。
+每个训练episode的真实terminal/contact记录落盘；首个成功及最多12类代表失败保存全部状态／命令，可用既有MuJoCo重模拟。
+这些随机轨迹可跨越rollout更新，不宣称来自单一checkpoint。确定性checkpoint回放另记录未裁切的Actor均值，
+同时保留实际送入CTBR的裁切后动作，便于分辨Actor裁切和rate proxy饱和。
+所有新增预算、部分记录、真实步进上限及代表轨迹往返检查均不执行optimizer；实际学习仅一次获批run。
+
+已验证：seed0恰好131072步／1501.227s停止；38正式评估＋两个checkpoint行为例完成。两条完整记录命令重模拟
+的状态／电机／观测／reward／终止零差，连同重模拟的共同评测成本131.082s。初始/512/65536/131072步checkpoint保存。
+后评估0/19且均角速度超限；长期混控饱和与大幅旋转表明动作尚不受控，不能由优化曲线或较高reward认定学习成功。
+每轴动作界限20rad/s与实际body-rate范数安全界限20rad/s是不同约束；此轮均沿用原契约，未事后修改。
+原进程完整摘要已写出，但外层session退出143来源未知；完整性与可重放核对单独记录，未用重训掩盖退出状态。
+
+
+### 14.8 Stage 1-A 执行链诊断与显式 Action Scale 对照
+
+现有`proxy_saturated`就是共享`apply_proxy`的逆混控motor需求越界标志；逐motor clip到[0,maximum]同时改变collective及torque，
+不能把它解释为独立的proxy torque限幅或实际data.act触顶。实际motor force经过40ms filterexact，ctrl/act必须分别记录；
+本模型actearly=false、单位force gain，无另设act/force硬裁切。trajectory动作写于区间结束列，控制重建须使用前一列omega。
+对保存的38条正式轨迹及四个checkpoint名义轨迹的只读重建验证映射/共享proxy/电机递推，未发现接线或尺度错误；
+编译旋翼位置×推力方向＋gear独立构成的mixer完全相同。没有新MuJoCo步进或训练。
+
+观察到final第一命令已经要求负motor；280ms独立裁切把所需负pitch torque变成正值，collective1.442→2.127N，
+延迟后平均2.211N，随后实际pitch仍增速。动作域每轴±20与可执行wrench域／安全角速norm20不是同一约束。
+原19例raw回报增加，但按γ=.999的完整确定性episode回报−3.40128→−4.46441；不能据raw曲线认定早死reward exploit。
+该折扣回报不是PPO clipped surrogate或随机policy期望值。唯一性因果仍需独立对照。
+
+提案只增加RL policy输出rate gain β=.1（有效每轴±2），保持env的±20 bounds和reward归一化尺度、推力映射、Physics、
+scorer及门槛不变。直接修改env的body_rate_limit会连带改变_running_reward中的action尺度，不是此单因素提案。
+静态hover-rest±2三轴box八角点可行，不能推广到任意collective／omega／motor状态；当时仅提出方案，后续授权实施结果如下。
+先对原/候选做相同physical hover和±1rad/s pulse/release基线，再对冻结final policy做同初态≤1s闭环；
+工程额度提案≤4096controls／20480个1ms区间／120s，0训练，结果保留全部失败。通过后才讨论新的有界PPO批准。
+现有4s hover证据稳定，但缺此Stage1 proxy的专门±轴小rate阶跃证据，不能用其他PX4 inner-loop测试代替。
+证据在`artifacts/agile_flight/stage1a_seed0_diagnosis_01/`；原实验与checkpoint保持。外层143原因仍UNKNOWN。
+
+用户随后批准单因素控制验证。`NormalizedCTBR(..., rate_scale_beta=1.)`增加显式keyword-only诊断gain，
+只缩放映射后的三个physical rate；默认1保留旧表达式及逐值结果，不写env bounds。`mapping_identity`记录parameterization/beta，
+避免把相同checkpoint的反事实映射误记为原评估。`configs/stage1/action_scale_diagnostic.json`与
+`tools/stage1_action_scale.py`只用于冻结策略控制诊断，不接入或启动PPO训练工厂。
+单CPU/单环境共享4096controls/20480物理子步/120s硬预算，包含导入初始化，逐控制及原mj_step入口计数、SIGALRM截止。
+复用原env/scorer及已有MJB，先完成相同physical命令的两映射4s hover和±轴1rad/s脉冲，再同初态冻结final各≤1s。
+每1ms在原mj_step后且原mj_forward前记录实际actuator_force、motor activation/ctrl及物理状态；不修改积分器或安全检查。
+
+OBSERVED：16窗口、3739controls/18692子步/45.740s，0训练、进程exit0；7组physical配对和原final历史重现均逐值零差。
+小rate pulse无饱和，峰值1.1101rad/s、归零末端norm≤.001103rad/s；rate归零不代表恢复水平或位置。
+冻结final beta1在.304s角速超限，beta.1裁切96.72%→0%、峰值角速20.00173→1.34859、yaw161.76°→4.19°，
+但在.788s越界（目标第一轴.802176m > .8m），没有接触。原1s无安全失败联合检查FAIL，控制尺度假设支持和任务能力不得混为一谈。
+后续匹配seed0重训只作为另行批准的学习研究建议，不因本对照改善而宣称稳定控制验收通过；全部旧参数、checkpoint和历史判定保持。
+新证据`artifacts/agile_flight/stage1a_action_scale_01/index.html`，旧143来源仍UNKNOWN。
+
+
+### 14.9 Stage 1-A beta 匹配训练接入
+
+原训练工厂从config透传rate_scale_beta（缺省1）到NormalizedCTBR；checkpoint携带同一config，重载和正式评估因此保留映射。
+训练可显式引用零更新initial_checkpoint。initialize_comparison仅接受相同任务/PPO/预算配置，差异限rate映射、来源引用及证据保留；
+检查原文件hash、实际env来源、第一reset观测与normalization设置，加载原actor/critic/optimizer和统计后核对完整状态hash。
+保持原seed0构造/reset顺序，不额外构造随机policy、不改变Torch/NumPy RNG。禁止final或已更新checkpoint作为该比较起点。
+证据选项可保存每个完整更新及所有episode，末尾未结束片段独立标记INCOMPLETE_TRAINING_END，不伪造终止或丢弃失败；
+学习期I/O仍消耗原预算。旧默认记录策略和历史任务算法不变。此轮为用户单独批准的beta=.1方法实验，不承诺接触学习成功。
+
+本次实测工程更新通过、最终原19例0/19越界；低rate降低角速/混控失真，但未得到位置/姿态协调。原始初始状态精确匹配，后续normalizer随rollout分化；详细控制/回报/成本证据见活动计划§0及独立beta01结果，完成后不追加训练。
+
+## Simulation ownership update (2026-10-21)
+
+User-authorized repository separation moves the unchanged Physics package to
+`rm_uav_mujoco/packages/physics`. RL retains Gymnasium environments, reward,
+training, checkpoint handling, training configurations and its Docker launcher.
+Package names, version, third-party lock and scoring remain unchanged.
+Complete mission integration belongs to parent `rm27/` and does not require RL.
+Historical root mission implementations are preserved; this relocation does not
+claim that their pending S3 algorithm adaptation has been completed.
+Standalone RL installation requires the external Physics checkout or an installed
+Physics wheel. Docker builds accept `RM27_PHYSICS_ROOT`; source runs mount both
+checkouts read-only. Historical S1/S2 evidence describes the earlier layout.
+
+## 15. Independent flight probe implementation
+
+`flight_probe.py` specializes Stage1's plant/step/safety extraction without modifying the original task. Reference-relative metrics and an independent continuous-tail scorer replace contact success; all contacts fail. A state-feedback PD baseline uses the same normalized CTBR path and is never used as PPO labels. `flight_probe_runner.py` uses the existing SB3 rollout/update/checkpoint implementation through an optional callback. Task/schema identity prevents cross-loading contact checkpoints. A paired runner owns exact common initialization and separate learning/evaluation clocks. The original trainer behavior remains the default.
+
+Configuration is in `configs/flight_probe/`; the only A/B task difference is lambda_control. Actual per-1ms solver forces are captured before forward recomputation. Terminal episode recording detaches state before vector auto-reset; policy distributions are sampled/logged before clipping. Original safety bounds and collective clipping are deliberately shared. Evidence and recorded-state MuJoCo replay are kept under a fresh artifacts directory. Engineering baseline: all five nominal cases pass; shifts settle at1.224s;23 reset checks pass. Seven focused checks including two legacy regressions pass; no training was used for these gates.
+
+Source review pins AirGym `bdaa61f6f1ce8df2e18ddec40762d08e16fa389c` and IsaacLab `207f319d9bcd4b70840001cbabf9af4b77686c05` (parent of the commit removing the supplied direct/quadcopter path). Read Hover/reset/observation/action/reward, PPO actor/loss/GAE/statistics and task PPO configurations. AirGym uses a separate rlPx4Controller rate controller, transforms collective from [-1,1] to[0,1], and rewards position/uprightness/spin/action smoothness. The external controller implementation is not in the AirGym tree and was not transplanted. IsaacLab applies collective/body moments directly, observes body velocity/rates/projected gravity/relative goal, and uses dt-scaled position proximity plus squared linear/angular velocity costs. Its PPO runner delegates optimization to RSL-RL; its internal optimizer is not vendored in the inspected task. No numerical equivalence with RM27 or ported controller is claimed. Retain original RM27 rate cost and the approved position/velocity/tilt ablation; do not copy upstream hover thrust, contact/reset tolerances, network, std or population size. Per-file SHA256 and exact source snapshots live in the experiment's upstream manifest.
+
+The completed paired pilot did not learn stable flight. Reward/early-termination time consistency is the next proposed diagnosis; the unchanged collective many-to-one mapping remains a separate hypothesis. A has no clipping/zero-thrust in all final cases but still fails; B develops low collective means and earlier exits. Do not infer a proven reward exploit. That proposal is now authorized only for the separate C diagnostic below; original B remains unchanged.
+
+Recorded-state playback resolves flight metadata to its declared original base plant, verifying all base values except the explicit task/observation/confirmation identities. This preserves contact asset registration and permits existing recordings without rewriting them. The replay adapter was fixed after the learning run; training hashes and the replay-only revision are recorded separately. Rendering performs mj_forward only, never mj_step. Original contact playback remains unchanged.
+
+C is an explicitly selected flight_probe_failure_tail protocol, not a default B reward change. With terminal slot index k=start_completed_ms//5 and physical termination end_ms, delta=-12*((5*(k+1)-end_ms)*.001+.005*sum(.999**j,j=1..799-k)). Add delta to the existing event component while recording it separately in terminal metadata; original -5 failure event remains. Original step/scorer/Physics are unchanged. The runner loads the B initial model.zip parameters including optimizer and normalize.pkl RMS, verifies identity and initial physical/RNG hashes, and compares the first512 sampled actions/means/std/observations against saved B. Actual return is distinguished from GAE(lambda=.95) critic targets.
+
+C evidence handling: external interruption occurred after complete update125. The original execution record is preserved incomplete; interruption.json distinguishes persisted training counts from unknown in-memory controls and exact stop time. Evaluation restores the last complete checkpoint without training and retains all23 cases. Common B/C objective returns are recomputed for both saved trajectory sets, and realized update counts125vs128 are reported as a comparison limitation.
+
+
+### Working flight baseline
+
+`flight_working.py` reuses the original plant, 1ms event checks and `FlightEvaluator`. The policy observes12 fixed-scale body-frame relative position, velocity, projected up relative to nominal, and body angular rates; no motor/contact state, full rotation-matrix constants, time or adaptive observation normalizer. `FeasibleCTBR` maps zero to nominal hover, collective to[.5mg,1.5mg], and rates to±2rad/s. Physics/proxy/mixer/motor dynamics are unchanged. Compact body observations follow the pinned IsaacLab design; positive proximity/upright/stability rewards follow the reviewed AirGym concepts with RM27-specific configurable scales. Original source pins remain above.
+
+The new reward is bounded nonnegative during flight (including an alive floor), with fixed positive success/negative failure events. Earlier failure loses remaining positive rewards and brings the same negative event forward under discounting. This avoids the former stopped-negative-cost incentive without synthesizing physical steps. PPO uses SB3, CPU subprocess environments,64×64 ELU, small Gaussian exploration and zero initial action head; exact configuration resides in `configs/flight_working/baseline.json`. A zero head supplies nominal hover only, not learned disturbance rejection. No PD weights/actions are copied.
+
+`flight_working_runner.py` separates learning/evaluation clocks, logs complete training episodes and sampled distribution evidence in batches, and records complete formal MuJoCo states for playback. PD remains an independent feasibility comparison. Old replay loads the explicitly recorded unchanged base plant; policy-task metadata separately identifies the new learning contract. This is an experimental candidate until strict acceptance is met.
+
+
+The adopted working default is candidate2, `configs/flight_working/attitude_baseline.json`. PPO outputs collective plus small roll/pitch attitude setpoints (±.2rad) and yaw-rate correction (±.5rad/s). A fixed5/s attitude-error loop converts these into the existing CTBR, capped±2rad/s; no position/velocity PD runs inside the policy path. The actor uses bias-free Tanh layers, preserving the known zero-error hover equilibrium while learning feedback weights; no imitation. At the artificial4s limit, training removes the terminal event and bootstraps the critic; real safety/contact failures terminate immediately. The independent4s flight scorer remains unchanged and is recorded separately. Learning rate1e-4, initial std.15; remaining exact settings and the actual shared-budget allocation are in the run config.
+
+Candidate2 first passed19/19 hover at262144 controls, then continued the same weights with50%hover/50%four-shift resets, finishing19/19+4/4 at393216. First shift checkpoint had±Y stable tails.453/.429s and remained failed; final shift mean settle2.4115s versus independentPD1.224s, max overshoot.05374m versusPD.000125m. Zero actor/mixer clips and zero-thrust in all final cases. The actual validated baseline includes the fixed attitude inner loop; do not describe it as a learned direct-body-rate controller. Old candidate1 config remains explicit reproducibility input, not the default. Checkpoint contract records fixed observation scales and bias-free actor requirements for any future separately authorized continuation.

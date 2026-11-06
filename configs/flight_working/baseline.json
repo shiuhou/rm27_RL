@@ -1,0 +1,12 @@
+{
+  "task_id": "state_flight_working_v1",
+  "base_config": "configs/flight_probe/task_b.json",
+  "observation": "body_error_velocity_up_rates_v1",
+  "collective_fraction": 0.5,
+  "rate_gain_rad_s": 2.0,
+  "reward": {"position_scale_m": 0.20, "fine_position_scale_m": 0.05, "speed_scale_m_s": 0.20, "tilt_scale_rad": 0.20, "rate_scale_rad_s": 0.50, "gain_per_s": 4.0, "event_success": 5.0, "event_failure": -5.0},
+  "ppo": {"learning_rate": 0.0003, "n_steps": 512, "batch_size": 256, "n_epochs": 5, "gamma": 0.999, "gae_lambda": 0.99, "ent_coef": 0.0, "vf_coef": 0.5, "max_grad_norm": 1.0, "target_kl": 0.015},
+  "policy": {"net_arch": [64, 64], "activation": "ELU", "log_std_init": -1.6094379124341003, "zero_initial_action_head": true, "observation_normalization": "fixed_physical_scales"},
+  "budget": {"transitions": 1000000, "learning_wall_s": 3600, "evaluation_wall_s": 600, "maximum_candidates": 2},
+  "seed": 0
+}

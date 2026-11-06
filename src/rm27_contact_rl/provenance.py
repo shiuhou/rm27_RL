@@ -30,7 +30,7 @@ def provenance(env, *, algorithm, seed=0, extra_sources=None):
     sources.update(extra_sources or {})
     source_hashes = {name: source_hash(path) for name, path in sources.items()}
     modules = [f"rm27_contact_physics.{name}" for name in
-               ("drone", "calibration", "contact_metrics", "model", "control", "teacher_interface", "evaluation")]
+               ("plant", "drone", "calibration", "contact_metrics", "model", "control", "teacher_interface", "evaluation")]
     if getattr(env, "task_id", None) == "agile_terminal_arrival_v1":
         modules.append("rm27_contact_physics.arrival")
     modules += ["rm27_contact_physics"]
@@ -42,6 +42,12 @@ def provenance(env, *, algorithm, seed=0, extra_sources=None):
     code_hashes += physics_hashes
     if getattr(env, "task_id", None) == "agile_terminal_arrival_v1":
         code_hashes.append(source_hash(rl_root / "arrival_env.py"))
+    if getattr(env, "task_id", None) == "fixed_surface_contact_v1":
+        code_hashes += [source_hash(rl_root / f"{name}.py") for name in
+                       ("stage1_plant", "stage1_env", "stage1_evaluation", "stage1_runner", "stage1_replay")]
+    if getattr(env, "task_id", None) == "state_flight_control_probe_v1":
+        code_hashes += [source_hash(rl_root / f"{name}.py") for name in
+                       ("flight_probe", "flight_probe_runner", "stage1_plant", "stage1_env", "stage1_evaluation", "stage1_runner")]
     physics_dist = metadata.distribution("rm27-contact-physics")
     direct_url = physics_dist.read_text("direct_url.json")
     def git(*args):
@@ -78,6 +84,13 @@ def provenance(env, *, algorithm, seed=0, extra_sources=None):
     if getattr(env, "task_id", None) == "agile_terminal_arrival_v1":
         result.update(task_id=env.task_id, observation_schema=env.observation_schema,
                       randomization="DECLARED_INITIAL_POSITION_ONLY_FIXED_DYNAMICS_AND_TARGET")
+    if getattr(env, "task_id", None) == "fixed_surface_contact_v1":
+        result.update(task_id=env.task_id, observation_schema=env.observation_schema,
+                      randomization="DECLARED_HOVER_POSE_VELOCITY_BODY_RATE_ONLY_FIXED_DYNAMICS_AND_SURFACE",
+                      task_parameter_status=env.rl_config["parameter_status"],
+                      physical_acceptance_confirmed=env.rl_config["parameter_status"] == "CONFIRMED")
+        result["parameter_confirmation_scope"] = env.rl_config.get("confirmation_scope", "PROVISIONAL_ENGINEERING_ONLY")
+        result["hardware_calibrated"] = False
     if algorithm == "PPO_CPU":
         versions.update({name: metadata.version(name) for name in ("torch", "stable-baselines3")})
     if build_source is not None:
