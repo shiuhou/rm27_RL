@@ -1,0 +1,43 @@
+{
+  "schema": "rm27_asm2_contact_v1",
+  "scope": "simulation_only_provisional_gentle_contact",
+  "training_allowed": false,
+  "native_dt_s": 0.0001,
+  "comparison_dt_s": 0.001,
+  "field_geometry": {
+    "path": ".agents/runs/rm27-stage1/contact-geometry.json",
+    "sha256": "0153d916bb16a32720fc59657811f06a974e2c48f69af5af4d5498376b3a408d"
+  },
+  "registration": {
+    "path": "upstream/rm27_RL/configs/stage1/contact_surface_registration.json",
+    "sha256": "13142f27dc9548f46e0aa3d5012e9cda64310bb493e3b31577eaeba5e8fea8f7"
+  },
+  "field_fixture": {
+    "path": ".agents/runs/asm2-collision/field-case.json",
+    "sha256": "c9a847edd5a630cdbd09225b3eda06c15b3d56c636b94ae8a1861224c94edd2b",
+    "clearance_shift_m": 0.00075,
+    "normal_approach_speed_m_s": 0.1,
+    "duration_s": 0.02
+  },
+  "diagnostic_fixtures": {
+    "path": ".agents/runs/asm2-collision/fixtures.json",
+    "sha256": "cbdcdd252747e1ac8b80ccb6bf3005afdf4b77855143e857e3d7b78ddf976814",
+    "clearance_shift_m": 0.00054,
+    "normal_approach_speed_m_s": 0.1,
+    "high_approach_speed_m_s": 0.5,
+    "duration_s": 0.02
+  },
+  "patch_face_z_m": -0.01986282,
+  "thresholds": {
+    "normal_speed_min_m_s": 0.02,
+    "normal_speed_max_m_s": 0.35,
+    "tangent_speed_max_m_s": 0.25,
+    "alignment_max_deg": 8.0,
+    "body_rate_max_rad_s": 1.5,
+    "penetration_max_m": 0.00025,
+    "target_plane_error_max_m": 0.0006,
+    "normal_impulse_min_N_s": 1e-7,
+    "load_delay_max_s": 0.001
+  },
+  "basis": "Gentle nominal simulation envelope selected before new qualification rollouts. 0.1 m/s corresponds to 10 um per primary physics tick, below the 50 um contact skin. The plane allowance includes the registered 0.4 mm source proxy displacement. A compressive load floor rejects unloaded numerical reports. These limits are engineering choices for the provisional model."
+}

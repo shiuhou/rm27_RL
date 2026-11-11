@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "experiment": "sf_rm27_stage1_pgs_braking_pilot_01",
+  "scope": "simulation_only_state_based_direct_ctbr_braking_bridge",
+  "budget": {"candidates": 1, "transitions": 3000000, "learning_s": 900, "evaluation_s": 600},
+  "pins": {
+    "parent": {"path": "configs/rm27_stage1c_sim_experiment.json", "sha256": "756149aff920e5cc1b86fb7ce9bb64903155bb09d05d011edeae9fe0b5852ae6"},
+    "backend": {"path": ".agents/runs/rm27-stage1/pgs-braking-pilot/backend-confirmation.json", "sha256": "de37914e296fd0f4b615e3cbe0866b6847e53e916d85cba19407c6e80f841ec2"},
+    "contract": {"path": ".agents/runs/rm27-stage1/pgs-braking-pilot/backend-confirmation-contract.json", "sha256": "2c5b99401cb18c52f093bca56d2727d69121ea69d8056a440cc8780bfb9359dc"},
+    "scene": {"path": ".agents/runs/rm27-stage1/contact-backend/offset-1e-06.usda", "sha256": "26501ffec65ad5a7b27d96857c04ecf7f1be3d33b8d7a7b609fd618a90ece3b3"},
+    "suites": {"path": ".agents/runs/rm27-stage1/braking-bridge/native-suites.json", "sha256": "39cf3fed593358478a263de678dbc1ac483d98662f45dc9ae7f2e6bfd4e14190"},
+    "prefixes": {"path": ".agents/runs/rm27-stage1/braking-bridge/native-prefixes.npz", "sha256": "5711c5cc829b20659759d9b4aee27773e54fe127164362dbe23f313866e81109"}
+  },
+  "sim": {"worlds": 128, "solver": "PGS", "contact_offset_m": 0.000001, "rest_offset_m": 0.0},
+  "learning": {"seed": 0, "gamma": 0.9998, "initial_std": 0.18, "rate": 0.0002, "initial_frontier": 3},
+  "promotion": {"window_episodes": 128, "min_fraction": 0.3, "consecutive_windows": 2},
+  "development_gate": {"nominal_transitions": 1000000, "min_net_improvement": 2, "max_safety_exits": 0}
+}

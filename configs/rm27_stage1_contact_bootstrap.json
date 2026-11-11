@@ -1,0 +1,12 @@
+{
+  "candidate": 2,
+  "experiment": "sf_rm27_stage1_sim_ppo_01",
+  "curriculum": {
+    "seed_fraction": 0.65,
+    "seed_clearance_min_m": 0.008,
+    "seed_clearance_max_m": 0.025,
+    "seed_inward_speed_m_s": 0.22,
+    "expand_fraction": 0.40
+  },
+  "expand_gate": {"minimum_near_episodes": 128, "minimum_qualified_fraction": 0.10}
+}

@@ -1,0 +1,189 @@
+{
+  "geometry_count": 11888,
+  "collision_count": 11874,
+  "visual_count": 14,
+  "mass_kg": 0.142,
+  "guard_probes": 288,
+  "visual_open_probes": 86,
+  "blocked_open_probes": 1,
+  "blocked_points": [
+    {
+      "xy_m": [
+        0.0275,
+        -0.019000000000000003
+      ],
+      "visual_hit": -1.0,
+      "collision_hit": 0.07600423063752368,
+      "nearest_visual_surface_distance_m": 6.527690593135544e-05
+    }
+  ],
+  "contact_groups": [
+    "contact_front",
+    "contact_rear"
+  ],
+  "side_collision_checks": [
+    {
+      "axis": 0,
+      "angle_rad": -1.5707963267948966,
+      "groups": [
+        "body"
+      ]
+    },
+    {
+      "axis": 0,
+      "angle_rad": 1.5707963267948966,
+      "groups": [
+        "body"
+      ]
+    },
+    {
+      "axis": 1,
+      "angle_rad": -1.5707963267948966,
+      "groups": [
+        "body"
+      ]
+    },
+    {
+      "axis": 1,
+      "angle_rad": 1.5707963267948966,
+      "groups": [
+        "body"
+      ]
+    }
+  ],
+  "contact_events_example": [
+    {
+      "group": "contact_front",
+      "geom": "contact_front_000",
+      "other_geom": "test_floor",
+      "position_world_m": [
+        0.01974337918278049,
+        0.0028210298963931395,
+        -0.019857819731507305
+      ],
+      "normal_other_to_drone_world": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "relative_velocity_world_m_s": [
+        1.9792256201531374e-06,
+        5.148391678800385e-07,
+        -0.07899727335873416
+      ],
+      "force_on_drone_world_N": [
+        -0.0006324328476288651,
+        -0.0001645093907929572,
+        0.06375647728071804
+      ],
+      "impulse_on_drone_world_Ns": [
+        -1.2648656952577302e-06,
+        -3.2901878158591444e-07,
+        0.0001275129545614361
+      ],
+      "physics_dt_s": 0.002,
+      "distance_m": -9.999463014605942e-06
+    },
+    {
+      "group": "contact_front",
+      "geom": "contact_front_001",
+      "other_geom": "test_floor",
+      "position_world_m": [
+        0.020861919968107635,
+        0.008421960170380768,
+        -0.019857819731507298
+      ],
+      "normal_other_to_drone_world": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "relative_velocity_world_m_s": [
+        2.0625841678388254e-06,
+        4.981919448597208e-07,
+        -0.0789627003713287
+      ],
+      "force_on_drone_world_N": [
+        -0.0006590688628205516,
+        -0.00015919001206574253,
+        0.04166188366468315
+      ],
+      "impulse_on_drone_world_Ns": [
+        -1.3181377256411032e-06,
+        -3.183800241314851e-07,
+        8.332376732936631e-05
+      ],
+      "physics_dt_s": 0.002,
+      "distance_m": -9.999463014599003e-06
+    },
+    {
+      "group": "contact_front",
+      "geom": "contact_front_001",
+      "other_geom": "test_floor",
+      "position_world_m": [
+        0.020861919968107635,
+        0.0016961799701675738,
+        -0.019857819731507298
+      ],
+      "normal_other_to_drone_world": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "relative_velocity_world_m_s": [
+        1.962484498298678e-06,
+        4.981919448597208e-07,
+        -0.07898754645372648
+      ],
+      "force_on_drone_world_N": [
+        -0.0006270834648909162,
+        -0.00015919001206574426,
+        0.05754029437565472
+      ],
+      "impulse_on_drone_world_Ns": [
+        -1.2541669297818324e-06,
+        -3.1838002413148853e-07,
+        0.00011508058875130944
+      ],
+      "physics_dt_s": 0.002,
+      "distance_m": -9.999463014599003e-06
+    },
+    {
+      "group": "contact_front",
+      "geom": "contact_front_002",
+      "other_geom": "test_floor",
+      "position_world_m": [
+        0.020861919964469663,
+        0.008421960209185883,
+        -0.019857819731507305
+      ],
+      "normal_other_to_drone_world": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "relative_velocity_world_m_s": [
+        2.062584168416434e-06,
+        4.981919449138917e-07,
+        -0.07896270037123049
+      ],
+      "force_on_drone_world_N": [
+        -0.000659068863005834,
+        -0.00015919001208355987,
+        0.04166188360194556
+      ],
+      "impulse_on_drone_world_Ns": [
+        -1.3181377260116679e-06,
+        -3.1838002416711976e-07,
+        8.332376720389112e-05
+      ],
+      "physics_dt_s": 0.002,
+      "distance_m": -9.999463014605942e-06
+    }
+  ],
+  "headless_contact_steps": 100,
+  "steps_wall_seconds": 0.02273437299299985,
+  "total_validation_seconds": 54.13824912700511,
+  "isaac_runtime": "NOT_RUN",
+  "passed": false
+}

@@ -1,0 +1,116 @@
+{
+  "schema": "rm27_visual_replay_v1",
+  "scope": "Visualization only; zero learning; frozen physics and scorer unchanged",
+  "files": {
+    "native_scene": {
+      "path": ".agents/runs/rm27-stage1/recovered/private/scene/scene.mjb",
+      "sha256": "8023b223fdfdf7829ba2478c580e8f81d82dcd497f564b28a5afdf9dbf156b9a"
+    },
+    "scorer": {
+      "path": "upstream/rm27_RL/src/rm27_contact_rl/stage1_evaluation.py",
+      "sha256": "abf83052541f305ecc9ef8d6b18532437ff9aced7779dca703fcd45acb3368c9"
+    },
+    "checkpoint": {
+      "path": ".agents/runs/rm27-stage1/pgs-braking-pilot/candidate/development-2m.pt",
+      "sha256": "b53888bd55fae63c268cf7cffbe8de599ec7ebdc11deeafb78f1b348dfa4527f"
+    },
+    "selection": {
+      "path": ".agents/runs/rm27-stage1/pgs-braking-pilot/selection.json",
+      "sha256": "925ba66294cecd8908fe34c8d80c0626a4ef2b30bcf08db21d915c31533bd10b"
+    },
+    "geometry": {
+      "path": ".agents/runs/rm27-stage1/contact-geometry.json",
+      "sha256": "0153d916bb16a32720fc59657811f06a974e2c48f69af5af4d5498376b3a408d"
+    },
+    "geometry_meshes": {
+      "path": ".agents/runs/rm27-stage1/contact-geometry.npz",
+      "sha256": "a08dfec8c48d7d84470815e458a7da2a8011aec22b95a03b0805e1802d6dd778"
+    },
+    "visual_geometry": {
+      "path": ".agents/runs/rm27-viewer/visual-geometry.json",
+      "sha256": "a72a5f4de1d6463ecda85541e78071670b2e846a589935346f5547b66f327222"
+    },
+    "visual_meshes": {
+      "path": ".agents/runs/rm27-viewer/visual-geometry.npz",
+      "sha256": "db95201da997b7aafea967d066f61794a4a35c62cc837048908e042e0b0d7508"
+    },
+    "visual_usd": {
+      "path": ".agents/runs/rm27-viewer/visuals.usdc",
+      "sha256": "fa14dc3e20abac12dd24f0f12de8cd8573936c8db9c85a7d93dbe1aa350f5a09"
+    },
+    "prefixes": {
+      "path": ".agents/runs/rm27-stage1/braking-bridge/native-prefixes.npz",
+      "sha256": "5711c5cc829b20659759d9b4aee27773e54fe127164362dbe23f313866e81109"
+    },
+    "frontier_summary": {
+      "path": ".agents/runs/rm27-stage1/pgs-braking-pilot/frontier-selected.json",
+      "sha256": "018b68af5db117ea46a2053236ce9d18b70d5ac9be4b3af5f1c60c7183ed1d76"
+    },
+    "frontier_trace": {
+      "path": ".agents/runs/rm27-stage1/pgs-braking-pilot/frontier-selected.npz",
+      "sha256": "21deaa6db5580048ceef746c7af55b4a2d49e63d041007c7f504dd18e04affa5"
+    },
+    "witness_summary": {
+      "path": ".agents/runs/rm27-stage1/handover/native-first-1p25.json",
+      "sha256": "6326de3671d2ad89e68f83d45c5bd6bc7170333062559ad1e8d01aacf162dac8"
+    },
+    "witness_trace": {
+      "path": ".agents/runs/rm27-stage1/handover/native-first-1p25.npz",
+      "sha256": "8d7a5c8657189f3d5952863ef1308e3b517b8a408f2ab81dc7dd1b189478df00"
+    },
+    "witness_controls": {
+      "path": ".agents/runs/rm27-stage1/handover/witness-controls-1p25.npz",
+      "sha256": "73a6225d6df4c86f569b67b4d2361c3d8be8ef479a9542ed3d024831352083cb"
+    },
+    "failure_summary": {
+      "path": ".agents/runs/rm27-stage1/pgs-braking-pilot/historical-1m19.json",
+      "sha256": "41e460349496e27fa4ee1a7ac406585048f519c8f3e34cdffc5d573214030429"
+    },
+    "failure_trace": {
+      "path": ".agents/runs/rm27-stage1/pgs-braking-pilot/historical-1m19.npz",
+      "sha256": "2ebe6c9350076a03c5f81412c982720fb9f4acba5e7b02b8b64d1e2e16328452"
+    },
+    "viewer_scene": {
+      "path": "configs/rm27_viewer_scene.usda",
+      "sha256": "94c4cc03f83b1dbe53115acf571b16077cec4e6d395820e79410ec15be96d19d"
+    }
+  },
+  "coordinate_system": {
+    "world": "NWU, right handed, Z up, meters",
+    "body": "FLU",
+    "quaternion": "wxyz",
+    "display_origin": "Target center subtraction is allowed for display only; original state arrays remain in frozen NWU coordinates"
+  },
+  "demos": {
+    "ppo_contact": {
+      "label": "PPO TERMINAL CONTACT | MUJOCO QUALIFIED",
+      "controller": "PGS braking Pilot PPO, update 244 / 1,998,848 transitions",
+      "trace": "frontier_trace",
+      "summary": "frontier_summary",
+      "case": "frontier_1p0_00",
+      "initial_description": "Moving informed snapshot: original 1 m witness at 1.815 s; bumper gap 0.418803 m; inward speed 2.08499 m/s",
+      "recorded_mode": "RECORDED MUJOCO | AUTHORITATIVE STATE PLAYBACK",
+      "closed_loop_mode": "ISAAC CLOSED-LOOP PPO | NEW SIMULATION"
+    },
+    "witness": {
+      "label": "DETERMINISTIC WITNESS | NOT PPO",
+      "controller": "Frozen deterministic feasibility CTBR schedule, not a learned actor",
+      "trace": "witness_trace",
+      "summary": "witness_summary",
+      "case": "nominal",
+      "initial_description": "Genuine stationary hover; COM-to-target normal standoff 1.25 m; zero initial linear and body-rate velocity",
+      "recorded_mode": "RECORDED MUJOCO | AUTHORITATIVE STATE PLAYBACK",
+      "closed_loop_mode": "ISAAC WITNESS COMMAND REPLAY | NOT PPO"
+    },
+    "ppo_failure": {
+      "label": "PPO STATIONARY START | FAILED",
+      "controller": "Same selected PGS braking Pilot PPO, update 244 / 1,998,848 transitions",
+      "trace": "failure_trace",
+      "summary": "failure_summary",
+      "case": "nominal",
+      "initial_description": "Original1m nominal stationary-hover benchmark; zero initial linear and body-rate velocity",
+      "recorded_mode": "RECORDED MUJOCO | AUTHORITATIVE STATE PLAYBACK",
+      "closed_loop_mode": "ISAAC CLOSED-LOOP PPO | NEW SIMULATION"
+    }
+  }
+}

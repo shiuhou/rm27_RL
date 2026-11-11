@@ -1,0 +1,2011 @@
+[
+  {
+    "name": "collision_3_0",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_0.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_1",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_1.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_2",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_2.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_3",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_3.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_4",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_4.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_5",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_5.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_6",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_6.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_7",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_7.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_8",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_8.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_9",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_9.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_10",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_10.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_11",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_11.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_12",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_12.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_13",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_13.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_14",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_14.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_15",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_15.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_16",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_16.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_17",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_17.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_18",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_18.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_19",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_19.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_20",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_20.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_21",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_21.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_22",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_22.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_23",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_23.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_24",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_24.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_25",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_25.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_26",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_26.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_27",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_27.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_28",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_28.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_29",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_29.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_30",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_30.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_31",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_31.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_32",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_32.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_33",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_33.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_34",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_34.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_35",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_35.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_36",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_36.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_37",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_37.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_38",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_38.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_39",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_39.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_40",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_40.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_41",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_41.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_42",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_42.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_43",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_43.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_44",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_44.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_45",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_45.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_46",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_46.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_47",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_47.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_48",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_48.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_49",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_49.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_50",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_50.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_51",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_51.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_52",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_52.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_53",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_53.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_54",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_54.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_55",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_55.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_56",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_56.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_57",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_57.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_58",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_58.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_59",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_59.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_60",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_60.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_61",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_61.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_62",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_62.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_63",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_63.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_64",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_64.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_65",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_65.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_66",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_66.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_67",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_67.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_68",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_68.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_69",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_69.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_70",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_70.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_71",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_71.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_72",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_72.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_73",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_73.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_74",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_74.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_75",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_75.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_76",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_76.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_77",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_77.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_78",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_78.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_79",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_79.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_80",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_80.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_81",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_81.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_82",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_82.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_83",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_83.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_84",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_84.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_85",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_85.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_86",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_86.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_87",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_87.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_88",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_88.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_89",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_89.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_90",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_90.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_91",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_91.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_92",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_92.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_93",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_93.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_94",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_94.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_95",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_95.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_96",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_96.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_97",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_97.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_98",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_98.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_99",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_99.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_100",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_100.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_101",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_101.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_102",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_102.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_103",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_103.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_104",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_104.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_105",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_105.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_106",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_106.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_107",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_107.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_108",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_108.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_109",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_109.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_110",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_110.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_111",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_111.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_112",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_112.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_113",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_113.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_114",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_114.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_115",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_115.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_116",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_116.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_117",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_117.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_118",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_118.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_119",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_119.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_120",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_120.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_121",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_121.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_122",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_122.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_123",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_123.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_124",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_124.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_125",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_125.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_126",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_126.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_127",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_127.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_128",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_128.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_129",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_129.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_130",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_130.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_131",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_131.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_132",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_132.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_133",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_133.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_134",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_134.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_135",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_135.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_136",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_136.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_137",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_137.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_138",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_138.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_139",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_139.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_140",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_140.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_141",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_141.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_142",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_142.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_143",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_143.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_144",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_144.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_145",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_145.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_146",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_146.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_147",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_147.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_148",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_148.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_149",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_149.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_150",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_150.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_151",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_151.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_152",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_152.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_153",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_153.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_154",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_154.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_155",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_155.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_156",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_156.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_157",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_157.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_158",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_158.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_159",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_159.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_160",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_160.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_161",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_161.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_162",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_162.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_163",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_163.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_164",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_164.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_165",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_165.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_166",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_166.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_167",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_167.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_168",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_168.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_169",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_169.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_170",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_170.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_171",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_171.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_172",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_172.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_173",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_173.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_174",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_174.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_175",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_175.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_176",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_176.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_177",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_177.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_178",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_178.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_179",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_179.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_180",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_180.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_181",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_181.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_182",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_182.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_183",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_183.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_184",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_184.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_185",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_185.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_186",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_186.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_187",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_187.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_188",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_188.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_189",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_189.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_190",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_190.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_191",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_191.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_192",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_192.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_193",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_193.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_194",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_194.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_195",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_195.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_196",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_196.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_197",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_197.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_198",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_198.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_199",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_199.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_200",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_200.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_201",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_201.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_202",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_202.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_203",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_203.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_204",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_204.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_205",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_205.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_206",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_206.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_207",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_207.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_208",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_208.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_209",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_209.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_210",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_210.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_211",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_211.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_212",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_212.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_213",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_213.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_214",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_214.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_215",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_215.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_216",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_216.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_217",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_217.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_218",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_218.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_219",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_219.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_220",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_220.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_221",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_221.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_222",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_222.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_223",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_223.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_224",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_224.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_225",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_225.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_226",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_226.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_227",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_227.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_228",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_228.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_229",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_229.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_230",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_230.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_231",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_231.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_232",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_232.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_233",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_233.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_234",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_234.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_235",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_235.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_236",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_236.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_237",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_237.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_238",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_238.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_239",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_239.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_240",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_240.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_241",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_241.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_242",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_242.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_243",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_243.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_244",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_244.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_245",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_245.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_246",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_246.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_247",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_247.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_248",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_248.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_249",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_249.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_250",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_250.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_251",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_251.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_252",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_252.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_253",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_253.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_254",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_254.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_255",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_255.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_256",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_256.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_257",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_257.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_258",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_258.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_259",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_259.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_260",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_260.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_261",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_261.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_262",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_262.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_263",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_263.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_264",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_264.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_265",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_265.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_266",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_266.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_267",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_267.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_268",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_268.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_269",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_269.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_270",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_270.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_271",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_271.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_272",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_272.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_273",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_273.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_274",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_274.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_275",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_275.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_276",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_276.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_277",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_277.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_278",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_278.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_279",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_279.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_280",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_280.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_281",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_281.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_282",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_282.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_283",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_283.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_284",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_284.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_285",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_285.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  },
+  {
+    "name": "collision_3_286",
+    "source_part": 3,
+    "group": "body",
+    "mesh": "collision_meshes/part_3_hull_286.obj",
+    "source_mesh_sha256": "a9f737d9e3beaab494ccd9c3f242871c99c40b48e3813ea230c4180df4dd79a7"
+  }
+]

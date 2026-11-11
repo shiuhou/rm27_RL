@@ -1,0 +1,10 @@
+[
+  {
+    "name": "collision_13_0",
+    "source_part": 13,
+    "group": "body",
+    "mesh": "collision_meshes/part_13_hull_0.obj",
+    "approximation": "tight convex electronics envelope; small mounting holes filled",
+    "source_mesh_sha256": "a413380b5aa721431973cc3a795ae220732b9cb47817bf8c7582db1576f7793e"
+  }
+]

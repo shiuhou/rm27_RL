@@ -1,0 +1,9 @@
+[
+  {
+    "name": "collision_1_0",
+    "source_part": 1,
+    "group": "body",
+    "mesh": "collision_meshes/part_1_hull_0.obj",
+    "source_mesh_sha256": "635f57084ed9beabc89aa47fea47fcd09a143d407b5ddee15c1fb4642706295a"
+  }
+]

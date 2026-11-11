@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "contract_id": "sf_rm27_stage1_handover_1p0_to_1p25_v1",
+  "training_authorized": false,
+  "distance_definition": "Signed projection of vehicle COM minus registered surface center on the frozen outward unit normal, in meters.",
+  "nominal_reset": "Position center + standoff * normal, upright, zero world velocity and body rates, nominal equilibrium actuator state and commands.",
+  "training_distribution_proposal": {
+    "nominal_standoff_m": [1.0, 1.25],
+    "sampling": "uniform, one shared state-based Direct-CTBR actor",
+    "perturbations": "Original frozen reset perturbation envelope. Actual normal COM coordinate spans 0.96 to 1.29 m."
+  },
+  "evaluation": {
+    "nominal_standoffs_m": [1.025, 1.125, 1.225],
+    "case_generator": "rm27_contact_rl.stage1_runner.evaluation_initials, unchanged fixed 19 cases per nominal distance",
+    "episodes": 57,
+    "denominator": "All 57 starts, including initial rejection, timeout and safety failure. Report each 19-case stratum and the aggregate.",
+    "qualification": "Unchanged frozen full-field MuJoCo Stage1Evaluator. Each episode runs continuously from reset with the learned actor choosing all commands.",
+    "horizon_s": 4.0,
+    "physics_dt_s": 0.001,
+    "policy_dt_s": 0.005
+  },
+  "separate_historical_benchmark": {"nominal_standoff_m": 1.0, "episodes": 19},
+  "source_sha256": {
+    "private_scene_mjb": "8023b223fdfdf7829ba2478c580e8f81d82dcd497f564b28a5afdf9dbf156b9a",
+    "task_contact_geometry_json": "cc108e235d4b2a8d6057c4796d639eb9f4d8ace8de7a007c9bb04c861d242f12",
+    "contact_surface_registration_json": "13142f27dc9548f46e0aa3d5012e9cda64310bb493e3b31577eaeba5e8fea8f7",
+    "stage1_evaluation_py": "abf83052541f305ecc9ef8d6b18532437ff9aced7779dca703fcd45acb3368c9",
+    "stage1_env_py": "d404155e46582be3a2eb10ddd1a8e19856ce3319a6c3fb3ee0d0153e4b40e02b",
+    "stage1_runner_py": "263122e49bbcac4f9ede0c2853df7fc398443b9c513c9d4f95f55b23814af934"
+  },
+  "feasibility_evidence_sha256": {
+    "native-first-1p0.json": "9f898f9ca55686ebe1a3d996c81779c4027128129fc9ef0e23e5db496a3d66ee",
+    "native-first-1p25.json": "6326de3671d2ad89e68f83d45c5bd6bc7170333062559ad1e8d01aacf162dac8"
+  }
+}

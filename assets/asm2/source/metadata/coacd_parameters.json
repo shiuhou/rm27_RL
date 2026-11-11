@@ -1,0 +1,46 @@
+{
+  "coacd_version": "1.0.14",
+  "units": "body-frame metres; real_metric=false uses CoACD normalized threshold",
+  "seed": 42,
+  "resolution": 3000,
+  "mcts_max_depth": 3,
+  "merge": true,
+  "preprocess_mode": "auto",
+  "max_convex_hull": -1,
+  "decimate": false,
+  "pca": false,
+  "extrude": false,
+  "real_metric": false,
+  "electronics_convex_envelopes": [
+    1,
+    4,
+    5,
+    12,
+    13
+  ],
+  "profiles": {
+    "part_0": {
+      "threshold": 0.003,
+      "preprocess_resolution": 100,
+      "mcts_iterations": 80,
+      "mcts_nodes": 15
+    },
+    "parts_9_10_11": {
+      "threshold": 0.0015,
+      "preprocess_resolution": 300,
+      "mcts_iterations": 20,
+      "mcts_nodes": 10
+    },
+    "other_nonconvex": {
+      "threshold": 0.01,
+      "preprocess_resolution": 100,
+      "mcts_iterations": 20,
+      "mcts_nodes": 10
+    }
+  },
+  "notes": [
+    "Parts 6,7,8 reuse part 2 hulls after verified translation.",
+    "Changing algorithm parameters requires removing corresponding part_N.json cache.",
+    "Original STEP is before battery adjustment; build.py applies translation once."
+  ]
+}

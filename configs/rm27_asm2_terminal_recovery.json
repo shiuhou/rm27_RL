@@ -1,0 +1,72 @@
+{
+  "schema": "rm27_asm2_terminal_recovery_v1",
+  "scope": "simulation_only_state_based_direct_ctbr_braking",
+  "authorization": {
+    "training_allowed_after_preflight": true,
+    "candidates": 1,
+    "max_transitions": 65536,
+    "max_learning_s": 600,
+    "max_preflight_s": 720
+  },
+  "pins": {
+    "flight": {
+      "path": "configs/rm27_asm2_flight.json",
+      "sha256": "20243853d293b524521f9273e34b269d0c668f64f208e599bcf606fd3e4b8d3e"
+    },
+    "contact": {
+      "path": "configs/rm27_asm2_contact.json",
+      "sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b"
+    },
+    "collision": {
+      "path": "configs/rm27_asm2_collision.json",
+      "sha256": "9045e6ab8a8f4a696ee917adef32863a8e4dfac6c04c5d781ebdb73b18fdaf0e"
+    },
+    "proxy": {
+      "path": "assets/asm2/proxy/manifest.json",
+      "sha256": "247f076685d84796980232073b9bf12f27b6ce065d82227d890fc02d2a11834b"
+    },
+    "resets": {
+      "path": ".agents/runs/asm2-handover/phase3-v1/reset-dataset/manifest.json",
+      "sha256": "eb77838f61d2695def68385b570487211f418eec3ebfcb9a8200ec8f7ba6b8a8"
+    },
+    "handover_limits": {
+      "path": "configs/rm27_asm2_handover.json",
+      "sha256": "16427a7995f82a080636b6a02a98f18aa3711234dc229a5d06a41647a17ae026"
+    }
+  },
+  "preflight": {
+    "worlds": 16,
+    "layouts": [
+      0,
+      1
+    ],
+    "allowed_dt_s": [
+      0.00025,
+      0.0001
+    ]
+  },
+  "goal_inset_m": 0.002,
+  "horizon_s": 0.12,
+  "braking_horizon_s": 0.8,
+  "handover_horizon_s": 2.3,
+  "selection_cases": [
+    "dev_far",
+    "dev_lateral_positive",
+    "stationary_1"
+  ],
+  "learning": {
+    "worlds": 16,
+    "seed": 42704,
+    "lr": 0.00012,
+    "initial_std": 0.16,
+    "terminal_mix": 0.1,
+    "braking_decel_m_s2": 2.0,
+    "braking_gap_m": 0.08
+  },
+  "development_gate": {
+    "transitions": 24576,
+    "learning_s": 240,
+    "min_improvement": 2,
+    "wait_s": 180
+  }
+}

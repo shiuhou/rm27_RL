@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "experiment": "sf_rm27_stage1c_handover_01",
+  "scope": "simulation_only_state_based_direct_ctbr_informed_ppo",
+  "authorized": true,
+  "budget": {"candidates": 2, "transitions": 12000000, "learning_s": 3600, "integration_s": 900, "evaluation_s": 900},
+  "source_experiment": {"path": "configs/rm27_stage1_sim_experiment.json", "sha256": "bb16443fabbda5d1358afe566968505493998a6f7f57d3fdccdd8059b9630670"},
+  "inputs": {
+    "handover_contract": {"path": "configs/rm27_stage1_handover_eval.json", "sha256": "57fa2c81c7e4efb26f4db80bd315440dcda99f9d1ea93d343f4f09ee5c983815"},
+    "gate_suites": {"path": "configs/rm27_stage1c_suites.json", "sha256": "a8437237164d4eff0db58f6e05432b83a479c3315a28755282fd7bba04a9c6a7"},
+    "unseen_suite": {"path": "configs/rm27_stage1c_unseen.json", "sha256": "771fb913ef0083d0dd389dc934952ad60179177596f483e5d96ea8ec3a6cbb74"},
+    "witness_1p0": {"path": ".agents/runs/rm27-stage1/handover/native-first-1p0.npz", "sha256": "58c55a24ea3878c2dcb330eaf7bb6258613ceba2efdc86c86efdc58a62313274"},
+    "witness_1p25": {"path": ".agents/runs/rm27-stage1/handover/native-first-1p25.npz", "sha256": "8d7a5c8657189f3d5952863ef1308e3b517b8a408f2ab81dc7dd1b189478df00"}
+  },
+  "goal_inset_m": 0.012,
+  "nominal_standoff_m": [1.0, 1.25],
+  "promotion": {"window_episodes": 128, "min_fraction": 0.30, "consecutive_windows": 2},
+  "candidate_1": {"seed": 0, "num_envs": 128, "initial_std": 0.18, "learning_rate": 0.0002, "transitions": 8000000, "learning_s": 2400}
+}

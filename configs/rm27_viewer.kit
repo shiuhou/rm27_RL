@@ -1,0 +1,33 @@
+[package]
+title = "RM27 Interactive Replay"
+version = "1.0.0"
+description = "Isaac Lab 2.1 rendering with the viewport and camera UI needed by RM27 replay"
+
+[dependencies]
+"isaaclab.python.headless.rendering" = {}
+"omni.kit.mainwindow" = {}
+"omni.kit.widget.toolbar" = {}
+"omni.kit.window.toolbar" = {}
+"omni.kit.viewport.window" = {}
+"omni.kit.viewport.utility" = {}
+"omni.kit.manipulator.camera" = {}
+
+[settings]
+app.enableStdoutOutput = false
+exts."omni.kit.widget.toolbar".PlayButton.enabled = true
+app.window.hideUi = false
+app.window.title = "RM27 Ver2 | Scientific Replay"
+app.window.width = 1280
+app.window.height = 800
+app.livestream.fixedHostPort = 47998
+app.livestream.nvcf.quitOnSessionEnded = false
+
+[settings.app.exts]
+folders = [
+    "/workspace/isaaclab/apps",
+    "/workspace/isaaclab/source",
+    "/isaac-sim/exts",
+    "/isaac-sim/extscache",
+    "/isaac-sim/extsPhysics",
+    "/isaac-sim/kit/exts",
+]

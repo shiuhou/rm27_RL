@@ -1,0 +1,12 @@
+[submodule "upstream/SimpleFlight"]
+	path = upstream/SimpleFlight
+	url = https://github.com/thu-uav/SimpleFlight.git
+[submodule "upstream/rm27_RL"]
+	path = upstream/rm27_RL
+	url = https://github.com/shiuhou/rm27_RL.git
+[submodule "upstream/rm27_sim"]
+	path = upstream/rm27_sim
+	url = https://github.com/shiuhou/rm27_sim.git
+[submodule "upstream/rm_mjcf"]
+	path = upstream/rm_mjcf
+	url = https://github.com/CosmosMount/rm_mjcf.git

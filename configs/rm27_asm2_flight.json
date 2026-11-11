@@ -1,0 +1,49 @@
+{
+  "schema": "rm27_asm2_free_flight_v1",
+  "scope": "provisional_simulation_only_free_flight",
+  "mass_kg": 0.142,
+  "gravity_m_s2": 9.81,
+  "mass_properties": "assets/asm2/source/metadata/mass_properties.json",
+  "rotor_part_indices": [6, 8, 7, 2],
+  "rotor_thrust_axis_body": [0.0, 0.0, 1.0],
+  "legacy_dynamics": "upstream/rm27_sim/configs/impact_recovery/dynamics_v2_150g.json",
+  "legacy_timing": "upstream/rm27_RL/configs/stage1/task_stage1a_seed0.json",
+  "yaw_reaction_signs": [1, -1, 1, -1],
+  "source_pins": {
+    "assets/asm2/source/metadata/mass_properties.json": "313593c862557802d974c000275e04e9326d185ed2e7eca24a6fbd2d53f2e897",
+    "assets/asm2/source/mujoco/model.xml": "f8374cc88ae9dc05877e3e5b01bc54720c14c97065d4e548cb34d217eb3e1d0f",
+    "upstream/rm27_sim/configs/impact_recovery/dynamics_v2_150g.json": "689152bc50694ba1019304efc2c8dde3a1267789e5992cfe2160057da48fc71a",
+    "upstream/rm27_RL/configs/stage1/task_stage1a_seed0.json": "5e64b0ae5ff841ecb4fa142f3d601f3f286df1cd1d982faea45f69ba1e187a22",
+    "upstream/rm27_sim/packages/physics/src/rm27_contact_physics/control.py": "039c1dad8a71db2e6cd2f7e6e1e9ec010cee1d7f5628109160820d4e19779517"
+  },
+  "provenance": {
+    "mass": "User-reported measured 142 g, equal to the package total",
+    "inertia_and_hubs": "CAD_ESTIMATE from supplied COM-centered tensor and four dmotor assembly centers in FLU",
+    "thrust_axes": "CAD-derived axis alignment with +Z thrust direction assumed for upright flight",
+    "reaction_torque": "PROVISIONAL Ver2 magnitude and alternating signs in FLU (+,+), (+,-), (-,-), (-,+) rotor order",
+    "thrust_cap_and_lag": "PROVISIONAL Ver2 thrust limit and exact first-order thrust filter",
+    "control": "PROVISIONAL Ver2 rate gain, rate clamp and 1 ms physics / 5 ms CTBR update intervals"
+  },
+  "free_flight": {
+    "controller": {
+      "position_kp_s2": [4.0, 4.0, 6.0],
+      "velocity_kd_s": [3.5, 3.5, 4.0],
+      "attitude_gain_s": [5.0, 5.0, 3.0],
+      "max_tilt_deg": 25.0,
+      "rate_limit_rad_s": 2.0,
+      "collective_fraction": 0.5
+    },
+    "moving_reference": {
+      "x_amplitude_m": 0.30,
+      "y_amplitude_m": 0.18,
+      "z_amplitude_m": 0.08,
+      "period_s": 4.0,
+      "rmse_m": 0.08,
+      "peak_error_m": 0.15
+    },
+    "ver2_track_checkpoint": {
+      "path": ".agents/runs/rm27-precision/track/checkpoint.pt",
+      "sha256": "ce098cb4e374079283509f52ef5af20268db260712a31b7eaad3bb30ea8ea7db"
+    }
+  }
+}

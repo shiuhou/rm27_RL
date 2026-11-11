@@ -1,0 +1,9 @@
+/.agents/*
+!/.agents/docs/
+__pycache__/
+
+*.pyc
+.venv/
+*.etli
+MUJOCO_LOG.TXT
+.env

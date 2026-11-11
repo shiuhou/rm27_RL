@@ -1,0 +1,15 @@
+#usda 1.0
+(
+    subLayers = [@../.agents/runs/rm27-stage1/contact-backend/offset-1e-06.usda@]
+)
+
+# Viewer-only display opinion, composed before PhysX creates its live body.
+# Collision APIs, shapes, offsets, materials and rigid-body properties inherit
+# unchanged from the verified production layer.
+over "Stage1Scene"
+{
+    over "Drone"
+    {
+        token visibility = "invisible"
+    }
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "experiment": "sf_rm27_stage1_sim_ppo_01",
+  "scope": "simulation_only_state_based_direct_ctbr_ppo",
+  "authorized": true,
+  "parameter_status": "PROVISIONAL_AUTHORIZED_FOR_THIS_SIMULATION_EXPERIMENT",
+  "budget": {"candidates": 2, "transitions": 100000000, "learning_s": 1800},
+  "assets": {
+    "task": {"path": "upstream/rm27_RL/configs/stage1/task_contact_geometry.json", "sha256": "cc108e235d4b2a8d6057c4796d639eb9f4d8ace8de7a007c9bb04c861d242f12"},
+    "scorer": {"path": "upstream/rm27_RL/src/rm27_contact_rl/stage1_evaluation.py", "sha256": "abf83052541f305ecc9ef8d6b18532437ff9aced7779dca703fcd45acb3368c9"},
+    "native_config": {"path": ".agents/runs/rm27-stage1/recovered/validation-config.json", "sha256": "e87e250907de2c8dc899ebd74012db1604428b2080c893d42ca9c60c40356e3e"},
+    "native_scene": {"path": ".agents/runs/rm27-stage1/recovered/private/scene/scene.mjb", "sha256": "8023b223fdfdf7829ba2478c580e8f81d82dcd497f564b28a5afdf9dbf156b9a"},
+    "registration": {"path": "upstream/rm27_RL/configs/stage1/contact_surface_registration.json", "sha256": "13142f27dc9548f46e0aa3d5012e9cda64310bb493e3b31577eaeba5e8fea8f7"},
+    "geometry": {"path": ".agents/runs/rm27-stage1/contact-geometry.json", "sha256": "0153d916bb16a32720fc59657811f06a974e2c48f69af5af4d5498376b3a408d"},
+    "isaac_scene": {"path": ".agents/runs/rm27-stage1/contact-scene.usda", "sha256": "3473c4db233d72374ae0aa03f8567ef6e4e9efad4b647d1baa9a0ddba22a3f4e"},
+    "isaac_preflight": {"path": ".agents/runs/rm27-stage1/physx-gpu.json", "sha256": "7357c7ddf5452a52f1059cc324ac81d673b230e52d1d51ee6e7d2388a594eaa1"},
+    "checkpoint": {"path": ".agents/runs/rm27-precision/track/checkpoint.pt", "sha256": "ce098cb4e374079283509f52ef5af20268db260712a31b7eaad3bb30ea8ea7db"}
+  },
+  "goal_inset_m": 0.012,
+  "curriculum": {"near_min_m": 0.03, "initial_max_m": 0.25, "final_max_m": 1.0, "expand_fraction": 0.60, "hover_fraction": 0.15, "near_inward_speed_m_s": 0.30},
+  "candidate_1": {"seed": 0, "learning_s": 720, "initial_std": 0.12, "learning_rate": 0.0001, "capture_weight": 1.0}
+}

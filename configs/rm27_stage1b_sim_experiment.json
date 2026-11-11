@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "experiment": "sf_rm27_stage1b_residual_01",
+  "scope": "simulation_only_state_based_direct_ctbr_residual_ppo",
+  "authorized": true,
+  "parameter_status": "PROVISIONAL_AUTHORIZED_FOR_THIS_SIMULATION_EXPERIMENT",
+  "budget": {"candidates": 1, "transitions": 3000000, "learning_s": 900},
+  "source_experiment": {"path": "configs/rm27_stage1_sim_experiment.json", "sha256": "bb16443fabbda5d1358afe566968505493998a6f7f57d3fdccdd8059b9630670"},
+  "near_checkpoint": {"path": ".agents/runs/rm27-stage1/ppo-contact/candidate-2/checkpoint.pt", "sha256": "728183aea46b80e5fb536dfaf5e15be783fbe764cfd643eb2a0f24408f84b433"},
+  "raw_bounds": [0.35, 0.85, 0.35, 0.40],
+  "goal_inset_m": 0.012,
+  "frontier_clearance_m": [[0.010, 0.022], [0.022, 0.060], [0.060, 0.120], [0.120, 0.250], [0.250, 0.500], [0.500, 0.800]],
+  "promotion": {"window_episodes": 128, "min_fraction": 0.50, "native_min_qualified": 10, "retry_transitions": 196608},
+  "candidate": {"seed": 0, "num_envs": 96, "initial_std": 0.65, "learning_rate": 0.0002}
+}

@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "contract_id": "sf_rm27_stage1c_stationary_gate_v1",
+  "units": [
+    "m",
+    "m",
+    "m",
+    "deg"
+  ],
+  "columns": [
+    "nominal_standoff_m",
+    "target_frame_slope_offset_m",
+    "target_frame_across_offset_m",
+    "world_yaw_deg"
+  ],
+  "bounds": [
+    [
+      1.0,
+      1.25
+    ],
+    [
+      -0.03,
+      0.03
+    ],
+    [
+      -0.03,
+      0.03
+    ],
+    [
+      -2.0,
+      2.0
+    ]
+  ],
+  "reset": "Upright world yaw only, zero linear and body angular velocity, nominal hover motor activation and command. No normal position perturbation beyond the standoff draw.",
+  "generation": "Independent NumPy PCG64 seeds. For each column, (permutation(N) + uniform(N))/N scaled to bounds and rounded to six decimals. Explicit rows below are authoritative.",
+  "suites": {
+    "unseen": {
+      "seed": 31327319,
+      "episodes": 20,
+      "starts": {
+        "unseen_00": [
+          1.164174,
+          -0.006759,
+          0.022645,
+          -0.149637
+        ],
+        "unseen_01": [
+          1.083543,
+          -0.016741,
+          -0.007311,
+          1.674318
+        ],
+        "unseen_02": [
+          1.091148,
+          -0.004947,
+          0.02886,
+          -0.252139
+        ],
+        "unseen_03": [
+          1.064364,
+          -0.027849,
+          0.011684,
+          -1.13448
+        ],
+        "unseen_04": [
+          1.05767,
+          0.003993,
+          -0.015333,
+          -0.966369
+        ],
+        "unseen_05": [
+          1.212821,
+          0.000386,
+          0.015527,
+          -0.468994
+        ],
+        "unseen_06": [
+          1.154174,
+          -0.026933,
+          0.014063,
+          1.823003
+        ],
+        "unseen_07": [
+          1.196017,
+          0.027727,
+          -0.000321,
+          0.809163
+        ],
+        "unseen_08": [
+          1.249316,
+          0.025989,
+          0.02099,
+          -1.284498
+        ],
+        "unseen_09": [
+          1.178276,
+          0.023355,
+          -0.027851,
+          -1.944671
+        ],
+        "unseen_10": [
+          1.134556,
+          -0.002633,
+          -0.012257,
+          1.180508
+        ],
+        "unseen_11": [
+          1.022002,
+          0.007673,
+          -0.003649,
+          -0.721114
+        ],
+        "unseen_12": [
+          1.148516,
+          0.011542,
+          0.025261,
+          -1.729471
+        ],
+        "unseen_13": [
+          1.205482,
+          0.020105,
+          0.005322,
+          0.673037
+        ],
+        "unseen_14": [
+          1.000119,
+          0.016802,
+          0.001877,
+          0.209166
+        ],
+        "unseen_15": [
+          1.040034,
+          -0.019645,
+          -0.025659,
+          -1.547203
+        ],
+        "unseen_16": [
+          1.23242,
+          -0.010941,
+          0.007171,
+          1.269132
+        ],
+        "unseen_17": [
+          1.119491,
+          -0.014016,
+          -0.019136,
+          1.483644
+        ],
+        "unseen_18": [
+          1.031636,
+          0.013968,
+          -0.011601,
+          0.082083
+        ],
+        "unseen_19": [
+          1.111974,
+          -0.021491,
+          -0.022005,
+          0.487879
+        ]
+      }
+    }
+  }
+}

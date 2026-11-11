@@ -1,0 +1,20 @@
+{
+  "schema": "rm27_asm2_handover_v1",
+  "scope": "bounded_simulation_only_deterministic_feasibility",
+  "training_allowed": false,
+  "max_contact_cases": 15,
+  "max_preview_rollouts": 180,
+  "wall_budget_s": 420,
+  "duration_grid_s": [1.35, 1.60, 1.85, 2.10],
+  "terminal_depth_grid_m": [0.000020, 0.000120, 0.000240],
+  "terminal_normal_speed_m_s": 0.040,
+  "terminal_extension_s": 0.045,
+  "stationary_com_normal_m": [0.23986282, 0.40, 0.65],
+  "flight_envelope": {
+    "max_com_speed_m_s": 2.0,
+    "max_body_rate_rad_s": 6.0,
+    "max_tilt_deg": 60.0,
+    "max_saturated_controls": 0
+  },
+  "basis": "The Phase 2 contact contract remains the acceptance reference. The flight envelope bounds nominal simulation search within the existing Field crop and provisional actuator caps. Preview uses the nominal target plane only. Contact is evaluated by the independent detailed plant."
+}

@@ -1,0 +1,34 @@
+{
+  "schema": "rm27_asm2_collision_candidate_v1",
+  "scope": "collision_validation_only",
+  "training_allowed": false,
+  "asset_root": "assets/asm2/source",
+  "candidate_usd": "assets/asm2/candidate/drone.usda",
+  "candidate_sha256": "c86f70ac9380670e78907c7d4a0dc605dadd49b6ab6562393941d7bc0555fd50",
+  "pins": {
+    "usd/drone.usdc": "4a7793bfaa22f76107eda6046cb4bd15ddc6be7af78ac4e891b7024fdd004394",
+    "mujoco/model.xml": "f8374cc88ae9dc05877e3e5b01bc54720c14c97065d4e548cb34d217eb3e1d0f",
+    "metadata/mass_properties.json": "313593c862557802d974c000275e04e9326d185ed2e7eca24a6fbd2d53f2e897",
+    "metadata/collision_geometry.json": "856661af4dfe45ec60a943ec3239f486076b3d2d7d0ade2dab3840af117b74f6",
+    "metadata/collision_validation.json": "66b5538668eed42fec9c31e6dd3198c73055ff5594f383415a255f26d6b33987",
+    "MANIFEST_SHA256.txt": "339cfd5ed64cbb7022faf163badeb595a1d434688b306ae8e83b03bc28419ce6"
+  },
+  "isaac_image": "xtrainer-astra:isaac-2.1.0",
+  "physics_dt_s": 0.001,
+  "solver": "PGS",
+  "diagnostic_contact_offset_m": 1e-06,
+  "rest_offset_m": 0.0,
+  "convex_hull_vertex_limit": 255,
+  "convex_min_thickness_m": 0.0,
+  "field_usd": ".agents/runs/rm27-stage1/contact-backend/offset-1e-06.usda",
+  "field_sha256": "26501ffec65ad5a7b27d96857c04ecf7f1be3d33b8d7a7b609fd618a90ece3b3",
+  "groups": {
+    "contact_front": 14,
+    "contact_rear": 1,
+    "body": 11859
+  },
+  "expected_mass_kg": 0.142,
+  "physical_task_qualification": "UNDEFINED_FOR_NEW_AIRFRAME; legacy scorer unchanged",
+  "cook_coordinate_scale": 1000.0,
+  "candidate_status": "VALIDATION_ONLY; NOT_ACCEPTED_FOR_TRAINING"
+}

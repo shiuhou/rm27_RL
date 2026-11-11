@@ -1,0 +1,9 @@
+{
+  "mode": "online",
+  "base_url": "https://api.wandb.ai",
+  "entity": "uhshi371-hkustgz",
+  "project": "rm27-agile-flight-rl",
+  "group": "sf-rtx4090",
+  "max_videos_per_run": 3,
+  "max_video_bytes": 50000000
+}
