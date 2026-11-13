@@ -1,0 +1,9 @@
+{
+  "schema": "asm2_r6_competence_reset_v1",
+  "source_config": "configs/rm27_asm2_regional_update.json",
+  "output": ".agents/runs/asm2-terminal/r6",
+  "per_arm_transitions": 98304,
+  "heldout_seed": 627113,
+  "method": "competence-gated predecessor reset expansion with autonomous suffix replay",
+  "extension_gate": "At midpoint, B must gain qualified contacts over A at >=2 distinct earlier anchors, gain >=1 robust 3/3 anchor, retain braking >=32/36 and terminal >=27/30 without retention envelope exits. Only then authorize the already user-permitted second equal block, <=196608 each."
+}

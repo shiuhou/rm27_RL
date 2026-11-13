@@ -1,0 +1,57 @@
+{
+  "schema": "asm2_resumable_comparison_v1",
+  "config_path": "configs/rm27_asm2_resumable.json",
+  "output": ".agents/runs/asm2-terminal/resumable-comparison",
+  "parent": ".agents/runs/asm2-terminal/phase4-meaningful/learning/checkpoint-186368.pt",
+  "bank": ".agents/runs/asm2-terminal/phase5ar/curriculum_resets.npz",
+  "receipt": ".agents/runs/asm2-terminal/phase4r2/backend-receipt.json",
+  "backend_verifier": ".agents/runs/asm2-terminal/phase4r2/braking_pilot.py",
+  "development_evaluator": ".agents/runs/asm2-terminal/phase5a/evaluate_development.py",
+  "task_config": "configs/rm27_asm2_terminal_recovery.json",
+  "overlay": ".agents/runs/asm2-terminal/phase4r2/proxy-with-reference-body.usda",
+  "arms": {
+    "A": "fixed",
+    "B": "adaptive"
+  },
+  "seed": 42720,
+  "final_seed": 42721,
+  "final_position_tangent_m": 0.001,
+  "final_velocity_tangent_m_s": 0.01,
+  "workers": 12,
+  "evaluate_every": 49152,
+  "evaluation_wait_s": 900,
+  "ppo": {
+    "gamma": 0.995,
+    "gae_lambda": 0.95
+  },
+  "adaptive": {
+    "boundary_mix": 0.55,
+    "boundary_floor": 0.05,
+    "discovery_mix": 0.1,
+    "retention": {
+      "terminal": 0.1,
+      "braking": 0.25
+    },
+    "position_tangent_m": 0.0005,
+    "velocity_tangent_m_s": 0.005
+  },
+  "budget": {
+    "per_arm_transitions": 300000,
+    "total_transitions": 600000,
+    "per_arm_learning_s": 4500,
+    "total_learning_s": 9000,
+    "update_reservation_s": 60
+  },
+  "pins": {
+    ".agents/runs/asm2-terminal/phase4-meaningful/learning/checkpoint-186368.pt": "85831eb55973c575b09283e276c17e7004ed059f7b64c9e25f98814ff8307fbd",
+    ".agents/runs/asm2-terminal/phase5ar/curriculum_resets.npz": "76435c6ceac237939c702bb1fd698be39cf905f97ea59acbd9291f5753816392",
+    ".agents/runs/asm2-terminal/phase4r2/backend-receipt.json": "19705fa591d35c010f0b93fa02c0b8709aebe2fb112885c6cd0f68ad6335a5e6",
+    ".agents/runs/asm2-terminal/phase4r2/braking_pilot.py": "321416c75ac11307bd34a93ed14c5c581be6c89a8b89934d2db488bdd065a3f5",
+    ".agents/runs/asm2-terminal/phase5a/evaluate_development.py": "cbb16b99fd37f15d19bfa56ca7b7e24fdd086b887ccc5e257ac5ba170c9adc7d",
+    "configs/rm27_asm2_terminal_recovery.json": "795ac9f4e046e08a9f363965c341cc60afe5c9a02b2d08690244686e3563e0e3",
+    "src/rm27_asm2/contact_task.py": "306fa22b06b16dad14ebf389a955ce72f30f3ddd1fff80984c5ff29075af80ec",
+    "src/rm27_asm2/terminal_native_eval.py": "f7c7ec3890493f72f89a630acc9737b164d3ee6b426ff09a54b553a5731018f1",
+    "src/rm27_asm2/flight.py": "de96d8ad60bef322f3123765dd338e2a9466b589b490ea0d0f50c62d59c0b4a6",
+    "simpleflight_lab/ppo.py": "a4adf5290958c75e5396db38809de4e3190a345575cc5e0fd2efce4ee2d1f507"
+  }
+}

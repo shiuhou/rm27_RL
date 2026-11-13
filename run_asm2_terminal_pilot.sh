@@ -2,9 +2,44 @@
 # Simulation-only ASM2 terminal pilot, gated by a pinned contact preflight.
 set -euo pipefail
 project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+source "$project_dir/docker/isaac-runtime/launch.sh"
 cache="$project_dir/.agents/runs/asm2-contact/cache"
 run_dir="$project_dir/.agents/runs/asm2-terminal/phase4-pilot"
 case "${1:-}" in
+  workflow)
+    if [[ ${2:-} != --workflow-config || -z ${3:-} ]]; then
+      echo 'workflow requires --workflow-config CONFIG' >&2
+      exit 2
+    fi
+    readarray -t workflow_launch < <(python3 - "$project_dir" "$3" <<'PYCONFIG'
+import json
+import math
+from pathlib import Path
+import sys
+
+root = Path(sys.argv[1]).resolve()
+config = json.loads(Path(sys.argv[2]).read_text())
+output = (root / config["output"]).resolve()
+if not output.is_relative_to(root / ".agents/runs") or output == root / ".agents/runs":
+    raise ValueError("Workflow output must be a run directory in the project")
+print(output)
+if config["schema"] == "rm27_asm2_rotation_bridge_instrumented_v1":
+    print("transition-only")
+else:
+    budget = config["budget"]
+    evaluations = 2 + math.ceil(budget["per_arm_transitions"] / config["evaluate_every"])
+    print(math.ceil(budget["per_arm_learning_s"] + evaluations * config["evaluation_wait_s"] + 300))
+PYCONFIG
+)
+    if [[ ${#workflow_launch[@]} != 2 ]]; then exit 2; fi
+    run_dir=${workflow_launch[0]}
+    timeout_s=${workflow_launch[1]}
+    if [[ $timeout_s == transition-only ]]; then
+      command=(-m rm27_asm2.rotation_bridge_experiment)
+    else
+      command=(-m rm27_asm2.terminal_training)
+    fi
+    container=rm27-asm2-terminal-workflow ;;
   preflight) command=(-m rm27_asm2.terminal_preflight); timeout_s=240; container=rm27-asm2-terminal-check ;;
   train) command=(-m rm27_asm2.terminal_training); timeout_s=1900; container=rm27-asm2-terminal-pilot ;;
   recovery-check)
@@ -23,12 +58,31 @@ case "${1:-}" in
     run_dir="$project_dir/.agents/runs/asm2-terminal/phase4-meaningful"
     command=(/sf/.agents/runs/asm2-terminal/phase4-meaningful/continue_braking.py)
     timeout_s=7600; container=rm27-asm2-terminal-pilot ;;
-  *) echo "Usage: $0 {preflight|train|recovery-check|matched-contact|braking-pilot|braking-continuation} [arguments]" >&2; exit 2 ;;
+  rotation-continuation)
+    run_dir="$project_dir/.agents/runs/asm2-terminal/phase5a"
+    command=(/sf/.agents/runs/asm2-terminal/phase5a/continue_rotation.py)
+    timeout_s=2600; container=rm27-asm2-terminal-pilot ;;
+  rotation-recovery)
+    run_dir="$project_dir/.agents/runs/asm2-terminal/phase5ar"
+    command=(/sf/.agents/runs/asm2-terminal/phase5ar/train_recovery.py)
+    timeout_s=7400; container=rm27-asm2-terminal-pilot ;;
+  rotation-outcome)
+    run_dir="$project_dir/.agents/runs/asm2-terminal/phase5-campaign"
+    command=(/sf/.agents/runs/asm2-terminal/phase5-campaign/train_outcome.py)
+    timeout_s=7600; container=rm27-asm2-terminal-pilot ;;
+  rotation-margin)
+    run_dir="$project_dir/.agents/runs/asm2-terminal/phase5-campaign"
+    command=(/sf/.agents/runs/asm2-terminal/phase5-campaign/train_campaign.py margin)
+    timeout_s=4900; container=rm27-asm2-terminal-pilot ;;
+  *) echo "Usage: $0 {workflow|preflight|train|recovery-check|matched-contact|braking-pilot|braking-continuation|rotation-continuation|rotation-recovery|rotation-margin|rotation-outcome} [arguments]" >&2; exit 2 ;;
 esac
 shift
 mkdir -p "$cache/kit" "$cache/user" "$run_dir"
-image=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["isaac_image"])' "$project_dir/configs/rm27_asm2_collision.json")
-exec timeout --signal=TERM --kill-after=15s "${timeout_s}s" docker run --rm --gpus all --network none \
+runner=()
+if [[ $timeout_s != transition-only ]]; then
+  runner=(timeout --signal=TERM --kill-after=15s "${timeout_s}s")
+fi
+exec "${runner[@]}" "${docker_command[@]}" run --rm "${container_home_mount[@]}" --gpus all --network none \
   --name "$container" --shm-size=2g --memory=48g --cpus=16 --ulimit core=0 --init \
   --user "$(id -u):$(id -g)" --env HOME=/home/ubuntu --env ACCEPT_EULA=Y --env PRIVACY_CONSENT=N \
   --env PYTHONDONTWRITEBYTECODE=1 --env PYTHONUNBUFFERED=1 --env PYTHONPATH=/sf/src:/sf \

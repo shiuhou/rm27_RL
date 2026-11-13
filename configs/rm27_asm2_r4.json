@@ -1,0 +1,40 @@
+{
+  "schema": "asm2_r4_braking_potential_v1",
+  "output": ".agents/runs/asm2-terminal/r4",
+  "archive": ".agents/runs/asm2-frontier/phase-r",
+  "training_sources": ["dev_center", "dev_fast", "dev_near_slow", "stationary_0", "stationary_2"],
+  "gamma": 0.995,
+  "potential_bound": 0.5,
+  "candidate": "discounted_success_laplacian_kernel_full_state",
+  "scale_rule": "RMS pairwise block distance over nominal qualified training-source states; no fitted bandwidth",
+  "offline_gates": {
+    "leave_source_out_auc_min": 0.8,
+    "transition_only_auc_min": 0.75,
+    "positive_median_above_negative_sources_min": 4,
+    "early_direction_sources_min": 4,
+    "early_positive_delta_fraction_min": 0.6,
+    "early_median_absolute_delta_min": 0.0001,
+    "hidden_log_score_fraction_p90_max": 0.25,
+    "positive_clearance_fraction_min": 1.0
+  },
+  "native_followup": {
+    "only_if_offline_gates_pass": true,
+    "maximum_continuations": 20,
+    "entry_cases": "Earliest robust 3/3 Fixed A anchor per training source; +/- existing 0.5 mm, 5 mm/s offsets on the other target tangent",
+    "early_cases": "Earliest certified training bridge anchor per source, same two new offsets; record full state/motor trajectory",
+    "entry_qualifications_min": 8,
+    "entry_sources_with_qualification_min": 4,
+    "horizon_s": 2.3
+  },
+  "conditional_training": {
+    "starting_checkpoint": ".agents/runs/asm2-terminal/resumable-comparison/A/checkpoint-196608.pt",
+    "reset_archive": ".agents/runs/asm2-terminal/r3/training.npz",
+    "settings_reference": "configs/rm27_asm2_regional_update.json",
+    "initial_transitions_per_arm": 98304,
+    "maximum_transitions_per_arm": 196608,
+    "extension_requires": "B gains entry-followed-by-native-qualified-contact over A at >=2 distinct earlier anchors, >=1 robust 3/3 anchor; braking >=32/36 and terminal >=27/30, no retention envelope exits",
+    "selection": "last common endpoint, sealed before fresh evaluation",
+    "heldout_seed": 427114,
+    "heldout_protocol": "R3 populations and perturbation magnitudes, independently seeded; no fitting or selection on held-out outcomes"
+  }
+}

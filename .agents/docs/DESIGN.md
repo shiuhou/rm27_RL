@@ -106,6 +106,42 @@ PYTHONPATH=src OPENBLAS_NUM_THREADS=1 .agents/runs/rm27-stage1/native-env/bin/py
 
 For interactive private-LAN playback, replace `--self-test` with `--detach --paused` and use the Isaac Sim WebRTC client. If the legacy viewer is using TCP 49100 / UDP 47998 on that address, stop it with `./run_visual_replay.sh --stop` before switching. `./run_asm2_flight_viewer.sh --stop` stops only ASM2 playback. The viewer uses actual CAD visuals and recorded Isaac poses, without running a policy or physics during playback.
 
+### 3.4 Isaac runtime on the RTX 4090
+
+The root launchers share `docker/isaac-runtime/launch.sh` and use the
+`isaac_image` field in `configs/rm27_asm2_collision.json`. The current image is
+`rm27-sim:isaac2.1-fixed`, derived from the unchanged, digest-pinned
+`xtrainer-astra:isaac-2.1.0` image. Build it from the project root:
+
+```bash
+sudo -n docker build --network none -t rm27-sim:isaac2.1-fixed docker/isaac-runtime
+./run_lab.sh -u /sf/tests/isaac_runtime_check.py \
+  --output /sf/.agents/runs/isaac-runtime-check/result.json
+```
+
+Choose an unused output file. The build downloads checksum-pinned official
+packages, upgrades both Kit Warp extensions to 1.8.1 and replaces Kit's malformed
+torchvision wheel with the official `0.20.1+cu118` wheel. Kit continues to select
+PyTorch `2.5.1+cu118`; the separate cu124 pip installation is not substituted.
+Warp's [official 1.8.1 release](https://github.com/NVIDIA/warp/releases/tag/v1.8.1)
+includes the `cuDeviceGetUuid` driver-entry-point fix. The image's original
+Isaac Lab/Sim code, PhysX settings, aircraft assets and scorer are retained.
+
+Launchers use `sudo -n docker` for the default local socket when the calling
+account cannot write it, without changing socket permissions. Containers retain
+the caller's UID/GID and receive a writable temporary home with existing cache
+mounts. Existing containers continue using their original images.
+
+**CONFIRMED, 2026-11-12, RTX 4090 / driver 580.178.04:** after actual Kit startup,
+the Isaac Lab Warp CUDA raycast kernel passed hit/miss and Torch-buffer checks;
+PNG read/write, CUDA JPEG decode and CUDA NMS passed. The targeted Warp UUID and
+torchvision ELF startup errors were absent. ASM2 deterministic flight passed
+19/19 Hover, 4/4 Shift and 2/2 moving cases. The unchanged v1.0.0 release
+first-contact gate passed 32/32 placements in each of two layouts. These remain
+sampled simulation checks, and do not authorize new learning or establish
+post-impact conformance. The sealed release and Goal Hybrid copy retain their
+original runtime references.
+
 ## 4. Control Interface
 
 ### 4.1 Initial candidate: Direct-CTBR
@@ -259,6 +295,59 @@ For evaluation, `heldout.npz` holds qualified phase snapshots and `heldout-hando
 The runtime inputs are `configs/rm27_asm2_flight.json`, `assets/asm2/proxy/manifest.json`, `configs/rm27_asm2_contact.json`, and the frozen 2027 Field registration pinned by the manifest. CTBR has a 5 ms update interval. Native qualification uses 0.1 ms physics and the Isaac comparison uses 1 ms physics. The existing normalized Ver2 output is `[a_p, a_q, a_r, a_T]`, with rates `2*[a_p, a_q, a_r]` rad/s and collective `(1 + 0.5*a_T)*m*g`. Its range contains every measured witness command from the sampled terminal regions. This is an action-range check for the terminal subset.
 
 Phase 4 needs an Isaac reset and contact-event regression before a learner starts. Both 50 ms terminal replays missed within the recorded windows at 1 ms in Isaac and MuJoCo, while the source trajectories qualified at 0.1 ms. Use a fixed set of positive and forbidden-contact controls, repeat the reset and signed-event checks across world layouts, and include a constant-command comparison. Keep native MuJoCo as the independent qualification reference. The Phase 3 manifests record deterministic evidence and carry `training_allowed=false`. [Terminal replay evidence](../plans/plan_new_airframe_phase0_01.md#5-phase-3-deterministic-feasibility-and-handover)
+
+### 7.4 Resumable fixed and adaptive comparison
+
+The comparison continues PPO from the verified Phase 4 checkpoint `checkpoint-186368.pt`. Both arms use the same seed, learner settings, observations, actions, reward and episode rules. Isaac uses the verified Phase 4R.2 overlay with 16 worlds, 0.1 ms physics and a 5 ms control interval. The fixed sampler preserves the existing stage mixtures and promotion gates. [Comparison configuration](../../configs/rm27_asm2_resumable.json)
+
+The adaptive sampler estimates each reset's success fraction `p` from three complete autonomous rollouts in native MuJoCo. It tests the nominal state and paired shifts of ±0.5 mm position and ±0.005 m/s velocity along the first target tangent. At initialization and every 49,152 transitions it refreshes the probabilities using the latest saved actor. It assigns 55% of resets in proportion to `0.05 + 4*p*(1-p)`, 10% uniformly across the bank, 10% uniformly to terminal states and 25% uniformly to braking states. Earlier states, including the five development handovers, can receive more weight when their outcomes place them near the success boundary. PPO samples the original bank rows with their filtered rotor thrust and held motor targets. The perturbations are for estimating reset difficulty.
+
+The launcher runs A then B. Both arms have a one-update restart check charged to the campaign. Each arm has at most 300,000 transitions and 4,500 learning seconds. The shared limits are 600,000 transitions and 9,000 learning seconds. The ledger reserves a complete update before collection and conservatively charges an interrupted reservation. A checkpoint at a complete update stores the learner, both optimizers, normalization, schedule, RNG and sampler state, configuration and evaluation history. The simulator snapshot is diagnostic because its PhysX solver and contact caches cannot be restored exactly. On restart, the learner discards active episodes and collects a new PPO batch from valid resets with the restored actor.
+
+Run these commands on the host using the project's native MuJoCo environment. After interruption, repeat the `run` command with the same configuration and output directory once the previous launcher has exited. It reloads the arm's `resume.pt` and continues against the existing ledger. When the host Python has the W&B SDK and configured project access, set `SF_WANDB=1` before `run` to enable the existing monitor. Local JSONL records are always available.
+
+```bash
+cd /home/dsa/project/ceo_pj/RM27_Agile_Flight_RL_Project
+export PYTHONPATH=src:. OPENBLAS_NUM_THREADS=1
+rm27_python=.agents/runs/rm27-stage1/native-env/bin/python
+rm27_config=configs/rm27_asm2_resumable.json
+rm27_run=.agents/runs/asm2-terminal/resumable-comparison
+
+"$rm27_python" -m rm27_asm2.terminal_workflow --workflow-config "$rm27_config" freeze
+"$rm27_python" -m rm27_asm2.terminal_workflow --workflow-config "$rm27_config" run
+```
+
+The host launcher services each development request automatically. For a saved request, run the same evaluator directly after the launcher has exited.
+
+```bash
+"$rm27_python" -m rm27_asm2.terminal_workflow --workflow-config "$rm27_config" evaluate \
+  --request "$rm27_run/A/evaluation-request.json"
+```
+
+Use only development results for sampling and checkpoint selection. The native first-touch evaluator compares the selected checkpoints on the frozen final perturbation suite and the historical regression suites of 105 phase starts, four reached handovers and 18 braking starts. The final suite contains 18 rotation starts, 18 braking starts and four perturbed navigation-reached handovers. It uses new perturbations of the historically examined `held_center_mid`, `held_diagonal`, `held_fast_offset` and `held_outer_slow` source trajectories. Treat the four perturbed handovers separately from the original four reached states. Simulator outcomes in the training log describe Isaac feedback. Native evaluation reports contain the complete first-touch outcomes.
+
+After both arms complete, run the final evaluator.
+
+```bash
+"$rm27_python" -m rm27_asm2.terminal_workflow --workflow-config "$rm27_config" final
+```
+
+The final evaluator writes `native-comparison.json`, per-suite episode results and representative native trajectories in `final-replays/`. To play an available rotation outcome from arm A, use the existing viewer.
+
+```bash
+rm27_replay=$(rg --files "$rm27_run/final-replays" -g 'A-rotation-*.npz' | sort | head -n 1)
+./run_asm2_flight_viewer.sh "$rm27_replay" --paused
+```
+
+### 7.5 Instrumented earlier-reset comparison
+
+The Phase R2 continuation uses the frozen Fixed A checkpoint and the existing PPO learner. A preserves 10% terminal, 45% braking and 45% late-rotation reset probabilities. B transfers 25 percentage points of late rotation to capped-feasible earlier resets. The bank and reserved development variants are frozen before either arm. The experiment driver verifies the archived source contracts and adds scoped observation of the learner and native evaluation. [Configuration](../../configs/rm27_asm2_rotation_bridge_instrumented.json)
+
+Each arm completes 98,304 transitions with learning time measured. The ledger retains complete-update reservations and elapsed time, with transition count as the pilot limit. Resume restores the actor, critic, optimizer, normalization, RNG and sampler, then starts fresh valid simulator episodes. The Docker launcher recognizes this experiment's transition-only authorization.
+
+Regional telemetry captures the band active before each step, the original reward and critic tensors, raw GAE from the learner's existing computation, normalized GAE, sampled actions and exploration statistics. It publishes a compressed archive only after the matching completed-update log row. CPU parity verifies that observation does not change the learner's tensors or RNG. The native evaluator annotates its existing autonomous traces with entry into the frozen transition/braking descriptor before contact or a safety exit.
+
+The readout reports the equal-transition endpoint, development-selected checkpoints, scientific improvement and strict promotion. Episode-start probabilities and transition shares are both measured because longer earlier-reset episodes can dominate PPO batches. [Protocol, outcomes and reproduction](../plans/plan_new_airframe_phase0_01.md#20-instrumented-phase-r2-earlier-reset-pilot)
 
 ## 8. Reward and Termination
 
@@ -432,3 +521,9 @@ CAD / Physical Characterization
 - Required temporal observation architecture.
 - Whether one policy or skill hierarchy is best inside the agile phase.
 - Contact proxy fidelity and PhysX–MuJoCo conformance.
+
+### Regional update balancing experiment
+
+The isolated `regional_update_experiment` continues both arms from Fixed A with the same earlier-reset bank and mixture. Only B's actor/critic scalar loss reductions receive mean-one regional weights; global advantage normalization, ValueNorm, optimizer and minibatch RNG remain unchanged. Missing regions are reported and their target mass normalized over present regions. All-one weighting reproduces the original PPO update exactly. The pinned learner and historical workflow sources remain unmodified. [Protocol and completed evidence](../plans/plan_new_airframe_phase0_01.md#21-regional-ppo-update-balancing)
+
+The completed weighted candidate raised braking loss mass from 20.3% to 46.5%, but produced only two qualifications on one previously successful reserved anchor, with 33/36 earlier envelope exits and no multi-anchor gain. This remains an isolated experimental adapter, not the default learner or a promoted policy. The frozen baseline remains unchanged. A concurrent Docker image tag rename was verified to resolve to the identical immutable image and handled by `regional_update_runtime` without rewriting the frozen experiment or changing training semantics.

@@ -2,10 +2,10 @@
 # Isolated GPU free-flight evaluation in the installed Isaac Lab image.
 set -euo pipefail
 project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+source "$project_dir/docker/isaac-runtime/launch.sh"
 cache="$project_dir/.agents/runs/asm2-flight/cache"
 mkdir -p "$cache/kit" "$cache/user"
-image=xtrainer-astra:isaac-2.1.0
-exec timeout --signal=TERM --kill-after=15s 300s docker run --rm --gpus all --network none \
+exec timeout --signal=TERM --kill-after=15s 300s "${docker_command[@]}" run --rm "${container_home_mount[@]}" --gpus all --network none \
   --name rm27-asm2-flight --shm-size=2g --memory=24g --cpus=12 --ulimit core=0 --init \
   --user "$(id -u):$(id -g)" --env HOME=/home/ubuntu --env ACCEPT_EULA=Y --env PRIVACY_CONSENT=N \
   --env PYTHONDONTWRITEBYTECODE=1 --env PYTHONUNBUFFERED=1 --env PYTHONPATH=/sf/src:/sf \

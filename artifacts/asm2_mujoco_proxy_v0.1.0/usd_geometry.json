@@ -1,0 +1,16 @@
+{
+  "usd_version": [
+    0,
+    22,
+    11
+  ],
+  "overlay_sha256": "288134c0802689f3165ff6141ec1829443dfa3e2e40915d47b4bbf971bfb2d2f",
+  "base_usd_sha256": "b6a3a2c8641fcaa17cac7bad0f3a07b2182f214c782a77a91c0cc64f007aa0e9",
+  "groups": {
+    "body": 3507,
+    "contact_front": 14,
+    "contact_rear": 1
+  },
+  "collider_count": 3522,
+  "max_coordinate_error_m": 7.256600195737484e-09
+}

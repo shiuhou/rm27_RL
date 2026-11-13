@@ -15,7 +15,7 @@ The supplied 142 g aircraft loads in Isaac Lab 2.1 / Isaac Sim 4.5. A separate c
 | Target scene | 1,822 fixed shapes; 25 registered legal colliders | Same frozen Field component, translated rigidly near the origin for these tests |
 | Task scorer | Frozen `Stage1Evaluator`, sphere-specific | Unchanged; ASM2 qualification explicitly undefined |
 
-The current root has no Git repository. Four `upstream/` repositories remain clean, detached at their existing revisions. Existing `simpleflight_lab.rm27_contact_geometry`, `rm27_contact_scene`, `stage1_sim`, native scorer, configurations and 35 checkpoints are preserved. `Stage1Sim` already decodes per-collider PhysX paths; aggregate body force was never the required semantic identifier.
+At the time of this integration audit, the project root had no Git repository. The four `upstream/` repositories were clean and detached at their pinned revisions. Existing `simpleflight_lab.rm27_contact_geometry`, `rm27_contact_scene`, `stage1_sim`, native scorer, configurations and 35 checkpoints are preserved. `Stage1Sim` already decodes per-collider PhysX paths; aggregate body force was never the required semantic identifier.
 
 Source: `assets/asm2/source/`, extracted from the supplied ZIP. ZIP SHA-256:
 `96450a99f393c4f8649bbdfbc7052124a662873f8603e0d6a02a0e6e1c71b682`.

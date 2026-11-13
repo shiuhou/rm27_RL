@@ -1,0 +1,78 @@
+{
+  "schema": "asm2_resumable_comparison_v1",
+  "config_path": "configs/rm27_asm2_rotation_bridge.json",
+  "output": ".agents/runs/asm2-terminal/phase-r2",
+  "parent": ".agents/runs/asm2-terminal/resumable-comparison/A/checkpoint-196608.pt",
+  "receipt": ".agents/runs/asm2-terminal/phase4r2/backend-receipt.json",
+  "backend_verifier": ".agents/runs/asm2-terminal/phase4r2/braking_pilot.py",
+  "development_evaluator": ".agents/runs/asm2-terminal/phase5a/evaluate_development.py",
+  "task_config": "configs/rm27_asm2_terminal_recovery.json",
+  "overlay": ".agents/runs/asm2-terminal/phase4r2/proxy-with-reference-body.usda",
+  "arms": {
+    "A": "fixed",
+    "B": "fixed"
+  },
+  "seed": 42722,
+  "workers": 12,
+  "evaluate_every": 24576,
+  "evaluation_wait_s": 900,
+  "ppo": {
+    "gamma": 0.995,
+    "gae_lambda": 0.95
+  },
+  "budget": {
+    "per_arm_transitions": 98304,
+    "total_transitions": 196608,
+    "per_arm_learning_s": 1350,
+    "total_learning_s": 2700,
+    "update_reservation_s": 60
+  },
+  "pins": {
+    ".agents/runs/asm2-terminal/phase4r2/backend-receipt.json": "19705fa591d35c010f0b93fa02c0b8709aebe2fb112885c6cd0f68ad6335a5e6",
+    ".agents/runs/asm2-terminal/phase4r2/braking_pilot.py": "321416c75ac11307bd34a93ed14c5c581be6c89a8b89934d2db488bdd065a3f5",
+    ".agents/runs/asm2-terminal/phase5a/evaluate_development.py": "cbb16b99fd37f15d19bfa56ca7b7e24fdd086b887ccc5e257ac5ba170c9adc7d",
+    "configs/rm27_asm2_terminal_recovery.json": "795ac9f4e046e08a9f363965c341cc60afe5c9a02b2d08690244686e3563e0e3",
+    "src/rm27_asm2/contact_task.py": "306fa22b06b16dad14ebf389a955ce72f30f3ddd1fff80984c5ff29075af80ec",
+    "src/rm27_asm2/terminal_native_eval.py": "f7c7ec3890493f72f89a630acc9737b164d3ee6b426ff09a54b553a5731018f1",
+    "src/rm27_asm2/flight.py": "de96d8ad60bef322f3123765dd338e2a9466b589b490ea0d0f50c62d59c0b4a6",
+    "simpleflight_lab/ppo.py": "a4adf5290958c75e5396db38809de4e3190a345575cc5e0fd2efce4ee2d1f507",
+    ".agents/runs/asm2-terminal/resumable-comparison/A/checkpoint-196608.pt": "eba759e7eeea93cd9fe06e0f8653d8f12bafc6cfd05a64bcbc11a7a78086fa3f",
+    ".agents/runs/asm2-terminal/resumable-comparison/A/checkpoint-196608.npz": "aa83d5cfc35cefa970a7c0cd27b42d531b90f91a48b452eff283fd22124cba74",
+    ".agents/runs/asm2-terminal/resumable-comparison/final-selection.json": "acb87bc5ed77a79e2bc562dcc1808b4a3db1df95428b80f3a978a43a95bf8880",
+    ".agents/runs/asm2-terminal/resumable-comparison/training.npz": "49f3018adb7d1aea08fe408a3588a9c9d2d3a7d39ba396d64e992bf01a53c55d",
+    ".agents/runs/asm2-frontier/phase-r/manifest.json": "bae1dc16e11ac7322d2b4d83bb50da5b396574dbd304118713565745f8794275",
+    ".agents/runs/asm2-frontier/phase-r/results.json": "06146bbe06eb99539d14b50aa318093b71c31facbc57cd78fd6398d65fff4f72",
+    ".agents/runs/asm2-terminal/phase5a/development_protocol.json": "d84c74d7e58d4a261fbf141b30c26023a65b0150573923f18a3d4386718567ef",
+    "src/rm27_asm2/terminal_workflow.py": "d6ecc628dc18afabca521e5824e1cc4227076a64c6bd7fc8c21debb5381e515e",
+    "src/rm27_asm2/terminal_curriculum.py": "a43ba108f541c8c2040dc4b0040fdb8f68a7c14c17f375e1b1c84e302f670f71",
+    "src/rm27_asm2/terminal_training.py": "0490fd7d3488b337334a96f2ed967cd691e2050927eefde494d003696b0b20db",
+    "src/rm27_asm2/terminal_isaac.py": "fea7b6eb389ed03be9fd7aac4ecbcf0c7b7e19d76f60f5d8ab349366e585aeaa",
+    "src/rm27_asm2/rotation_bridge.py": "56219da148d6e1f8b8a7ceb8b4d86b3b2b5e91f8c60b8572a36deb547b61347d",
+    "src/rm27_asm2/rotation_bridge_report.py": "336bde9bf89a460150f8e869ca211c76840bdce0bc96fd9d619917e845ae0335"
+  },
+  "bridge": {
+    "source_run": ".agents/runs/asm2-frontier/phase-r",
+    "training_source": ".agents/runs/asm2-terminal/resumable-comparison/training.npz",
+    "mixtures": {
+      "A": {
+        "terminal": 0.1,
+        "braking": 0.45,
+        "rotation_late": 0.45
+      },
+      "B": {
+        "terminal": 0.1,
+        "braking": 0.45,
+        "rotation_late": 0.2,
+        "rotation_bridge": 0.25
+      }
+    },
+    "gate": {
+      "robust_anchors": 6,
+      "anchor_delta": 3,
+      "braking_qualified": 32,
+      "terminal_qualified": 27,
+      "max_exits": 0
+    },
+    "gate_checkpoint": "last_common_positive_transitions"
+  }
+}

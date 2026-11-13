@@ -1,0 +1,25 @@
+{
+  "schema": "rm27_asm2_policy_frontier_v1",
+  "experiment": "configs/rm27_asm2_terminal_recovery.json",
+  "comparison": ".agents/runs/asm2-terminal/resumable-comparison",
+  "anchors": [
+    ["handover", "handover", 0],
+    ["early", "rotation", 2],
+    ["rotation", "rotation", 6],
+    ["transition_pre", "rotation", -1],
+    ["transition_post", "braking", 0],
+    ["braking_mid", "braking", 4],
+    ["braking_late", "braking", 9],
+    ["near_contact", "terminal", 4]
+  ],
+  "perturbation": {
+    "axis_target_frame": 0,
+    "position_m": 0.0005,
+    "velocity_m_s": 0.005,
+    "variants": {"nominal": 0, "minus": -1, "plus": 1}
+  },
+  "pilot": {"case": "dev_center", "labels": ["handover", "near_contact"]},
+  "max_rollouts": 600,
+  "max_seconds": 1800,
+  "workers": 12
+}

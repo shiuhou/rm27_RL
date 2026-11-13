@@ -1,0 +1,8 @@
+{
+  "schema": "rm27_asm2_rotation_bridge_instrumented_v1",
+  "base_config": "configs/rm27_asm2_rotation_bridge.json",
+  "output": ".agents/runs/asm2-terminal/phase-r2-instrumented",
+  "per_arm_transitions": 98304,
+  "transition_protocol": ".agents/runs/asm2-frontier/actuator-memory/m2/protocol.json",
+  "transition_protocol_sha256": "1a202c8e690788f302ecd35389c4dcf4748fe49d0d82940757d86bc9c0f876bd"
+}
