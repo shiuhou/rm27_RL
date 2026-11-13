@@ -1,0 +1,1460 @@
+{
+  "mujoco": "3.12.0",
+  "numpy": "2.5.1",
+  "model_sha256": "2356bc3f8372fe14002521a82d4a9533867c688f8ed3d13cf172c74e17905ae4",
+  "detailed_mjcf_sha256": "f8374cc88ae9dc05877e3e5b01bc54720c14c97065d4e548cb34d217eb3e1d0f",
+  "proxy_manifest_sha256": "247f076685d84796980232073b9bf12f27b6ce065d82227d890fc02d2a11834b",
+  "overlay_sha256": "288134c0802689f3165ff6141ec1829443dfa3e2e40915d47b4bbf971bfb2d2f",
+  "contact_contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+  "physics": {
+    "timestep_s": 0.0001,
+    "gravity_m_s2": [
+      0.0,
+      0.0,
+      -9.81
+    ],
+    "solver": "mjSOL_NEWTON",
+    "integrator": "mjINT_IMPLICITFAST",
+    "iterations": 100,
+    "tolerance": 1e-08
+  },
+  "control_dt_s": 0.005,
+  "model": {
+    "mass_kg": 0.142,
+    "colliders": 3522,
+    "visuals": 14,
+    "groups": {
+      "body": 3507,
+      "contact_front": 14,
+      "contact_rear": 1
+    },
+    "compiled_max_vertex_error_m": 4.1231269550233345e-09,
+    "hover_1s_position_error_m": 6.719415626471983e-15
+  },
+  "field_recompiled_max_vertex_error_m": 9.934107470962049e-09,
+  "same_labels": 10,
+  "cases": 10,
+  "controls": [
+    {
+      "name": "dev_center",
+      "reference": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 452,
+          "sample_time_s": 0.0451,
+          "interval_end_s": 0.045200000000000004,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_001",
+            "contact_front_002",
+            "contact_front_003",
+            "contact_front_004",
+            "contact_front_005",
+            "contact_front_006",
+            "contact_front_007",
+            "contact_front_008",
+            "contact_front_009",
+            "contact_front_010",
+            "contact_front_011",
+            "contact_front_012",
+            "contact_front_013"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36286",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 77,
+          "body_rate_rad_s": 0.005666709491146481,
+          "max_penetration_m": 1.700217027565936e-06,
+          "compressive_normal_impulse_N_s": 0.00027579809062936155
+        },
+        "first_loaded": {
+          "tick": 452,
+          "sample_time_s": 0.0451,
+          "interval_end_s": 0.045200000000000004,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_004",
+            "contact_front_005",
+            "contact_front_007",
+            "contact_front_008",
+            "contact_front_009",
+            "contact_front_010"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 14,
+          "body_rate_rad_s": 0.005666709491146481,
+          "max_penetration_m": 8.267317399349161e-07,
+          "compressive_normal_impulse_N_s": 0.00027579809062936155
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "proxy": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 452,
+          "sample_time_s": 0.0451,
+          "interval_end_s": 0.045200000000000004,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_001",
+            "contact_front_002",
+            "contact_front_003",
+            "contact_front_004",
+            "contact_front_005",
+            "contact_front_006",
+            "contact_front_007",
+            "contact_front_008",
+            "contact_front_009",
+            "contact_front_010",
+            "contact_front_011",
+            "contact_front_012",
+            "contact_front_013"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36286",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 77,
+          "body_rate_rad_s": 0.005666709491146481,
+          "max_penetration_m": 1.700217027565936e-06,
+          "compressive_normal_impulse_N_s": 0.00027579809062936155
+        },
+        "first_loaded": {
+          "tick": 452,
+          "sample_time_s": 0.0451,
+          "interval_end_s": 0.045200000000000004,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_004",
+            "contact_front_005",
+            "contact_front_007",
+            "contact_front_008",
+            "contact_front_009",
+            "contact_front_010"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 14,
+          "body_rate_rad_s": 0.005666709491146481,
+          "max_penetration_m": 8.267317399349161e-07,
+          "compressive_normal_impulse_N_s": 0.00027579809062936155
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "same_label": true,
+      "first_touch_delta_s": 0.0
+    },
+    {
+      "name": "dev_near_slow",
+      "reference": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 487,
+          "sample_time_s": 0.048600000000000004,
+          "interval_end_s": 0.0487,
+          "groups": [
+            "contact_front",
+            "contact_rear"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_006",
+            "contact_rear_000"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36286",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 28,
+          "body_rate_rad_s": 0.0016654661032596237,
+          "max_penetration_m": 3.164224448046573e-06,
+          "compressive_normal_impulse_N_s": 0.00013781375103637147
+        },
+        "first_loaded": {
+          "tick": 487,
+          "sample_time_s": 0.048600000000000004,
+          "interval_end_s": 0.0487,
+          "groups": [
+            "contact_front",
+            "contact_rear"
+          ],
+          "aircraft_colliders": [
+            "contact_front_006",
+            "contact_rear_000"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 5,
+          "body_rate_rad_s": 0.0016654661032596237,
+          "max_penetration_m": 3.1060155279672656e-06,
+          "compressive_normal_impulse_N_s": 0.00013781375103637147
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "proxy": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 487,
+          "sample_time_s": 0.048600000000000004,
+          "interval_end_s": 0.0487,
+          "groups": [
+            "contact_front",
+            "contact_rear"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_006",
+            "contact_rear_000"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36286",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 28,
+          "body_rate_rad_s": 0.0016654661032596237,
+          "max_penetration_m": 3.164224448046573e-06,
+          "compressive_normal_impulse_N_s": 0.00013781375103637147
+        },
+        "first_loaded": {
+          "tick": 487,
+          "sample_time_s": 0.048600000000000004,
+          "interval_end_s": 0.0487,
+          "groups": [
+            "contact_front",
+            "contact_rear"
+          ],
+          "aircraft_colliders": [
+            "contact_front_006",
+            "contact_rear_000"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 5,
+          "body_rate_rad_s": 0.0016654661032596237,
+          "max_penetration_m": 3.1060155279672656e-06,
+          "compressive_normal_impulse_N_s": 0.00013781375103637147
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "same_label": true,
+      "first_touch_delta_s": 0.0
+    },
+    {
+      "name": "field_inverted_body",
+      "reference": {
+        "qualified": false,
+        "reason": "FORBIDDEN_AIRFRAME_FIRST_TOUCH",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 60,
+          "sample_time_s": 0.0059,
+          "interval_end_s": 0.006,
+          "groups": [
+            "body"
+          ],
+          "aircraft_colliders": [
+            "collision_11_1003",
+            "collision_11_1008",
+            "collision_11_1009",
+            "collision_11_1019",
+            "collision_11_1020",
+            "collision_11_1021",
+            "collision_11_1022",
+            "collision_11_1033",
+            "collision_11_1035",
+            "collision_11_1038",
+            "collision_11_1039",
+            "collision_11_1043",
+            "collision_11_1045",
+            "collision_11_1047",
+            "collision_11_1048",
+            "collision_11_1051",
+            "collision_11_1052",
+            "collision_11_1056",
+            "collision_11_1057",
+            "collision_11_106",
+            "collision_11_1063",
+            "collision_11_1065",
+            "collision_11_1067",
+            "collision_11_1068",
+            "collision_11_1071",
+            "collision_11_1072",
+            "collision_11_1075",
+            "collision_11_1076",
+            "collision_11_1145",
+            "collision_11_1146",
+            "collision_11_1147",
+            "collision_11_1148",
+            "collision_11_1153",
+            "collision_11_1154",
+            "collision_11_1155",
+            "collision_11_1156",
+            "collision_11_1161",
+            "collision_11_1162",
+            "collision_11_1165",
+            "collision_11_1166",
+            "collision_11_1169",
+            "collision_11_1171",
+            "collision_11_1173",
+            "collision_11_1174",
+            "collision_11_1185",
+            "collision_11_1186",
+            "collision_11_1189",
+            "collision_11_1190",
+            "collision_11_1197",
+            "collision_11_1198",
+            "collision_11_1199",
+            "collision_11_1200",
+            "collision_11_1310",
+            "collision_11_1312",
+            "collision_11_1313",
+            "collision_11_1322",
+            "collision_11_1535",
+            "collision_11_1536",
+            "collision_11_1537",
+            "collision_11_1702",
+            "collision_11_1707",
+            "collision_11_1709",
+            "collision_11_1729",
+            "collision_11_1865",
+            "collision_11_1866",
+            "collision_11_1867",
+            "collision_11_1923",
+            "collision_11_1924",
+            "collision_11_1925",
+            "collision_11_1926",
+            "collision_11_1931",
+            "collision_11_1932",
+            "collision_11_1933",
+            "collision_11_1939",
+            "collision_11_1940",
+            "collision_11_1967",
+            "collision_11_1968",
+            "collision_11_1987",
+            "collision_11_1990",
+            "collision_11_1993",
+            "collision_11_1995",
+            "collision_11_1997",
+            "collision_11_1999",
+            "collision_11_2001",
+            "collision_11_2003",
+            "collision_11_2005",
+            "collision_11_2007",
+            "collision_11_2009",
+            "collision_11_2011",
+            "collision_11_2013",
+            "collision_11_2015",
+            "collision_11_2017",
+            "collision_11_2019",
+            "collision_11_2021",
+            "collision_11_2025",
+            "collision_11_2210",
+            "collision_11_2213",
+            "collision_11_2215",
+            "collision_11_2217",
+            "collision_11_2219",
+            "collision_11_2221",
+            "collision_11_2223",
+            "collision_11_2225",
+            "collision_11_2227",
+            "collision_11_2229",
+            "collision_11_2230",
+            "collision_11_2233",
+            "collision_11_2235",
+            "collision_11_2237",
+            "collision_11_2239",
+            "collision_11_2241",
+            "collision_11_2243",
+            "collision_11_2247",
+            "collision_11_2251",
+            "collision_11_2252",
+            "collision_11_2253",
+            "collision_11_2254",
+            "collision_11_2274",
+            "collision_11_2275",
+            "collision_11_2278",
+            "collision_11_2279",
+            "collision_11_2280",
+            "collision_11_2281",
+            "collision_11_2306",
+            "collision_11_2307",
+            "collision_11_2319",
+            "collision_11_2320",
+            "collision_11_2517",
+            "collision_11_2518",
+            "collision_11_2519",
+            "collision_11_270",
+            "collision_11_271",
+            "collision_11_273",
+            "collision_11_274",
+            "collision_11_2743",
+            "collision_11_2744",
+            "collision_11_279",
+            "collision_11_281",
+            "collision_11_283",
+            "collision_11_2866",
+            "collision_11_2868",
+            "collision_11_2869",
+            "collision_11_2871",
+            "collision_11_2872",
+            "collision_11_2873",
+            "collision_11_2874",
+            "collision_11_2875",
+            "collision_11_2876",
+            "collision_11_2877",
+            "collision_11_2878",
+            "collision_11_2929",
+            "collision_11_2930",
+            "collision_11_2937",
+            "collision_11_2938",
+            "collision_11_2940",
+            "collision_11_2953",
+            "collision_11_2954",
+            "collision_11_3054",
+            "collision_11_3055",
+            "collision_11_3056",
+            "collision_11_3057",
+            "collision_11_314",
+            "collision_11_316",
+            "collision_11_318",
+            "collision_11_319",
+            "collision_11_3202",
+            "collision_11_3203",
+            "collision_11_3210",
+            "collision_11_3211",
+            "collision_11_3212",
+            "collision_11_3213",
+            "collision_11_3238",
+            "collision_11_3239",
+            "collision_11_3242",
+            "collision_11_3243",
+            "collision_11_3247",
+            "collision_11_3250",
+            "collision_11_3251",
+            "collision_11_3255",
+            "collision_11_3258",
+            "collision_11_3259",
+            "collision_11_3262",
+            "collision_11_3263",
+            "collision_11_3266",
+            "collision_11_3267",
+            "collision_11_3271",
+            "collision_11_3274",
+            "collision_11_3275",
+            "collision_11_3278",
+            "collision_11_3279",
+            "collision_11_3282",
+            "collision_11_3283",
+            "collision_11_343",
+            "collision_11_3435",
+            "collision_11_3439",
+            "collision_11_3440",
+            "collision_11_3443",
+            "collision_11_3447",
+            "collision_11_3448",
+            "collision_11_345",
+            "collision_11_3451",
+            "collision_11_3452",
+            "collision_11_3455",
+            "collision_11_3456",
+            "collision_11_346",
+            "collision_11_3460",
+            "collision_11_3464",
+            "collision_11_3467",
+            "collision_11_3471",
+            "collision_11_3475",
+            "collision_11_3476",
+            "collision_11_3479",
+            "collision_11_3483",
+            "collision_11_3484",
+            "collision_11_349",
+            "collision_11_3495",
+            "collision_11_3496",
+            "collision_11_3497",
+            "collision_11_3498",
+            "collision_11_351",
+            "collision_11_3519",
+            "collision_11_353",
+            "collision_11_354",
+            "collision_11_358",
+            "collision_11_361",
+            "collision_11_362",
+            "collision_11_363",
+            "collision_11_364",
+            "collision_11_386",
+            "collision_11_387",
+            "collision_11_390",
+            "collision_11_391",
+            "collision_11_394",
+            "collision_11_396",
+            "collision_11_397",
+            "collision_11_400",
+            "collision_11_4013",
+            "collision_11_4014",
+            "collision_11_402",
+            "collision_11_403",
+            "collision_11_4038",
+            "collision_11_404",
+            "collision_11_412",
+            "collision_11_424",
+            "collision_11_450",
+            "collision_11_453",
+            "collision_11_4656",
+            "collision_11_4657",
+            "collision_11_477",
+            "collision_11_478",
+            "collision_11_479",
+            "collision_11_480",
+            "collision_11_491",
+            "collision_11_492",
+            "collision_11_495",
+            "collision_11_496",
+            "collision_11_497",
+            "collision_11_498",
+            "collision_11_499",
+            "collision_11_500",
+            "collision_11_504",
+            "collision_11_505",
+            "collision_11_506",
+            "collision_11_513",
+            "collision_11_514",
+            "collision_11_6",
+            "collision_11_63",
+            "collision_11_64",
+            "collision_11_722",
+            "collision_11_74",
+            "collision_11_819",
+            "collision_11_826",
+            "collision_11_827",
+            "collision_11_832",
+            "collision_11_833",
+            "collision_11_835",
+            "collision_11_840",
+            "collision_11_844",
+            "collision_11_845",
+            "collision_11_848",
+            "collision_11_849",
+            "collision_11_88",
+            "collision_11_89",
+            "collision_11_90",
+            "collision_11_919",
+            "collision_11_920",
+            "collision_11_921",
+            "collision_11_922",
+            "collision_11_929",
+            "collision_11_930",
+            "collision_11_931",
+            "collision_11_932",
+            "collision_11_935",
+            "collision_11_939",
+            "collision_11_94",
+            "collision_11_940",
+            "collision_11_945",
+            "collision_11_946",
+            "collision_11_96",
+            "collision_11_97",
+            "collision_11_98",
+            "collision_11_995",
+            "collision_11_996"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 1561,
+          "body_rate_rad_s": 1.14055856811247e-18,
+          "max_penetration_m": 1.3803682040135906e-05,
+          "compressive_normal_impulse_N_s": 0.0012245680637402146
+        },
+        "first_loaded": null,
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "proxy": {
+        "qualified": false,
+        "reason": "FORBIDDEN_AIRFRAME_FIRST_TOUCH",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 55,
+          "sample_time_s": 0.0054,
+          "interval_end_s": 0.0055000000000000005,
+          "groups": [
+            "body"
+          ],
+          "aircraft_colliders": [
+            "collision_proxy_11_024",
+            "collision_proxy_11_025",
+            "collision_proxy_11_026",
+            "collision_proxy_11_031",
+            "collision_proxy_11_032",
+            "collision_proxy_11_037",
+            "collision_proxy_11_038",
+            "collision_proxy_11_039",
+            "collision_proxy_11_040",
+            "collision_proxy_11_043",
+            "collision_proxy_11_044",
+            "collision_proxy_11_047",
+            "collision_proxy_11_050",
+            "collision_proxy_11_051",
+            "collision_proxy_11_056",
+            "collision_proxy_11_057",
+            "collision_proxy_11_058",
+            "collision_proxy_11_065",
+            "collision_proxy_11_066",
+            "collision_proxy_11_067",
+            "collision_proxy_11_077",
+            "collision_proxy_11_089",
+            "collision_proxy_11_101",
+            "collision_proxy_11_103",
+            "collision_proxy_11_104",
+            "collision_proxy_11_107",
+            "collision_proxy_11_108",
+            "collision_proxy_11_118",
+            "collision_proxy_11_123",
+            "collision_proxy_11_124",
+            "collision_proxy_11_132",
+            "collision_proxy_11_136",
+            "collision_proxy_11_145",
+            "collision_proxy_11_148",
+            "collision_proxy_11_165",
+            "collision_proxy_11_166",
+            "collision_proxy_11_167",
+            "collision_proxy_11_168",
+            "collision_proxy_11_194",
+            "collision_proxy_11_207",
+            "collision_proxy_11_211",
+            "collision_proxy_11_214",
+            "collision_proxy_11_221",
+            "collision_proxy_11_222",
+            "collision_proxy_11_223",
+            "collision_proxy_11_224",
+            "collision_proxy_11_238",
+            "collision_proxy_11_243",
+            "collision_proxy_11_244",
+            "collision_proxy_11_245",
+            "collision_proxy_11_246",
+            "collision_proxy_11_247",
+            "collision_proxy_11_272",
+            "collision_proxy_11_273",
+            "collision_proxy_11_274",
+            "collision_proxy_11_276",
+            "collision_proxy_11_277",
+            "collision_proxy_11_278",
+            "collision_proxy_11_288",
+            "collision_proxy_11_295",
+            "collision_proxy_11_296",
+            "collision_proxy_11_305",
+            "collision_proxy_11_306",
+            "collision_proxy_11_307",
+            "collision_proxy_11_308",
+            "collision_proxy_11_309",
+            "collision_proxy_11_321",
+            "collision_proxy_11_322",
+            "collision_proxy_11_323",
+            "collision_proxy_11_324",
+            "collision_proxy_11_325",
+            "collision_proxy_11_326",
+            "collision_proxy_11_327",
+            "collision_proxy_11_328",
+            "collision_proxy_11_329",
+            "collision_proxy_11_330",
+            "collision_proxy_11_348",
+            "collision_proxy_11_367",
+            "collision_proxy_11_368",
+            "collision_proxy_11_369",
+            "collision_proxy_11_379",
+            "collision_proxy_11_380",
+            "collision_proxy_11_382",
+            "collision_proxy_11_383",
+            "collision_proxy_11_384",
+            "collision_proxy_11_385",
+            "collision_proxy_11_386",
+            "collision_proxy_11_397",
+            "collision_proxy_11_398",
+            "collision_proxy_11_410",
+            "collision_proxy_11_411",
+            "collision_proxy_11_421",
+            "collision_proxy_11_423",
+            "collision_proxy_11_425",
+            "collision_proxy_11_426",
+            "collision_proxy_11_427",
+            "collision_proxy_11_428",
+            "collision_proxy_11_429",
+            "collision_proxy_11_430",
+            "collision_proxy_11_431",
+            "collision_proxy_11_432",
+            "collision_proxy_11_433",
+            "collision_proxy_11_434",
+            "collision_proxy_11_436",
+            "collision_proxy_11_437",
+            "collision_proxy_11_439",
+            "collision_proxy_11_440",
+            "collision_proxy_11_458",
+            "collision_proxy_11_459",
+            "collision_proxy_11_460",
+            "collision_proxy_11_461",
+            "collision_proxy_11_462",
+            "collision_proxy_11_463",
+            "collision_proxy_11_464",
+            "collision_proxy_11_465",
+            "collision_proxy_11_466",
+            "collision_proxy_11_474",
+            "collision_proxy_11_475",
+            "collision_proxy_11_476",
+            "collision_proxy_11_478",
+            "collision_proxy_11_479",
+            "collision_proxy_11_481",
+            "collision_proxy_11_483",
+            "collision_proxy_11_485",
+            "collision_proxy_11_487",
+            "collision_proxy_11_489",
+            "collision_proxy_11_490",
+            "collision_proxy_11_496",
+            "collision_proxy_11_498",
+            "collision_proxy_11_501"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 872,
+          "body_rate_rad_s": 1.1406307117430685e-18,
+          "max_penetration_m": 1.2603363484152419e-05,
+          "compressive_normal_impulse_N_s": 0.001189346856166524
+        },
+        "first_loaded": null,
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "same_label": true,
+      "first_touch_delta_s": -0.0004999999999999996
+    },
+    {
+      "name": "dev_center:744",
+      "reference": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 239,
+          "sample_time_s": 0.0238,
+          "interval_end_s": 0.0239,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_006",
+            "contact_front_007"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36286",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 24,
+          "body_rate_rad_s": 0.024296938434245744,
+          "max_penetration_m": 1.2541158483843915e-06,
+          "compressive_normal_impulse_N_s": 0.000298844434454057
+        },
+        "first_loaded": {
+          "tick": 239,
+          "sample_time_s": 0.0238,
+          "interval_end_s": 0.0239,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_006",
+            "contact_front_007"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364"
+          ],
+          "signed_points": 12,
+          "body_rate_rad_s": 0.024296938434245744,
+          "max_penetration_m": 5.802957661452012e-07,
+          "compressive_normal_impulse_N_s": 0.000298844434454057
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "proxy": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 239,
+          "sample_time_s": 0.0238,
+          "interval_end_s": 0.0239,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_006",
+            "contact_front_007"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36286",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 24,
+          "body_rate_rad_s": 0.024296938434245744,
+          "max_penetration_m": 1.2541158483843915e-06,
+          "compressive_normal_impulse_N_s": 0.000298844434454057
+        },
+        "first_loaded": {
+          "tick": 239,
+          "sample_time_s": 0.0238,
+          "interval_end_s": 0.0239,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_006",
+            "contact_front_007"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364"
+          ],
+          "signed_points": 12,
+          "body_rate_rad_s": 0.024296938434245744,
+          "max_penetration_m": 5.802957661452012e-07,
+          "compressive_normal_impulse_N_s": 0.000298844434454057
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "same_label": true,
+      "first_touch_delta_s": 0.0
+    },
+    {
+      "name": "dev_fast:890",
+      "reference": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 410,
+          "sample_time_s": 0.0409,
+          "interval_end_s": 0.041,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_001",
+            "contact_front_002",
+            "contact_front_003",
+            "contact_front_004",
+            "contact_front_005",
+            "contact_front_006",
+            "contact_front_007",
+            "contact_front_008",
+            "contact_front_009",
+            "contact_front_010",
+            "contact_front_011",
+            "contact_front_012",
+            "contact_front_013"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36286",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 104,
+          "body_rate_rad_s": 0.010069736399708259,
+          "max_penetration_m": 7.413300766801606e-06,
+          "compressive_normal_impulse_N_s": 0.0004775258446705416
+        },
+        "first_loaded": {
+          "tick": 410,
+          "sample_time_s": 0.0409,
+          "interval_end_s": 0.041,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_003",
+            "contact_front_004",
+            "contact_front_005",
+            "contact_front_007",
+            "contact_front_008",
+            "contact_front_009",
+            "contact_front_010"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 25,
+          "body_rate_rad_s": 0.010069736399708259,
+          "max_penetration_m": 5.506324315451838e-06,
+          "compressive_normal_impulse_N_s": 0.0004775258446705416
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "proxy": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 410,
+          "sample_time_s": 0.0409,
+          "interval_end_s": 0.041,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_001",
+            "contact_front_002",
+            "contact_front_003",
+            "contact_front_004",
+            "contact_front_005",
+            "contact_front_006",
+            "contact_front_007",
+            "contact_front_008",
+            "contact_front_009",
+            "contact_front_010",
+            "contact_front_011",
+            "contact_front_012",
+            "contact_front_013"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36286",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 104,
+          "body_rate_rad_s": 0.010069736399708259,
+          "max_penetration_m": 7.413300766801606e-06,
+          "compressive_normal_impulse_N_s": 0.0004775258446705416
+        },
+        "first_loaded": {
+          "tick": 410,
+          "sample_time_s": 0.0409,
+          "interval_end_s": 0.041,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_003",
+            "contact_front_004",
+            "contact_front_005",
+            "contact_front_007",
+            "contact_front_008",
+            "contact_front_009",
+            "contact_front_010"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 25,
+          "body_rate_rad_s": 0.010069736399708259,
+          "max_penetration_m": 5.506324315451838e-06,
+          "compressive_normal_impulse_N_s": 0.0004775258446705416
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "same_label": true,
+      "first_touch_delta_s": 0.0
+    },
+    {
+      "name": "dev_fast:894",
+      "reference": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 248,
+          "sample_time_s": 0.0247,
+          "interval_end_s": 0.024800000000000003,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_001",
+            "contact_front_002",
+            "contact_front_003",
+            "contact_front_004",
+            "contact_front_005",
+            "contact_front_006",
+            "contact_front_007",
+            "contact_front_008",
+            "contact_front_009",
+            "contact_front_010",
+            "contact_front_011",
+            "contact_front_012",
+            "contact_front_013"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36286",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 104,
+          "body_rate_rad_s": 0.008502339430588446,
+          "max_penetration_m": 5.281697636278599e-06,
+          "compressive_normal_impulse_N_s": 0.0003339398293788081
+        },
+        "first_loaded": {
+          "tick": 248,
+          "sample_time_s": 0.0247,
+          "interval_end_s": 0.024800000000000003,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_004",
+            "contact_front_005",
+            "contact_front_007",
+            "contact_front_008",
+            "contact_front_009",
+            "contact_front_010"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 19,
+          "body_rate_rad_s": 0.008502339430588446,
+          "max_penetration_m": 3.958551730062765e-06,
+          "compressive_normal_impulse_N_s": 0.0003339398293788081
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "proxy": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 248,
+          "sample_time_s": 0.0247,
+          "interval_end_s": 0.024800000000000003,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_001",
+            "contact_front_002",
+            "contact_front_003",
+            "contact_front_004",
+            "contact_front_005",
+            "contact_front_006",
+            "contact_front_007",
+            "contact_front_008",
+            "contact_front_009",
+            "contact_front_010",
+            "contact_front_011",
+            "contact_front_012",
+            "contact_front_013"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36286",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 104,
+          "body_rate_rad_s": 0.008502339430588446,
+          "max_penetration_m": 5.281697636278599e-06,
+          "compressive_normal_impulse_N_s": 0.0003339398293788081
+        },
+        "first_loaded": {
+          "tick": 248,
+          "sample_time_s": 0.0247,
+          "interval_end_s": 0.024800000000000003,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_004",
+            "contact_front_005",
+            "contact_front_007",
+            "contact_front_008",
+            "contact_front_009",
+            "contact_front_010"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 19,
+          "body_rate_rad_s": 0.008502339430588446,
+          "max_penetration_m": 3.958551730062765e-06,
+          "compressive_normal_impulse_N_s": 0.0003339398293788081
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "same_label": true,
+      "first_touch_delta_s": 0.0
+    },
+    {
+      "name": "dev_lateral_positive:790",
+      "reference": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 419,
+          "sample_time_s": 0.041800000000000004,
+          "interval_end_s": 0.0419,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_007"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 10,
+          "body_rate_rad_s": 0.022606395833834097,
+          "max_penetration_m": 4.752740170934212e-06,
+          "compressive_normal_impulse_N_s": 0.00025232915858230796
+        },
+        "first_loaded": {
+          "tick": 419,
+          "sample_time_s": 0.041800000000000004,
+          "interval_end_s": 0.0419,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_007"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364"
+          ],
+          "signed_points": 2,
+          "body_rate_rad_s": 0.022606395833834097,
+          "max_penetration_m": 2.9466620063735578e-06,
+          "compressive_normal_impulse_N_s": 0.00025232915858230796
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "proxy": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 419,
+          "sample_time_s": 0.041800000000000004,
+          "interval_end_s": 0.0419,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_007"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 10,
+          "body_rate_rad_s": 0.022606395833834097,
+          "max_penetration_m": 4.752740170934212e-06,
+          "compressive_normal_impulse_N_s": 0.00025232915858230796
+        },
+        "first_loaded": {
+          "tick": 419,
+          "sample_time_s": 0.041800000000000004,
+          "interval_end_s": 0.0419,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_007"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35363",
+            "rmuc2027_surface_35364"
+          ],
+          "signed_points": 2,
+          "body_rate_rad_s": 0.022606395833834097,
+          "max_penetration_m": 2.9466620063735578e-06,
+          "compressive_normal_impulse_N_s": 0.00025232915858230796
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "same_label": true,
+      "first_touch_delta_s": 0.0
+    },
+    {
+      "name": "near_miss_receding_patch",
+      "reference": {
+        "qualified": false,
+        "reason": "NO_SIGNED_TOUCH",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": null,
+        "first_loaded": null,
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "proxy": {
+        "qualified": false,
+        "reason": "NO_SIGNED_TOUCH",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": null,
+        "first_loaded": null,
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "same_label": true,
+      "first_touch_delta_s": null
+    },
+    {
+      "name": "dev_far:867",
+      "reference": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 1159,
+          "sample_time_s": 0.1158,
+          "interval_end_s": 0.1159,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_006"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 10,
+          "body_rate_rad_s": 0.042592831442808614,
+          "max_penetration_m": 1.9909378439528225e-05,
+          "compressive_normal_impulse_N_s": 0.000703312573906473
+        },
+        "first_loaded": {
+          "tick": 1159,
+          "sample_time_s": 0.1158,
+          "interval_end_s": 0.1159,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_006"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 6,
+          "body_rate_rad_s": 0.042592831442808614,
+          "max_penetration_m": 1.9909378439528225e-05,
+          "compressive_normal_impulse_N_s": 0.000703312573906473
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "proxy": {
+        "qualified": true,
+        "reason": "QUALIFIED",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 1159,
+          "sample_time_s": 0.1158,
+          "interval_end_s": 0.1159,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_006"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 10,
+          "body_rate_rad_s": 0.042592831442808614,
+          "max_penetration_m": 1.9909378439528225e-05,
+          "compressive_normal_impulse_N_s": 0.000703312573906473
+        },
+        "first_loaded": {
+          "tick": 1159,
+          "sample_time_s": 0.1158,
+          "interval_end_s": 0.1159,
+          "groups": [
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "contact_front_000",
+            "contact_front_006"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 6,
+          "body_rate_rad_s": 0.042592831442808614,
+          "max_penetration_m": 1.9909378439528225e-05,
+          "compressive_normal_impulse_N_s": 0.000703312573906473
+        },
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "same_label": true,
+      "first_touch_delta_s": 0.0
+    },
+    {
+      "name": "dev_lateral_positive:763",
+      "reference": {
+        "qualified": false,
+        "reason": "FORBIDDEN_AIRFRAME_FIRST_TOUCH",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 1269,
+          "sample_time_s": 0.1268,
+          "interval_end_s": 0.1269,
+          "groups": [
+            "body",
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "collision_0_570",
+            "contact_front_007"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 10,
+          "body_rate_rad_s": 0.11537202206192958,
+          "max_penetration_m": 1.5908983172364943e-05,
+          "compressive_normal_impulse_N_s": 0.0007830461678330964
+        },
+        "first_loaded": null,
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "proxy": {
+        "qualified": false,
+        "reason": "FORBIDDEN_AIRFRAME_FIRST_TOUCH",
+        "contract_sha256": "fbfd2d9499e70c36838d041573120b88f7a099feb90b2dea4642afcaa22b401b",
+        "physics_dt_s": 0.0001,
+        "first_touch": {
+          "tick": 1269,
+          "sample_time_s": 0.1268,
+          "interval_end_s": 0.1269,
+          "groups": [
+            "body",
+            "contact_front"
+          ],
+          "aircraft_colliders": [
+            "collision_0_570",
+            "contact_front_007"
+          ],
+          "target_colliders": [
+            "rmuc2027_surface_35364",
+            "rmuc2027_surface_36293"
+          ],
+          "signed_points": 10,
+          "body_rate_rad_s": 0.11537202206192958,
+          "max_penetration_m": 1.5908983172364943e-05,
+          "compressive_normal_impulse_N_s": 0.0007830461678330959
+        },
+        "first_loaded": null,
+        "positive_separation_records": 0,
+        "positive_separation_compressive_records": 0
+      },
+      "same_label": true,
+      "first_touch_delta_s": 0.0
+    }
+  ]
+}

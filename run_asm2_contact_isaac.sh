@@ -2,6 +2,7 @@
 # Isolated matched contact diagnostics on the existing GPU simulation image.
 set -euo pipefail
 project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+source "$project_dir/docker/isaac-runtime/launch.sh"
 cache="$project_dir/.agents/runs/asm2-contact/cache"
 mkdir -p "$cache/kit" "$cache/user"
 module=rm27_asm2.contact_isaac
@@ -12,8 +13,7 @@ if [[ ${1:-} == --handover ]]; then
   mkdir -p "$project_dir/.agents/runs/asm2-handover"
   extra_mounts=(--mount "type=bind,src=$project_dir/.agents/runs/asm2-handover,dst=/sf/.agents/runs/asm2-handover")
 fi
-image=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["isaac_image"])' "$project_dir/configs/rm27_asm2_collision.json")
-exec timeout --signal=TERM --kill-after=15s 240s docker run --rm --gpus all --network none \
+exec timeout --signal=TERM --kill-after=15s 240s "${docker_command[@]}" run --rm "${container_home_mount[@]}" --gpus all --network none \
   --name rm27-asm2-contact-isaac --shm-size=2g --memory=48g --cpus=16 --ulimit core=0 --init \
   --user "$(id -u):$(id -g)" --env HOME=/home/ubuntu --env ACCEPT_EULA=Y --env PRIVACY_CONSENT=N \
   --env PYTHONDONTWRITEBYTECODE=1 --env PYTHONUNBUFFERED=1 --env PYTHONPATH=/sf/src:/sf \

@@ -1,6 +1,6 @@
 # RM27 interactive replay and monitoring
 
-From `/home/dsa/project/ceo_pj/RM27_Agile_Flight_RL_Project` on the 4090 workstation:
+From the main project root on the 4090 workstation:
 
 ```bash
 ./run_visual_replay.sh --detach --paused
@@ -10,7 +10,7 @@ The launcher prints the private workstation IPv4 address (currently `10.4.137.50
 
 Official client downloads: [Apple silicon](https://download.isaacsim.omniverse.nvidia.com/isaacsim-webrtc-streaming-client-1.0.6-macos-arm64.dmg), [Intel Mac](https://download.isaacsim.omniverse.nvidia.com/isaacsim-webrtc-streaming-client-1.0.6-macos-x64.dmg). Version 1.0.6 is used for the installed Isaac Sim 4.5 backend.
 
-The launcher publishes only the selected private address, with a fixed media port. It refuses public/non-RFC1918 addresses and never changes the host firewall. No router forwarding/public exposure is needed. Use `--bind PRIVATE_IPV4` if the automatically selected LAN/VPN interface is unsuitable. Optional Kit UI extensions and render caches stay under `.agents/runs/rm27-viewer/cache/`; the Docker image is unchanged.
+The launcher publishes only the selected private address, with a fixed media port. It refuses public/non-RFC1918 addresses and never changes the host firewall. No router forwarding/public exposure is needed. Use `--bind PRIVATE_IPV4` if the automatically selected LAN/VPN interface is unsuitable. Optional Kit UI extensions and render caches stay under `.agents/runs/rm27-viewer/cache/`. New launches use the [repaired Isaac image](DESIGN.md#34-isaac-runtime-on-the-rtx-4090); existing running viewers keep their original image.
 
 Decoded video, mouse camera control, demonstration/mode selection and playback controls were verified with NVIDIA's Linux 1.0.6 client. The Mac client and your Mac-to-workstation route have not been directly tested. The installed streaming backend crashed during a disconnect/reconnect test; session reuse is not validated. Restart the viewer process before each new client session using the stop and launch commands below. Pause, camera movement and replay within one connected session work without a restart.
 

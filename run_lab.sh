@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+source "$project_dir/docker/isaac-runtime/launch.sh"
 run_dir="$project_dir/.agents/runs/simpleflight"
 mkdir -p "$run_dir/cache/kit"
 auth_mount=()
@@ -10,7 +11,7 @@ fi
 if [[ ${1:-} != -* ]]; then
   set -- -m simpleflight_lab "$@"
 fi
-exec docker run --rm --gpus all --shm-size=2g --init \
+exec "${docker_command[@]}" run --rm "${container_home_mount[@]}" --gpus all --shm-size=2g --init \
   --user "$(id -u):$(id -g)" --env HOME=/home/ubuntu \
   --tmpfs "/isaac-sim/kit/data:uid=$(id -u),gid=$(id -g),mode=0700" \
   --tmpfs "/isaac-sim/kit/logs:uid=$(id -u),gid=$(id -g),mode=0700" \
@@ -23,4 +24,4 @@ exec docker run --rm --gpus all --shm-size=2g --init \
   --mount "type=bind,src=$project_dir,dst=/sf" \
   --mount "type=bind,src=$run_dir/cache,dst=/home/ubuntu/.cache" \
   --workdir /sf --entrypoint /isaac-sim/python.sh \
-  nvcr.io/nvidia/isaac-lab:2.1.0 "$@"
+  "$image" "$@"

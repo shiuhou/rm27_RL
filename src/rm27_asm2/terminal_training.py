@@ -13,8 +13,8 @@ import traceback
 
 import numpy as np
 
-from .asset import ROOT, digest, read_json, write_result
-from .contact_task import load_contact_spec
+from .asset import ROOT, digest, obj_mesh, read_json, write_result
+from .contact_task import PATCH_GROUPS, load_contact_spec
 from .flight import load_profile
 from .flight_suite import flight_settings
 from .terminal_isaac import TerminalSim
@@ -137,6 +137,99 @@ class TerminalEnvironment:
         return self.observation(), reward, terminated, truncated, {}
 
 
+
+class BrakingEnvironment(TerminalEnvironment):
+    def __init__(self, sim, data, goal, horizon, budget, settings, n_braking):
+        self.n_braking = n_braking
+        self.mix = settings["terminal_mix"]
+        self.deceleration = settings["braking_decel_m_s2"]
+        self.shaping_gap = settings["braking_gap_m"]
+        patch = np.concatenate([obj_mesh(sim.spec.source / "mujoco" / entry["mesh"])[0]
+                                for entry in sim.spec.entries.values() if entry["group"] in PATCH_GROUPS])
+        self.patch = sim.tensor(np.unique(patch, axis=0))
+        super().__init__(sim, data, goal, horizon, budget)
+
+    def reset(self, ids, rows=None):
+        if rows is None:
+            torch = self.torch
+            sample = torch.rand(len(ids), device=self.sim.device)
+            braking = torch.randint(self.n_braking, (len(ids),), device=self.sim.device)
+            terminal = torch.randint(self.n_braking, len(self.data[0]), (len(ids),), device=self.sim.device)
+            rows = torch.where(sample < self.mix, terminal, braking)
+        super().reset(ids, rows)
+
+    def step(self, action):
+        torch = self.torch
+        local_normal = self.R.transpose(1, 2) @ self.normal
+        support = local_normal @ self.patch.T
+        offset, index = support.min(dim=1)
+        gap = (self.state[:, :3]-self.center) @ self.normal + offset
+        point_rate = torch.linalg.cross(self.state[:, 10:13], self.patch[index], dim=1)
+        inward = -(self.state[:, 7:10] @ self.normal + (local_normal*point_rate).sum(dim=1))
+        speed_limit = (GENTLE_SPEED_M_S**2+2.*self.deceleration*gap.clamp_min(0.)).sqrt()
+        overspeed = ((inward-speed_limit).clamp_min(0.)/.25).square().clamp_max(1.)
+        penalty = .02*overspeed*((gap > 0.) & (gap <= self.shaping_gap))
+        obs, reward, terminated, truncated, extras = super().step(action)
+        return obs, reward-penalty, terminated, truncated, extras
+
+
+
+class CurriculumEnvironment(BrakingEnvironment):
+    """Existing rotation reward/termination with an explicit reset sampler."""
+    def __init__(self, sim, bank, sampler, goal, cfg, budget):
+        from .terminal_curriculum import BANDS
+        self.sampler = sampler
+        self.band_by_row = sim.torch.as_tensor(
+            [BANDS.index(str(b)) for b in bank['band']], device=sim.device)
+        self.active_row = sim.torch.empty(sim.worlds, dtype=sim.torch.long, device=sim.device)
+        self.active_band = sim.torch.empty_like(self.active_row)
+        self.best_distance = sim.torch.empty(sim.worlds, device=sim.device)
+        self.completed_by_row = np.zeros(len(bank['states']), dtype=np.int64)
+        self.success_by_row = self.completed_by_row.copy()
+        self.horizon_by_band = sim.torch.as_tensor(
+            [round(seconds/sim.profile.policy_dt_s) for seconds in
+             ([cfg['braking_horizon_s']]*2+[cfg['handover_horizon_s']]*(len(BANDS)-2))],
+            device=sim.device, dtype=sim.torch.int32)
+        super().__init__(sim, bank, goal, cfg['handover_horizon_s'], budget, cfg['learning'],
+                         int(np.sum(bank['band'] == 'braking')))
+
+    def reset(self, ids, rows=None):
+        # The base constructor supplies world IDs. Draw bank rows for the initial reset too.
+        if rows is None or not hasattr(self, 'state'):
+            rows = self.torch.as_tensor(self.sampler.sample(len(ids)), device=self.sim.device)
+        if hasattr(self, '_episode_events'):
+            self._episode_events.update(self.sim.events)
+        TerminalEnvironment.reset(self, ids, rows)
+        self.active_row[ids] = rows
+        self.active_band[ids] = self.band_by_row[rows]
+        if not self.torch.is_tensor(self.horizon):
+            self.horizon = self.torch.empty_like(self.episode_ticks)
+        self.horizon[ids] = self.horizon_by_band[self.active_band[ids]]
+        self.best_distance[ids] = (self.state[ids, :3]-self.goal).norm(dim=1)
+
+    def step(self, action):
+        torch = self.torch
+        old_distance = (self.state[:, :3]-self.goal).norm(dim=1)
+        old_best = self.best_distance.clone()
+        rehearsal = self.active_band < 2
+        old_rows = self.active_row.clone()
+        before = self.outcomes['DESIGNATED_LOADED']
+        # Record completions before reset removes event identity.
+        self._episode_events = {}
+        obs, reward, terminated, truncated, extras = super().step(action)
+        new_best = torch.minimum(old_best, self.step_error_m)
+        reward = reward-8.*(old_distance-self.step_error_m)+8.*(old_best-new_best)*rehearsal
+        done = terminated | truncated
+        self.best_distance.copy_(torch.where(done, self.best_distance, new_best))
+        rows = old_rows[done].cpu().numpy()
+        np.add.at(self.completed_by_row, rows, 1)
+        for world, reason in self._episode_events.items():
+            if reason == 'DESIGNATED_LOADED':
+                self.success_by_row[int(old_rows[world])] += 1
+        if sum(v == 'DESIGNATED_LOADED' for v in self._episode_events.values()) != self.outcomes['DESIGNATED_LOADED']-before:
+            raise RuntimeError('Lost completed contact event during reset')
+        return obs, reward, terminated, truncated, extras
+
 def train():
     import torch
 
@@ -252,6 +345,9 @@ def train():
 
 
 def main():
+    if '--workflow-config' in sys.argv:
+        from .terminal_workflow import main as workflow_main
+        return workflow_main()
     from isaaclab.app import AppLauncher
 
     launcher = AppLauncher(headless=True)

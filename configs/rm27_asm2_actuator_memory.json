@@ -1,0 +1,26 @@
+{
+  "schema": "rm27_asm2_actuator_memory_v1",
+  "frontier_run": ".agents/runs/asm2-frontier/phase-r",
+  "branch_trace": ".agents/runs/asm2-terminal/phase5-campaign/matched-pitch-native.json",
+  "experiment": "configs/rm27_asm2_terminal_recovery.json",
+  "anchor_phases": ["early", "rotation", "transition_pre", "transition_post"],
+  "anchor_window_s": 0.15,
+  "visible_limits": {
+    "position_m": 0.001,
+    "velocity_m_s": 0.005,
+    "attitude_deg": 0.25,
+    "body_rates_rad_s": 0.02
+  },
+  "actor_limits": {"collective_fraction_hover": 0.002, "rate_rad_s": 0.01},
+  "min_memory_delta_N": 0.01,
+  "pulse": {"duration_s": 0.02, "collective_fraction_hover": 0.02, "rate_rad_s": 0.1},
+  "local_horizon_s": 0.3,
+  "sample_times_s": [0.005, 0.1, 0.2, 0.3],
+  "calibration": [
+    {"case": "dev_far", "phase": "rotation"},
+    {"case": "stationary_1", "phase": "transition_pre"}
+  ],
+  "minimum_independent_anchors": 2,
+  "max_rollouts": 300,
+  "max_seconds": 600
+}

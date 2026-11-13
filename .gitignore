@@ -2,8 +2,33 @@
 !/.agents/docs/
 __pycache__/
 
-*.pyc
+# Independently versioned dependencies and local simulation inputs.
+/upstream/
+/assets/
+/artifacts/asm2_mujoco_proxy_v0.1.0/assets/
+/artifacts/asm2_model_release/*.tar.gz
+
+# Environments, caches, checkpoints, and simulator output.
 .venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.py[cod]
+*.pt
+*.pth
+*.ckpt
+*.npz
+*.log
 *.etli
-MUJOCO_LOG.TXT
+/MUJOCO_LOG.TXT
+wandb/
+.DS_Store
+
+# Local credentials and environment overrides.
 .env
+.env.*
+!.env.example
+.netrc
+*.pem
+*.key

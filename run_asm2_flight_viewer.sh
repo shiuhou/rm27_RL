@@ -2,13 +2,14 @@
 # Private-LAN Isaac playback of a recorded ASM2 free-flight run.
 set -euo pipefail
 project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+source "$project_dir/docker/isaac-runtime/launch.sh"
 container=rm27-asm2-flight-viewer
 run_dir="$project_dir/.agents/runs/asm2-flight/viewer"
 
 if [[ ${1:-} == --stop ]]; then
-  owner=$(docker inspect --format '{{index .Config.Labels "rm27.asm2.viewer"}}' "$container" 2>/dev/null || true)
+  owner=$("${docker_command[@]}" inspect --format '{{index .Config.Labels "rm27.asm2.viewer"}}' "$container" 2>/dev/null || true)
   [[ "$owner" == "$project_dir" ]] || { echo 'No project-owned ASM2 flight viewer is running.' >&2; exit 1; }
-  exec docker stop --timeout 12 "$container"
+  exec "${docker_command[@]}" stop --timeout 12 "$container"
 fi
 if [[ ${1:-} == --help || $# == 0 ]]; then
   cat <<'EOF'
@@ -75,13 +76,12 @@ PY
 else
   bind_ip=127.0.0.1
 fi
-if docker container inspect "$container" >/dev/null 2>&1; then
+if "${docker_command[@]}" container inspect "$container" >/dev/null 2>&1; then
   echo 'ASM2 viewer already exists. Stop it with ./run_asm2_flight_viewer.sh --stop.' >&2
   exit 1
 fi
 mkdir -p "$run_dir/cache/kit" "$run_dir/cache/data" "$run_dir/cache/ov" "$run_dir/cache/user"
-image=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["isaac_image"])' "$project_dir/configs/rm27_asm2_collision.json")
-exec docker run --rm "${detach[@]}" --name "$container" --label "rm27.asm2.viewer=$project_dir" \
+exec "${docker_command[@]}" run --rm "${container_home_mount[@]}" "${detach[@]}" --name "$container" --label "rm27.asm2.viewer=$project_dir" \
   --gpus all --shm-size=2g --init --stop-timeout=12 --ulimit core=0 --log-opt max-size=4m --log-opt max-file=1 \
   --user "$(id -u):$(id -g)" --env HOME=/home/ubuntu --env PUBLIC_IP="$bind_ip" \
   --env NVIDIA_DRIVER_CAPABILITIES=all --env ACCEPT_EULA=Y --env PRIVACY_CONSENT=N \

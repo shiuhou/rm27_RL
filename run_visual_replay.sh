@@ -2,14 +2,15 @@
 # Private-LAN Isaac Sim viewer; independent of every learner/training process.
 set -euo pipefail
 project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+source "$project_dir/docker/isaac-runtime/launch.sh"
 container=sf-rm27-visual-replay
 run_dir="$project_dir/.agents/runs/rm27-viewer"
 if [[ ${1:-} == --stop ]]; then
-  owner=$(docker inspect --format '{{index .Config.Labels "sf.rm27.viewer"}}' "$container" 2>/dev/null || true)
+  owner=$("${docker_command[@]}" inspect --format '{{index .Config.Labels "sf.rm27.viewer"}}' "$container" 2>/dev/null || true)
   [[ "$owner" == "$project_dir" ]] || { echo 'No SF-owned RM27 viewer is running.'; exit 1; }
-  docker stop --timeout 12 "$container"
+  "${docker_command[@]}" stop --timeout 12 "$container"
   for attempt in {1..50}; do
-    docker container inspect "$container" >/dev/null 2>&1 || exit 0
+    "${docker_command[@]}" container inspect "$container" >/dev/null 2>&1 || exit 0
     sleep .1
   done
   echo "Container stopped; Docker is still removing it." >&2
@@ -62,7 +63,7 @@ address=ipaddress.IPv4Address(sys.argv[1])
 if not any(address in ipaddress.ip_network(n) for n in ('10.0.0.0/8','172.16.0.0/12','192.168.0.0/16','127.0.0.0/8')):
     raise SystemExit('Refusing a public/non-RFC1918 viewer bind; use private LAN or VPN.')
 PY
-if docker container inspect "$container" >/dev/null 2>&1; then
+if "${docker_command[@]}" container inspect "$container" >/dev/null 2>&1; then
   echo "Viewer container already exists. Use ./run_visual_replay.sh --stop before relaunch." >&2
   exit 1
 fi
@@ -72,7 +73,7 @@ if ((stream)); then
   ports=(--publish "$bind_ip:49100:49100/tcp" --publish "$bind_ip:47998:47998/udp")
   echo "RM27 private WebRTC: $bind_ip (TCP49100 / UDP47998)"
 fi
-exec docker run --rm "${detach[@]}" --name "$container" --label "sf.rm27.viewer=$project_dir" \
+exec "${docker_command[@]}" run --rm "${container_home_mount[@]}" "${detach[@]}" --name "$container" --label "sf.rm27.viewer=$project_dir" \
   --gpus all --shm-size=2g --init --log-opt max-size=4m --log-opt max-file=1 \
   --user "$(id -u):$(id -g)" --env HOME=/home/ubuntu \
   --env NVIDIA_DRIVER_CAPABILITIES=all --env PUBLIC_IP="$bind_ip" \
@@ -84,5 +85,5 @@ exec docker run --rm "${detach[@]}" --name "$container" --label "sf.rm27.viewer=
   --mount "type=bind,src=$run_dir/cache/ov,dst=/home/ubuntu/.local/share/ov" \
   --mount "type=bind,src=$run_dir/cache/user,dst=/home/ubuntu/.cache" \
   --mount "type=bind,src=$project_dir,dst=/sf" "${ports[@]}" \
-  --workdir /sf --entrypoint /isaac-sim/python.sh nvcr.io/nvidia/isaac-lab:2.1.0 \
+  --workdir /sf --entrypoint /isaac-sim/python.sh "$image" \
   -m simpleflight_lab.visual_replay --livestream "$stream" "${viewer_args[@]}"

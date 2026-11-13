@@ -1,0 +1,14 @@
+{
+  "schema": "rm27_asm2_regional_update_v1",
+  "source_config": "configs/rm27_asm2_rotation_bridge_instrumented.json",
+  "output": ".agents/runs/asm2-terminal/regional-update",
+  "per_arm_transitions": 98304,
+  "reset_mixture": {"terminal": 0.1, "braking": 0.45, "rotation_late": 0.2, "rotation_bridge": 0.25},
+  "update_target": {"terminal": 0.1, "braking": 0.45, "rotation_late": 0.2, "rotation_bridge": 0.25},
+  "arms": {"A": "original_uniform_transition_loss", "B": "regional_weighted_actor_and_critic_loss"},
+  "absent_region_rule": "renormalize_target_over_present_regions; no replay or synthetic samples",
+  "normalization": "unchanged global advantage and ValueNorm statistics",
+  "stop": "98304 transitions per arm; stop on invalid feedback or nonfinite update; no wall-clock cutoff or renewal",
+  "selection_and_gates": "unchanged Phase R2 development ranking, scientific rule and strict promotion at matched endpoint",
+  "authorization": "User approved proposed matched regional PPO-update balancing experiment: alright, do it. 2026-11-12"
+}

@@ -13,7 +13,7 @@
     "metadata/collision_validation.json": "66b5538668eed42fec9c31e6dd3198c73055ff5594f383415a255f26d6b33987",
     "MANIFEST_SHA256.txt": "339cfd5ed64cbb7022faf163badeb595a1d434688b306ae8e83b03bc28419ce6"
   },
-  "isaac_image": "xtrainer-astra:isaac-2.1.0",
+  "isaac_image": "rm27-sim:isaac2.1-fixed",
   "physics_dt_s": 0.001,
   "solver": "PGS",
   "diagnostic_contact_offset_m": 1e-06,

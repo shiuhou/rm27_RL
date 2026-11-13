@@ -1,0 +1,9 @@
+{
+  "schema": "asm2_r3_exploration_v1",
+  "source_config": "configs/rm27_asm2_regional_update.json",
+  "output": ".agents/runs/asm2-terminal/r3",
+  "per_arm_transitions": 196608,
+  "intermediate_transitions": 98304,
+  "initial_std_B": 0.64,
+  "heldout_seed": 427113
+}
