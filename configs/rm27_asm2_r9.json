@@ -1,0 +1,11 @@
+{
+  "schema": "asm2_r9_authorized_single_arm_v1",
+  "output": ".agents/runs/asm2-terminal/r9",
+  "approval": "APPROVE_R9_393216",
+  "preregistration": "configs/rm27_asm2_r9_proposal.json",
+  "max_transitions": 393216,
+  "max_native_evaluations_and_replays": 831,
+  "control": "archived R8 B only",
+  "initial_coefficient": 0.01,
+  "decay_transitions": 393216
+}

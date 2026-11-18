@@ -4,6 +4,8 @@
 
 本專案負責 RM27 新一代四旋翼的 **Contact-Constrained Agile Surface Interception** 研究與工程實作。目標不是單純提高 PPO reward，而是建立一套能在實際新機型上驗證、可追溯、可逐步部署的敏捷接觸控制系統。
 
+本工作區為 **4090 RL** 專案。若收到指定 5060／Non-RL 工作區或與本工作區職責衝突的執行任務，先停止並提醒使用者確認，不跨工作區代執行；已明確授權的正式共用資料唯讀取得不在此限。
+
 本文件是 Agent 的工作規範。需求以 `.agents/docs/SPEC.md` 為準，架構以 `.agents/docs/DESIGN.md` 為準，階段狀態以 `.agents/docs/ROADMAP.md` 為準，當前工作以 `.agents/plans/` 中明確標記為 Active 的 plan 為準。
 
 同時遵循根目錄 [engineering.md](engineering.md) 的工程規則。既有 `simpleflight_lab/`、`configs/`、`upstream/`、`.agents/runs/` 及舊測試保留原位；`src/` 為未來新機型實作入口，不表示既有程式已遷移或新模型已完成。
