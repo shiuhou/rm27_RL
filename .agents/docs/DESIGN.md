@@ -1,8 +1,10 @@
 # RM27 Agile Flight RL — DESIGN
 
-**Version:** 1.0  
-**Date:** 2026-11-10  
-**Status:** Provisional ASM2 flight and native handover verified. Isaac terminal contact conformance remains open.
+**Version:** 1.1
+
+**Date:** 2026-11-18
+
+**Status:** N1/R9-A offline consumer verified, 55/55 CPU tests PASS, against locally pinned published G0 9ea80518259173c15882ae8a3ab6059eb2643336. Overall R9-A and formal RL evaluation remain BLOCKED by dataset, observation and model/protocol compatibility gaps. Historical learned baselines retained; no new training/native authorization.
 
 ---
 
@@ -41,6 +43,8 @@ Perception / VIO / Target Tracking
 ```
 
 任務層分工：Navigation 提供可行接管狀態；Agile Policy 負責接管後的自主敏捷機動；Recovery 在接觸事件後獨立處理。
+
+N1/R9 先對齊同一任務鏈的輸入、事件和評估語義。4090 消費 5060 正式發布的 G0 資料，保留 RL 自己的 observation/action/PPO/training pipeline；當前工作限離線 scenario consumer、CPU conformance 與固定接管 protocol 準備，不代表上述完整任務鏈已運行。固定接管能力比較及選擇接管時機仍有後續 Gate，詳見 §6.5。
 
 ## 2. Main Components and Responsibilities
 
@@ -260,6 +264,150 @@ export PYTHONPATH=src OPENBLAS_NUM_THREADS=1
 
 For interactive recorded-state playback, launch the viewer with `--paused` in place of the self-test arguments and connect to its printed private IP from the Isaac Sim WebRTC client. Choose an address with the viewer's ports free if the legacy stream is still active.
 
+### 6.4 視覺導航至 RL 接管接口（2026-11-15）
+
+需求來源：[SPEC §4.1](SPEC.md#41-視覺導航與-rl-分工確認2026-11-15)。本節記錄本輪對齊的責任邊界與待驗證設計，不表示接口已實作。§6.3 的固定時間交接是歷史 feasibility 設定，不是新任務要求。
+
+#### 責任與流程
+
+| 負責方 | 責任 | 交付 |
+|---|---|---|
+| 使用者側視覺導航 | 識別綠燈、估計目標、控制接近方向與高度，按 RL 進場要求調整位置和速度；未接管時退出重來 | 即時狀態、導航意圖、控制權交接 |
+| RL 研究側 | 驗證可處理的進場狀態，給出導航可用的數值規範，選擇接管時機，研究接管後觸板與恢復 | 進場範圍、接管判據、退出邊界需求、策略與驗證證據 |
+
+流程：導航持續接近 → RL 持續觀察並等待或請求接管 → 許可條件滿足時確認交接 → 自主居中、對齊、觸板和恢復。未接管且到達動態退出邊界時，由導航退出；本次窗口關閉。
+
+「舒服的進場」是一片具備實證支持的狀態範圍，必須與導航可達狀態、估計誤差和延遲相容，不是單一點，也不是已認證可達集合。導航應讓飛機經過這個窗口，無固定距離懸停要求。
+
+现有样本的数值、坐标变换、已测试误差与尚不能发布的导航包线，见 [导航进场证据整理](ASM2_NAVIGATION_ENTRY_EVIDENCE.md)。该文档为证据分析，不新增接管阈值。
+
+#### RL 側必須提供的進場規範
+
+| 項目 | 導航需要的具體輸出 | 目前狀態 |
+|---|---|---|
+| 位置與高度 | 相對板中心的法向距離、沿坡／橫向偏移，及導航使用的重力方向高度對應關係 | `UNKNOWN`：數值待驗證 |
+| 速度 | 不同距離與偏移下的法向接近速度、沿坡／橫向速度範圍 | `UNKNOWN`：不得用獨立上下限忽略狀態耦合 |
+| 姿態與動態 | 相對板面姿態、角速度、執行器響應的允許範圍 | `UNKNOWN` |
+| 接管 | 許可條件、接管請求與確認、控制周期與資料時效 | 本節為設計草案，門檻未凍結 |
+| 退出 | 依速度、姿態、延遲及制動／退出能力決定的最晚退出邊界 | `UNKNOWN`：需與導航退出能力共同驗證 |
+| 證據 | 每個範圍的來源、完整任務成功率、失敗類型、擾動覆蓋及模型版本 | `NOT_RUN`：本輪無新增驗證 |
+
+歷史 witness 和首次接觸成功可提供候選狀態，但不能直接視為「接觸加恢復」的成熟接管範圍。
+
+#### 導航／估計側提供給 RL 的資料
+
+| 資料 | 內容 |
+|---|---|
+| 目標註冊 | 綠燈到板中心的幾何關係，板面法線、兩個切向軸與有限板面邊界 |
+| 相對運動 | 目標座標系中的相對位置與速度；相對姿態、機體角速度、重力方向 |
+| 執行器與歷史 | 最近實際執行的 CTBR、飽和標誌，以及實際可取得的推力／轉速估計與可信度 |
+| 導航意圖 | 當前接近速度指令、減速／退出狀態，讓等待決策知道導航正在做什麼 |
+| 資料品質 | 時間戳、資料年齡、有效性、估計誤差或不確定度 |
+| 交接管理 | 接管許可、控制權持有者、退出餘量或退出標誌 |
+
+所有座標軸方向、單位、時序、頻率及失效語義須在實作前凍結；重力高度不等於斜板法向距離。單一綠燈圖像位置不能單獨確定距離與板面朝向，須明確標定與估計來源。資料可由感知、估計器或控制器提供，不要求全部由導航算法產生。
+
+不得以仿真真值替代部署時不可得的 Actor 輸入。接管後仍持續提供狀態估計，接觸與恢復所需事件感測接口待定。現有 45 維觀測是否足夠需逐項映射，本輪不改動。
+
+#### 接管與退出判據
+
+- 工程許可與 RL 選擇分開。許可至少檢查估計有效性、資料時效、機體淨空、運行範圍與控制器／執行器狀態；不要求交接前已完成居中、對齊或煞停。
+- 交接在約定控制周期邊界確認，始終只有一個指令來源；保留實際推力、濾波記憶與控制歷史，不重置物理狀態。
+- 退出依據為「再等一個周期後，是否仍能以導航已驗證的退出能力安全離開」。需考慮延遲、姿態、速度、執行器響應、有限機體幾何與誤差；不能只採固定距離或名義點質量煞停距離。
+- 估計失效、包線風險或退出餘量不足時導航退出，不強迫接管。退出啟動後關閉本輪窗口，避免控制權反覆切換。
+
+#### 算法候選與尚未決定事項
+
+`HYPOTHESIS`：接管後沿用連續動作 PPO／Direct-CTBR 作研究候選。接管時機的獨立離散 PPO 僅保留為 G3 後續選項；N1/R9-A/B 不訓練 selector，以凍結 slices 評估控制能力。尚未選定或實作接管學習器。
+
+若採學習式接管，等待期間導航持續推進；回報需涵蓋交接後的接觸與恢復，不能在接管時截斷，亦不能用 Fixed A 成功分數代替完整任務結果。接管與控制周期不同時，折扣應按實際時間一致處理。
+
+本專案不開發導航／MPC。前次討論中的導航 MPC 是未採納的範圍建議。接觸和恢復採單一 Actor 或分開策略仍待驗證，不因本輪討論直接替換 §11 的既有分離架構。
+
+完整評估需同時報告全部進場嘗試的任務成功率、接管率、接管後成功率、不同初態族結果、合法／非法觸板、未接管退出與恢復成功。不能只在容易接管的少數案例中計算成功率。
+
+本輪僅更新文件；未啟動訓練、native rollout、控制器修改、硬體工作、commit 或 push。
+
+### 6.5 N1/R9-A Shared Scenario Consumer / Fixed-handover Protocol
+
+本節為 2026-11-18 架構決策，取代 §6.4 中可能被理解為「先學 selector」的次序。需求見 [SPEC §4.2](SPEC.md#42-n1r9-共用研究邊界2026-11-18)，狀態與 gate 見 [ROADMAP §2.1](ROADMAP.md#21-n1r9-研究路線2026-11-18)。最小 consumer 已通過 33 官方 + 22 本地 CPU tests，最終 receipt 為 `.agents/runs/n1-r9-a/results.json`；資料重放不步進物理，整體 R9-A／正式 RL evaluator 仍 `BLOCKED / NOT_RUN`。
+
+#### 發布方與消費方
+
+```text
+5060 正式 G0 release：契約／scenario／版本與雜湊／producer tests
+                         |
+                         v
+4090 release identity acceptance + 本地模型／scorer 相容性核對
+                         |
+                         v
+Shared Scenario Consumer ── source-family split / frozen handover slice
+             |                                      |
+             v                                      v
+可取得的估測 runtime view                  完整初態／actuator history／GT
+             |                                      |
+             v                                      v
+RL 自有 45D observation adapter              restore / diagnostics only
+             |
+             v
+既有 Actor → 自有 action decoder → CTBR / plant
+             |
+             v
+版本化 contact / separation / recovery ledger（缺失能力明示）
+```
+
+1. 只驗證並消費正式 G0 release；契約檔名、schema 欄位、版本字串與必填規則均以發布包為準。本機不新建同名 G0 contracts，不將附件 JSON／ROS 示例當成實際接口，也不自行採用 N1 的候選搜尋參數。
+2. 分開記錄 producer 的 release/version/source revision 和 consumer 的本地 HEAD/path/hash。相同內容可以有不同本地路徑；相同版本文字不能代替內容雜湊。缺檔、版本不支援、模型／時間語義不相容時給出明確原因並停止相應比較，不能自動用本地舊資料冒充共用 scenario。
+3. 核對的對象包含機體與 target geometry、合法／禁止部位、註冊標定、動力學／actuator model、control hold 與 physics timing、scorer 及輸出定義。格式可讀不等於物理相容；若有差異，保留獨立任務標籤，另提相容性決策，不改 frozen plant。
+4. G0 的 producer test evidence 與 4090 consumer test evidence 分開。已取得的小型原始 producer receipts 與接收方核對存於 `.agents/runs/n1-r9-a/`；producer 未 committed 的 checksum/test receipt 不冒稱已在發布 commit 中。歷史原始 logs、發布說明和接收方本次測試分開，不由 portable tests 推導 same-state cross-consumer PASS。
+
+本次以 `git@github.com:shiuhou/rm27_drones.git` 的發布 commit `9ea80518259173c15882ae8a3ab6059eb2643336` 取得 80 個 immutable Git blob，保留原相對路徑於 `upstream/rm27_g0/9ea8051/`。版本為 `0.1.0-draft / PROPOSED`、snapshot `rm27.handover/1`、scenario manifest `1`；逐檔 SHA-256 和本地映射見 `acquisition.json`。不匯入 remote dirty working tree，不複製整個 repository，不改 frozen contracts。
+
+已發布 scenario manifest 只有 legacy PX4 navigation 的 3 筆 diagnostic records，屬 `fixed-waypoints-half-height-001:single-source-trajectory` 的單一 `dev` family，沒有 admitted recorded scenario。其 `native_record` 可作 provenance 與逐筆診斷重放，缺失的 frame/clock/epoch/COM/model/actuator registration 不可從診斷 GT 補齊。原始大型 source logs 未匯入，本地只驗證已發布 projection；保留 `originals_verified=false`，不把 manifest 中的 raw hash 當作本機已重算原 log。另取得的 closure receipt 描述 `asm2-moving-handover-01-02-common-prefix` 的 3 筆 `RECORDED_SIM_ESTIMATED`，但 `published=false`；未發布 fixture、`trusted=false` 與 heading-history FAIL 不成為本地 admitted dataset。
+
+最小本地入口為 `src/rm27_asm2/shared_handover.py`，隔離於既有 PPO、reward、plant 與 native scorer。它消費發布方 schema/validator、保存來源 metadata、建立 Actor 欄位可用性報告、逐筆離線 replay，並輸出 fixed-handover protocol；測試入口為 `tests/test_asm2_shared_handover.py`。CPU 驗證、`replay.jsonl` 與 `fixed_handover_protocol.json` 收在 `.agents/runs/n1-r9-a/`，不改 Actor 輸入或從缺失資料製造 Tensor。
+
+#### RL 輸入和控制保持獨立
+
+現有程式 `terminal_native_eval.learned_controller` 的原始 45D 特徵為：`goal-position` 重複十次（30）、world velocity（3）、`R.T` 展平（9）、body rates（3）。該重複不是十幀歷史，沒有 motor-state input；native 路徑目前取自模擬物理狀態。R9-A 對每欄標記正式 G0 runtime 來源、frame/unit、時間、可用性、normalization/ordering、GT-only 風險及缺失處置；不把缺值填零、複製 GT 或改網路當成 conformance。既有特徵為 float32 physical features，保留 checkpoint Actor LayerNorm，不新增 scalar normalizer。`synthetic_actor_observation` 只在 `SYNTHETIC_TEST` 的已註冊 producer world／target-centred frame 測試欄位排列與轉換，既不是 runtime mapping，也不證明與 4090 模型等價。已發布 diagnostic records 的必要 estimated state 與 target registration 不完整，因此 Actor readiness 為 BLOCKED，不能因可讀 JSON 即宣稱可執行 policy。
+
+現有 Actor 正規化動作次序為 `[p,q,r,T]`，經 tanh 後轉成物理 CTBR `[T_N,p,q,r]`：rates 為 `2*action[:3]` rad/s，collective 為 `mg*(1+0.5*action[3])`。這是本地現行接口描述，不是 G0 schema 要求或新的硬體限制。consumer 必須保留該解碼與相應 checkpoint 語義；是否需擴 observation 必須另立單變量研究。
+
+完整轉移／恢復需保留 actual rotor thrust、held targets、可用控制／估測歷史與剩餘任務時間。離線 snapshot restore 僅在 case 起點進行；在線交接及接觸到恢復之間不得 reset。歷史 NPZ 缺少完整 solver integration vector 時照實標記，不以 physical-state restore 宣稱 bitwise solver restore。
+
+#### 固定接管協議與 CPU 驗證邊界
+
+- 使用正式 scenario ID、來源 trajectory/family、predeclared slice/timestamp、完整初態／歷史及 split。slice 選擇與無效輸入處置在看控制 outcome 前凍結；不得由 learned accept/reject 篩掉困難案例。
+- 按正式契約的 request/accept/adjust/abort/ack/timeout、sequence、expiry 與 authority 語義測試。接管前驗證最新狀態與許可，所有時刻只有一個指令持有者；不以預測到達狀態替代實測狀態。
+- 釘選的發布方 protocol 只接受 `REFERENCE_TRAJECTORY` successor，其 Snapshot continuity、ACK boundary/history、lease/expiry 和 command validation 測試只證明此 offline contract。不能將它改名為 Direct-CTBR runtime authority、連續 plant branching 或實際 RL handover PASS。G0 D1 的 3522 與 RL 3521 proxy 等 model/scorer 身份差異仍待正式相容性決策。
+- R9-A 的首個驗證層為純資料／CPU：release hashes、frame/quaternion/unit、timestamp/ordering、來源 split 無洩漏、motor/history 完整性、unsupported schema 拒絕，以及修改 diagnostic GT 不影響 runtime observation。
+- 先用已發布 archive／明示的合成測試輸入檢查資料與時序語義；合成輸入不計作真實 navigation source 或 admitted scenario。離線 replay 不呼叫 plant step。若需要實際 plant step 或 native smoke，即使沒有 PPO 也須另列預算與批准；本輪不啟動 evaluator。
+- 保留既有 contact-only native evaluator，full-task ledger 另按正式 G0 語義映射。合格首次接觸 latch 與後續 forbidden load／separation／recovery 分欄；尚無恢復模組時記為未評估，不能推定 PASS。
+- 原 Phase 4、Fixed A、R8、歷史 R9 的 archives 不覆寫；它們未跑過新 scenario 時記為 `NOT_EVALUATED_ON_G0`。舊 fresh 已公開結果的 case 只作 regression，新 heldout 依正式 source-family split 留存。
+
+#### R9-A 本地靜態相容性差分（2026-11-18）
+
+未交付或批准取得具名新版G0時，只核對原發布包與本地已有材料。本批沒有Consumer／Actor／訓練器／契約修改，沒有重跑原55項tests。分項資格與精確檔案hash以 `.agents/runs/n1-r9-a/compatibility.json` 為本批receipt；原 `results.json`／frozen protocol保持原樣。Package/source identity、data admission profile、Actor input、physical branch、CTBR authority、independent split、evaluation semantics分開判定；3筆BLOCKED不是0/3任務失敗。
+
+- **模型身份分層。** 本地 `artifacts/asm2_mujoco_proxy_v0.1.0/models/asm2_isaac_proxy.xml` 的SHA `2356bc3f…`與G0 D1宣告值完全相同，只有XML byte identity PASS。Fixed A的native evaluator從詳細MJCF與Field／actuator recipe建構，具有11874個aircraft hulls（15指定合法）；原training proxy manifest有3521 entries，Phase4R.2 overlay補reference hull。不能以任何一者的同名／byte-match推定完整scene、transitive mesh、compiled physics或scorer相容。本批不編譯plant。
+- **Target及45D。** Native world將原armor center `[11.4561,0,1.079] m`平移至零；其target frame columns為 `[-registered_slope, across, normal]`，local region halfwidth順序為slope/across `[.045,.05] m`。G0要求 `[across,slope,normal]`，必須依實際註冊建立det=+1的旋轉，不能只交換兩軸或借用別run的target。本地goal offset `.01786282 m`沿normal，並非G0給出的新進場起點。需要可追溯EstimatedState及world/body-origin-to-COM（含非零lever arm時的velocity修正）、target、clock／epoch／各channel informative time才可project；raw PX4 arrays／synthetic fixture不提供這些資格。
+- **Branch與控制範圍。** Actual thrust `act[4]`及held targets `ctrl[4]`必須分開。現有rate allocator為無積分memory的代數feedback；native actuator為`.04 s filterexact, actearly=false`，motor cap `1.103625 N`，native contact primary dt `.0001 s`、CTBR `.005 s`。Actor各rate±2 rad/s、collective `[.69651,2.08953] N`，與allocator±20 rad/s及total clamp `[0,4.4145] N`不同。現有offline restore寫qpos/qvel/act/ctrl後forward，重設local clock/tick；未恢復solver warmstart／完整integration vector，也未表示外部PX4／estimator／delay memory。上述scope、控制相位及remaining horizon須明示，不能借phase名稱自選fresh horizon。
+- **Scorer語義。** Local first-signed-manifold、first-pair timely loaded qualification與reason可作具名contact-profile映射的候選；它是first-contact latch。`positive_separation_records`只計正distance的native reports，不能映射為Q_separation。既有rollout在contact判定後停止，不能提供完整Q_clearance／separation dwell／stable recovery的window。三筆catalogue的contact／separation／recovery／full-task維持NOT_EVALUATED。
+
+CTBR接口差異的**可審查提案，尚未批准／未實作**：由producer正式決定DIRECT_CTBR successor與command admission版本，沿用single owner、lease generation、epoch撤銷與expiry原則；明定ACK是資料回聲還是何時實際接管，不能把離線Snapshot同一性當運動中的state freeze。首個`t_apply`需對應已註冊clock及control phase，predecessor負責此前有效held command，successor僅在state／measurement／lease與首個命令都有效時切入。本地physical `[T,p_FLU,q_FLU,r_FLU]`對共用FRD rates用`diag(1,-1,-1)`、T為N；policy bounds與allocator bounds分開。Actual motor state與held input連續，不加blending、首拍覆寫、slew limiter或action correction。Pending timeout只能保留尚有效的predecessor；已失效／切換後stale由具名且已驗證supervisor/fallback承擔，沒有這項決策即BLOCKED／NO_VALID_CONTROL，不能聲稱safe hover。發布的`adapt_physical_ctbr`僅synthetic、target-free helper，不是runtime權限實作；4090不擴寫凍結protocol。
+
+### 6.6 N1/R9-B Controlled Learning Experiment — 待獨立批准
+
+附件提出的 decaying demonstration regularization 已在**歷史 R9** 完成，結果為 Scientific No-Go，詳見 [歷史 R9 報告](ASM2_R9_DEMONSTRATION_REGULARIZED_PPO.md)。本節的 N1/R9-B 是新的工作包名稱，不重用 `r9/`、舊 config／manifest 或原批准字串，不把舊訓練改名為新共用 scenario 實驗。
+
+當前 learning mechanism 為 `UNSELECTED`。先完成 R9-A／G1-R，才據輸入可用性、共同 scenario 覆蓋和已有負結果選出一個可反證假設。不得以另一個 lambda、reset 比例或對同七條 demonstrations 的 sweep 當作新機制。若需要新的診斷或 native 資料，先單獨列出其授權和成本。
+
+R9-B 批准前必須凍結：單一 intervention、matched control 與可比性、checkpoint／optimizer／normalizer 初始化、dataset/split/sampling、reward/observation/action/PPO 語義、seed、loss 與 gradient path、terminal/truncation、checkpoint cadence、development selection、fresh quarantine、retention/promotion/stop gate，以及 training 和 native/replay 各自預算。使用歷史 R8 B 作 control 僅限 task/source/config/physics 等身份可比；新 G0 分布不能套用舊成功率假裝 matched。
+
+只有跨不同 earlier anchors／source families 的新 autonomous qualified contacts、持續性和 braking/terminal retention 可支持 contact mechanism adoption。完整任務還必須驗證 safe separation 與 stable recovery。Action likelihood、descriptor entry、reward 或低 imitation error 均不替代 native 結果。原歷史 braking ≥32/36、terminal ≥27/30 等 gate 不降低；新 scenario 的分母和 full-task gate 必須另行預登記，不能套用舊分母。
+
+目前無新 PPO、native 或 replay allowance；附件 393,216 transitions 等數字為較早提案，歷史批准也已用畢，不構成新 R9-B 預算。
+
 ## 7. Witness-Based Curriculum
 
 ### 7.1 Role of deterministic witness
@@ -466,7 +614,7 @@ Use `--geometry detailed` for the matched immutable reference. Benchmarks use a 
 
 ## 11. Recovery Separation
 
-Contact policy 在 qualified contact 或明確失敗事件終止。Recovery branch 從事件後真實狀態開始，獨立研究：
+歷史 contact-only policy 在 qualified contact 或明確失敗事件終止，其結果保持原義。未來完整任務的外層 episode 不得在首次接觸時當作完成；Recovery branch 從同一連續物理過程的碰後狀態開始，runtime 控制使用可取得的估測，GT 僅作評估。獨立研究：
 - Impact detection。
 - Attitude/rate stabilization。
 - Position/velocity recovery。
@@ -509,6 +657,8 @@ CAD / Physical Characterization
 | ADR-005 | Witness states allowed; teacher actions not required | PROPOSED | Research objective changes |
 | ADR-006 | Isaac training candidate, MuJoCo independent evaluation | PROVISIONAL | New conformance / throughput evidence |
 | ADR-007 | Recovery is separate branch | PROPOSED | Integrated mission evidence justifies coupling |
+| ADR-008 | Consume official 5060 G0 release; RL observation/action/PPO remain local | PUBLISHED BLOBS PINNED; OFFLINE CONSUMER PASS; FORMAL DATASET BLOCKED | Admitted published scenarios and model/observation compatibility verified |
+| ADR-009 | N1/R9-A/B fixed-handover first; selector deferred to G3 | CPU PROTOCOL PREPARATION; FORMAL EVALUATION NOT_RUN | Multi-source capability and retention evidence |
 
 ## 14. Open Design Questions
 
@@ -527,3 +677,7 @@ CAD / Physical Characterization
 The isolated `regional_update_experiment` continues both arms from Fixed A with the same earlier-reset bank and mixture. Only B's actor/critic scalar loss reductions receive mean-one regional weights; global advantage normalization, ValueNorm, optimizer and minibatch RNG remain unchanged. Missing regions are reported and their target mass normalized over present regions. All-one weighting reproduces the original PPO update exactly. The pinned learner and historical workflow sources remain unmodified. [Protocol and completed evidence](../plans/plan_new_airframe_phase0_01.md#21-regional-ppo-update-balancing)
 
 The completed weighted candidate raised braking loss mass from 20.3% to 46.5%, but produced only two qualifications on one previously successful reserved anchor, with 33/36 earlier envelope exits and no multi-anchor gain. This remains an isolated experimental adapter, not the default learner or a promoted policy. The frozen baseline remains unchanged. A concurrent Docker image tag rename was verified to resolve to the identical immutable image and handled by `regional_update_runtime` without rewriting the frozen experiment or changing training semantics.
+
+### R8 BC initialization experiment
+
+`demonstration_learning.py` extracts exact native45-D observations and inverse-tanh CTBR labels from complete saved successful trajectories. Fixed-variance Gaussian supervised loss changes Actor mean parameters only. Two original-source-excluded validation folds select a bounded epoch count; final refit uses all seven demonstrations and25 successful autonomous retention traces, with equal demo/retention mass and source/trajectory balancing. `r8_experiment.py` replaces only B initial Actor mean weights; both arms restore identical Fixed A critic, ValueNorm, log standard deviation and parent PPO Adam states. BC uses a separate discarded optimizer. Ordinary PPO has no imitation term. Native development selection is frozen before held-out evaluation.

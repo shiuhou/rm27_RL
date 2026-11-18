@@ -1,0 +1,11 @@
+{
+  "schema": "asm2_r8_demonstration_v1",
+  "source_config": "configs/rm27_asm2_regional_update.json",
+  "output": ".agents/runs/asm2-terminal/r8",
+  "per_arm_transitions": 393216,
+  "heldout_seed": 827114,
+  "bc": {"seed": 82714, "max_epochs": 80, "patience": 10, "learning_rate": 0.0001, "batch_size": 128, "steps_per_epoch": 16, "inverse_tanh_epsilon": 0.000001},
+  "selection": "Among 98304,196608,294912,393216 checkpoints with braking>=32/36 and terminal>=27/30 and zero retention envelope exits: maximize earlier distinct qualified anchors, then robust 3/3 anchors, then earlier contacts, then braking contacts, then latest endpoint. If none eligible use final checkpoint; no promotion. BC separately evaluated, never substituted for a PPO checkpoint.",
+  "go": "B exceeds A earlier qualification at >=2 distinct anchors and gains >=1 robust anchor, with braking>=32/36 and terminal>=27/30 and no retention envelope exits. Demonstrated starts alone do not pass. Report final persistence and held-out independently.",
+  "stop": "Full 393216 per arm; only numerical invalidity, invalid experiment, exhausted authorized resources or severe sustained collapse can stop early. No time deadline or zero-early-success futility gate."
+}

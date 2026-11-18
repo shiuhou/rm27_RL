@@ -17,6 +17,25 @@ by the configuration. Keep these local inputs, release archives, checkpoints,
 and experiment outputs in their documented locations. Local plans and run
 records live under `.agents/`.
 
+Current research status is recorded in the [roadmap](.agents/docs/ROADMAP.md).
+R8, historical R9 demonstration-regularized PPO, and R9.1 are closed No-Go
+results. N1/R9-A has completed offline consumer checks; formal fixed-handover
+evaluation remains blocked (three catalogued scenarios, zero eligible or
+evaluated). New R9-B learning is unselected and not authorized.
+
+The shared-handover consumer and its tests require the separately acquired G0
+release subset from
+[`shiuhou/rm27_drones`](https://github.com/shiuhou/rm27_drones/tree/9ea80518259173c15882ae8a3ab6059eb2643336),
+revision `9ea80518259173c15882ae8a3ab6059eb2643336`, at
+`upstream/rm27_g0/9ea8051/`, and the original receiver receipt at
+`.agents/runs/n1-r9-a/acquisition.json` (SHA-256
+`0fd9e74b8b99edd15da1b5986ea4fcfbb498fc1e09962e52ed1203cd90eb1641`).
+These inputs are not included in this repository. Provision the pinned inputs
+before running `tests/test_asm2_shared_handover.py`; a fresh clone alone is
+insufficient. Keep receipt identity checks intact. See
+[DESIGN §6.5](.agents/docs/DESIGN.md#65-n1r9-a-shared-scenario-consumer--fixed-handover-protocol)
+for the supported offline scope and remaining dependencies.
+
 The upstream checkouts are separate Git repositories. Use the following
 revisions when restoring this workspace.
 

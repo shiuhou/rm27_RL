@@ -1,8 +1,10 @@
 # RM27 Agile Flight RL — SPEC
 
-**Version:** 1.0  
-**Date:** 2026-11-10  
-**Status:** Provisional ASM2 flight, native contact and sampled simulated handovers verified.  
+**Version:** 1.1
+
+**Date:** 2026-11-18
+
+**Status:** N1/R9 alignment complete; published G0 contracts pinned locally at 9ea80518259173c15882ae8a3ab6059eb2643336. R9-A offline consumer PASS (55/55 CPU tests); overall R9-A, formal RL evaluation and R9-B remain BLOCKED by the published dataset and compatibility gaps. Historical R8 and demonstration-regularized R9 remain Scientific No-Go; no new training/native budget.
 **Research direction:** Contact-Constrained Agile Surface Interception
 
 ---
@@ -19,9 +21,11 @@
 
 **Can a resource-constrained quadrotor learn a closed-loop agile manoeuvre that coordinates translation, large attitude rotation, terminal braking and controlled physical contact with a designated surface, from a validated navigation handover state, under realistic actuator and contact dynamics?**
 
+2026-11-18 對齊的完整研究問題：在導航實際可達、且具有物理可行性證據的一組帶速進場狀態中，RL 能覆蓋多大的狀態範圍，完成 **qualified first contact → safe separation → stable recovery**？與 Non-RL 使用相同 scenario／模型身份及驗收語義比較。物理可行性與控制器能力均以有限實證表達，不宣稱已認證 reachable set。既有 first-contact 結果維持原任務語義。
+
 中文暫定名稱：**接觸約束敏捷表面攔截**（Contact-Constrained Agile Surface Interception）。
 
-「Perching」是重要先行研究類別，但 RM27 目前的主要 terminal event 是合格的瞬時物理接觸，不要求在表面持續附著或停留。因此不應把本任務直接等同傳統 perching。
+「Perching」是重要先行研究類別。既有 RL benchmark 的 terminal event 是合格首次物理接觸；完整研究任務還要求分離與穩定恢復，不要求在表面持續附著或停留。
 
 ### 2.2 Mission context
 
@@ -74,13 +78,41 @@ Phase 3 驗證既有位置控制器實際到達的模擬 handover states，並�
 
 Navigation 負責提供可行的接管狀態；Agile Policy 必須在接管後自主決定如何完成敏捷機動。Handover Set 不可只為了讓 RL 容易成功而任意縮小，必須由實際導航能力、定位誤差、延遲及安全空間共同決定。
 
+### 4.1 視覺導航與 RL 分工確認（2026-11-15）
+
+來源：使用者本輪目標對齊。`CONFIRMED` 指需求已確認，不代表能力已驗證。
+
+- 使用者側實作視覺導航，以綠燈為識別物，控制飛機朝目標方向及指定高度持續接近，可以減速，不在固定距離懸停等接管。
+- 本 RL 專案負責給出有驗證依據的進場要求：飛多近、飛多高、飛到什麼相對位置，以及速度、姿態、角速度和執行器狀態的允許範圍。導航主動配合這個範圍；本專案不替使用者開發導航或 MPC。
+- 最終目標是 RL 在接近途中根據即時狀態選擇接管時機。N1/R9-A/B 先使用事前凍結的 fixed-handover slices 評估控制能力，暫不新增 discrete handover policy。若一直未接管，導航在安全退出餘量耗盡前退出，重新進場；不得強制在最後一刻交給 RL。
+- 完整任務目標為自主接管、居中對齊、合法底面觸板，以及觸板後脫離並恢復穩定可控飛行。量化 gate、恢復實作及與本地 evaluator 的相容性依 §4.2 辦理，不由附件敘述直接更改本地 scorer。
+- 既有首次接觸 scorer 與歷史任務結果保持原義；首次接觸合格不代表恢復成功，也不代表官方撞擊計分合格。初期 contact-only 研究與完整任務目標分開驗收。
+- 0.65 m 靜止懸停、固定進場路徑、先向外繞均不是本次任務要求。接管範圍不得由單一孤立成功狀態或幾何相似性直接宣稱有效。
+
+2026-11-15 對齊當時僅授權文件整理；2026-11-18 後續 R9-A 的 CPU consumer 授權依 §4.2 辦理，仍無新訓練、native rollout、硬體操作或導航實作授權。接口與候選算法見 [DESIGN §6.4](DESIGN.md#64-視覺導航至-rl-接管接口2026-11-15)。
+
+### 4.2 N1/R9 共用研究邊界（2026-11-18）
+
+- **共用的權威輸入**為 5060 正式發布的 G0 Target/State、Navigation-to-Handover、Physics/Evaluation 契約及 Scenario Set 的格式與版本身份。4090 僅做 consumer 與本地適配，不另外定義同名契約、手填 schema 或重建 scenario generator。本次取得發布 commit `9ea80518259173c15882ae8a3ab6059eb2643336` 的 80 個檔案，保留於 `upstream/rm27_g0/9ea8051/`；契約為 `0.1.0-draft / PROPOSED`、snapshot 為 `rm27.handover/1`、scenario manifest 為 version `1`。來源、逐檔 SHA-256 與 producer receipts 見 `.agents/runs/n1-r9-a/acquisition.json`；接收方產生的 inventory 不冒稱 producer 正式 release checksum manifest。
+- 此發布版本只有 3 筆 legacy navigation diagnostic records、1 個 `dev` source family、**0 個 admitted recorded scenarios**，不是可直接評估 RL 的完整 dataset。另取得的 producer closure receipt 描述 3 筆 `RECORDED_SIM_ESTIMATED`、單一 admitted dev family，但明示 `published=false`；該未發布 fixture 與 remote dirty code 不匯入、不混入已釘選資料。producer 未提供 committed standalone checksum/test receipt 時，保留原 receipt 與其版本差異，不聲稱交付完整。
+- 共同比較需要核對 frame、unit、quaternion convention、綠燈到板面標定、機體／碰撞／執行器／scorer hashes、控制與物理時序、scenario/source/split 身份。5060 路徑與 Git revision 是發布方 provenance，必須與 4090 本地路徑及實際 hashes 分開。
+- **維持獨立**：RL observation encoder、action decoder、PPO objective、Actor/Critic、normalizer、optimizer、reset sampler 及 training pipeline。共用 snapshot 不等於共用 Actor 輸入，更不授權移植 Non-RL planner 或 teacher actions。
+- runtime observation 只可使用發布契約中可取得的估測／歷史欄位；simulator GT 僅供恢復物理初態、驗證及診斷。既有 45D Actor 使用模擬真值的歷史評估不重新命名為 estimated-runtime conformance。缺少可用欄位時記錄 blocker，不以 GT 補齊。
+- 已發布 protocol 的接管輸出是 `REFERENCE_TRAJECTORY`；其 Snapshot、ACK、lease 與 authority conformance 不代表 Direct-CTBR runtime authority。資料重放僅為離線逐筆重放，不代表 plant state restore 或新 native rollout。G0 D1 的 3522 與本地 RL 3521 proxy 等模型身份須另行比對，不能以同名 ASM2 推導相容。
+- split 按獨立 navigation source trajectory／family 凍結，相關 frames 不跨 train/dev/heldout；既有 R8/R9 fresh suite 已被使用，不能重新當成未見盲測集。Scenario 需含完整物理／執行器狀態與控制歷史，runtime view 和 diagnostic GT 分離。
+- Fixed-handover capability 與自主選擇接管的 E2E 評估分開。前者所有預定合法 slices 都入分母，不能由 selector 挑易例；後者所有合法 navigation attempts 入分母，另報 acceptance、abort、conditional success。
+- 完整任務獨立記錄 first-contact、forbidden contacts、separation、stable recovery、飛行包線和 timing。附件引用的 8 cm 分離、1 s hold、0.95 m/s speed、5 mm clearance 為來源報告 gate；其量測對象、事件、窗口和版本須由正式 G0 release 核對，**不自動成為本機新門檻**。沒有 full-task evaluator 時，full-task 欄位為未評估，不能由 contact-only PASS 推導。
+- 同軸、居中、相向面接觸為 nominal 設計目標，並非經證明的全域最優策略；接觸點速度、衝量作用線與 COM 必須使用一致座標。官方撞擊計分與研究工程資格持續分開。
+
+當前授權 R9-A 的最小 consumer 實作、離線 loader/schema/provenance/observation-isolation/replay CPU tests 與 fixed-handover protocol 準備；不啟動 plant step、native contact campaign、PPO 或硬體，也不啟用歷史剩餘預算。最終驗證與缺項以 `.agents/runs/n1-r9-a/` 原始輸出為準。若任務內容指向其他 host 或 Non-RL component，應先停止並提醒使用者，不在 5060 執行該工作。R9-A/B 的階段與 gates 見 [ROADMAP §2.1](ROADMAP.md#21-n1r9-研究路線2026-11-18)。
+
 ## 5. Contact Objective
 
 ### 5.1 Intended physical contact
 
-新機型預期使用**原有機身整個底部外殼**作為接觸區域，不再使用舊任務的人工 9 mm 球形 fixture 作正式接觸定義。
+物理目標是原有機身底部朝向裝甲板的接觸，不再使用舊任務的人工 9 mm 球形 fixture。當前 ASM2 工程合法部位維持指定 15 個 front/rear patches，其餘 body 維持 forbidden；full-underside 幾何研究意圖不代表整個底殼均已獲准接觸。
 
-使用者已提供 142 g ASM2 STEP / USD / MJCF collision package。本次 integration 必須保留其 14 個 `contact_front`、1 個 `contact_rear` 及其餘 `body` colliders 的語意與個別身分；這是 candidate geometry 分類，不自動凍結新任務的物理 qualification。原有 full-underside 研究意圖、實際允許 shell 範圍與正式數值門檻仍須設計確認。
+使用者已提供 142 g ASM2 STEP / USD / MJCF collision package。保留其 14 個 `contact_front`、1 個 `contact_rear` 及其餘 `body` colliders 的語意與個別身分。現有 provisional first-contact 工程契約已實作；任何共用 G0 模型／判定相容性差異均需明確處理，不在研究計劃對齊中修改物理、幾何、接觸偏移或 scorer。
 
 ### 5.2 Geometric intent
 
@@ -139,6 +171,8 @@ Deterministic planner / witness 可以用於 feasibility analysis、baseline 及
 Stationary-hover starts 仍是重要的完整任務能力測試與後期擴展目標，不應被永久排除。
 
 ### 6.3 Algorithm
+
+N1/R9 的當前基線仍為既有 PPO + Direct-CTBR。R9-A 只實作離線資料消費、CPU conformance 與 protocol 準備，R9-B 是需獨立批准的單一可反證 learning-mechanism experiment；機制與預算尚未選定。歷史 R9 demonstration regularization 已完成 No-Go，不能照附件較早的提案重跑。以下其他算法僅為候選清單，不構成 sweep 或實作承諾。
 
 - PPO：保留為第一個主要 baseline，因已有 RM27 basic-flight 和 terminal-braking 資產。
 - TD3：作為主要 off-policy challenger。
@@ -249,14 +283,19 @@ CAD estimates、manufacturer specifications、bench measurements 和 inferred pa
 
 | Item | Status |
 |---|---|
-| Research direction | Proposed baseline |
+| Research direction | N1/R9 shared fixed-handover capability first; autonomous handover and full recovery are future gates |
 | Complete new-airframe CAD | ASM2 STEP RECEIVED; focused collision/mass review completed; full design freeze pending |
 | New-airframe mass / inertia | User-reported measured 142 g; full inertia and rotor centers CAD_ESTIMATE; actuator calibration pending |
-| New full-underside geometry | ASM2 15-patch candidate supplied; NOT_FROZEN |
+| New full-underside geometry | Existing ASM2 legal 15-patch engineering contract retained; no geometry changes authorized |
 | New simulation model | Provisional isolated ASM2 flight baseline verified in Isaac and native MuJoCo; detailed collision candidate preserved |
 | New contact scorer | ASM2 provisional first-contact contract implemented for native MuJoCo |
 | New handover set | Finite navigation-reached sample set verified in native simulation |
-| New contact RL training | NOT_AUTHORIZED |
+| Learned baseline | Phase 4 checkpoint-186368.pt retained; Fixed A is continuation reference |
+| Historical R8 / R9 / R9.1 | Completed No-Go under their original definitions; evidence preserved |
+| Shared G0 local identity | 9ea80518259173c15882ae8a3ab6059eb2643336; 0.1.0-draft / PROPOSED; 80 published files pinned locally; acquisition provenance retained |
+| Shared G0 dataset / formal RL evaluation | BLOCKED: published 3 diagnostic records, 1 dev family, 0 admitted recorded scenarios; unpublished closure is separate evidence |
+| R9-A consumer | Offline PASS, 33 official + 22 local CPU tests; overall R9-A BLOCKED; receipt .agents/runs/n1-r9-a/results.json; no Actor or plant changes |
+| New contact RL training | NOT_AUTHORIZED; historical training budgets closed |
 | Legacy evidence preservation | REQUIRED |
 
 ## 14. Change Control
@@ -269,3 +308,7 @@ CAD estimates、manufacturer specifications、bench measurements 和 inferred pa
 - 新研究方向取代目前主目標。
 
 單純實作步驟或實驗進度變化只更新 PLAN / ROADMAP。
+
+### R8 bounded demonstration-assisted authorization — historical, closed
+
+R8 explicitly permits supervised action learning from the seven saved, native-qualified optimized-prefix/Fixed A connections, followed by ordinary PPO. This is demonstration-assisted learning, not a claim of pure model-free learning. Source/phase, future actions and full actuator state remain provenance/verification metadata, never Actor inputs. Independent evaluation must generate every action through the learned45-D Direct-CTBR Actor, with no planned prefix, handover or teacher switching. Frozen first-contact qualification and protected baselines are unchanged.
